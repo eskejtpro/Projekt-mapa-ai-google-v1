@@ -22,7 +22,8 @@ import {
   FolderOpen,
   Folder,
   Clock,
-  Navigation
+  Navigation,
+  ArrowUpDown
 } from 'lucide-react';
 
 import { TravelPhoto, TravelAlbum, TravelTrip, OfflineMapPackage, MapTileProvider, AppSettings, TravelStats } from './types/travel';
@@ -44,6 +45,7 @@ import { TvModeModal } from './components/TvModeModal';
 import { OfflineMapsModal } from './components/OfflineMapsModal';
 import { AndroidSyncModal } from './components/AndroidSyncModal';
 import { PhotoDetailModal } from './components/PhotoDetailModal';
+import { CatalogOrganizerModal } from './components/CatalogOrganizerModal';
 
 export default function App() {
   // Baza danych wspomnień
@@ -52,6 +54,7 @@ export default function App() {
   const [trips, setTrips] = useState<TravelTrip[]>([]);
   const [offlinePackages, setOfflinePackages] = useState<OfflineMapPackage[]>([]);
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [reorderAlbum, setReorderAlbum] = useState<TravelAlbum | null>(null);
 
   // Okno Windows 10/11
   const [isWindowMaximized, setIsWindowMaximized] = useState<boolean>(true);
@@ -278,6 +281,39 @@ export default function App() {
     setIsSlideshowOpen(true);
   };
 
+  // Zapis własnej kolejności slajdów w katalogu / albumie
+  const handleSaveAlbumOrder = (albumId: string, orderedPhotoIds: string[]) => {
+    setAlbums(prevAlbums => {
+      const updated = prevAlbums.map(a => {
+        if (a.id === albumId) {
+          return { ...a, customPhotoOrder: orderedPhotoIds };
+        }
+        return a;
+      });
+      StorageService.saveAlbums(updated);
+      return updated;
+    });
+    showToast('Zapisano własną kolejność zdjęć w katalogu!', 'success');
+  };
+
+  // Uruchomienie pokazu slajdów z wybranego albumu według jego własnej kolejności
+  const handleStartAlbumSlideshow = (album: TravelAlbum) => {
+    const albumPhotos = photos.filter(p => p.albumId === album.id);
+    if (album.customPhotoOrder && album.customPhotoOrder.length > 0) {
+      const orderMap = new Map<string, number>();
+      album.customPhotoOrder.forEach((id, idx) => orderMap.set(id, idx));
+      const sorted = [...albumPhotos].sort((a, b) => {
+        const orderA = orderMap.has(a.id) ? orderMap.get(a.id)! : 99999;
+        const orderB = orderMap.has(b.id) ? orderMap.get(b.id)! : 99999;
+        if (orderA !== orderB) return orderA - orderB;
+        return a.date.localeCompare(b.date);
+      });
+      handleStartSlideshow(sorted);
+    } else {
+      handleStartSlideshow(albumPhotos);
+    }
+  };
+
   // Reset do demo
   const handleResetDemo = () => {
     setConfirmDialog({
@@ -479,6 +515,7 @@ export default function App() {
                   onStartSlideshow={(list) => handleStartSlideshow(list)}
                   onSelectAlbum={(id) => setSelectedAlbumId(id)}
                   selectedAlbumId={selectedAlbumId}
+                  onOpenOrganizer={(album) => setReorderAlbum(album)}
                   density={settings.galleryDensity}
                   showExifBadges={settings.showExifBadges}
                 />
@@ -494,7 +531,7 @@ export default function App() {
                         Albumy i Kolekcje Podróżnicze
                       </h2>
                       <p className="text-xs text-slate-400">
-                        Podróże podzielone na albumy rodzinne oraz kolekcje inteligentne.
+                        Podróże podzielone na katalogi rodzinne z możliwością własnego układania kolejności slajdów.
                       </p>
                     </div>
 
@@ -531,6 +568,11 @@ export default function App() {
                             <div className="absolute bottom-3 right-3 bg-emerald-500/20 text-emerald-400 text-xs px-2.5 py-1 rounded-full font-bold border border-emerald-500/30">
                               {count} {count === 1 ? 'zdjęcie' : 'zdjęć'}
                             </div>
+                            {album.customPhotoOrder && album.customPhotoOrder.length > 0 && (
+                              <div className="absolute top-3 right-3 bg-amber-500/90 text-slate-950 text-[10px] px-2 py-0.5 rounded-md font-bold shadow flex items-center gap-1">
+                                <Sparkles className="w-3 h-3" /> Ułożony
+                              </div>
+                            )}
                           </div>
 
                           <div className="p-4 flex-1 flex flex-col justify-between space-y-2">
@@ -543,9 +585,30 @@ export default function App() {
                               </p>
                             </div>
 
-                            <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-amber-400 font-semibold">
-                              <span>Otwórz album</span>
-                              <ExternalLink className="w-3.5 h-3.5" />
+                            <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                              <span className="text-amber-400 font-semibold group-hover:underline flex items-center gap-1">
+                                Otwórz album <ExternalLink className="w-3.5 h-3.5" />
+                              </span>
+
+                              <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                                <button
+                                  onClick={() => setReorderAlbum(album)}
+                                  className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-amber-400 border border-slate-700 transition-colors flex items-center gap-1 font-medium cursor-pointer"
+                                  title="Ułóż kolejność zdjęć w tym katalogu"
+                                >
+                                  <ArrowUpDown className="w-3 h-3 text-amber-400" />
+                                  Kolejność
+                                </button>
+                                <button
+                                  onClick={() => handleStartAlbumSlideshow(album)}
+                                  disabled={count === 0}
+                                  className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500 text-amber-400 hover:text-slate-950 border border-amber-500/30 transition-all flex items-center gap-1 font-bold cursor-pointer disabled:opacity-30"
+                                  title="Uruchom pokaz slajdów tego albumu"
+                                >
+                                  <Play className="w-3 h-3 fill-current" />
+                                  Slajdy
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -885,6 +948,19 @@ export default function App() {
         onClose={() => setIsSlideshowOpen(false)}
         photos={slideshowPhotos}
         initialIndex={slideshowStartIndex}
+        albumName={selectedAlbumId ? albums.find(a => a.id === selectedAlbumId)?.name : undefined}
+      />
+
+      <CatalogOrganizerModal
+        isOpen={!!reorderAlbum}
+        onClose={() => setReorderAlbum(null)}
+        album={reorderAlbum}
+        allPhotos={photos}
+        onSaveOrder={handleSaveAlbumOrder}
+        onStartSlideshow={(ordered) => {
+          setReorderAlbum(null);
+          handleStartSlideshow(ordered);
+        }}
       />
 
       <TvModeModal

@@ -147,15 +147,67 @@ export const MapView: React.FC<MapViewProps> = ({
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
     const map = L.map(mapContainerRef.current, {
-      center: [36.0, 15.0],
+      center: [30.0, 15.0],
       zoom: 3,
-      minZoom: 2,
+      minZoom: 3,
       maxZoom: 19,
       zoomControl: false,
       worldCopyJump: false,
+      bounceAtZoomLimits: false,
       fadeAnimation: true,
       zoomAnimation: true,
+      maxBounds: [
+        [-85.05112878, -10000],
+        [85.05112878, 10000],
+      ],
+      maxBoundsViscosity: 1.0,
     });
+
+    // Ścisła blokada pionowa — gwarantuje, że widok nigdy nie wyjedzie poza krawędzie kafelków
+    // (Biegun Północny i Południowy) i nie odsłoni czarnej pustki nad lub pod mapą.
+    const enforceVerticalBounds = () => {
+      if (!mapContainerRef.current) return;
+      const size = map.getSize();
+      if (size.y === 0) return;
+      const zoom = map.getZoom();
+      const center = map.getCenter();
+      const centerPoint = map.project(center, zoom);
+      const worldHeight = 256 * Math.pow(2, zoom);
+      const halfH = size.y / 2;
+
+      let clampedY = centerPoint.y;
+      if (worldHeight >= size.y) {
+        if (clampedY - halfH < 0) {
+          clampedY = halfH;
+        } else if (clampedY + halfH > worldHeight) {
+          clampedY = worldHeight - halfH;
+        }
+      } else {
+        clampedY = worldHeight / 2;
+      }
+
+      if (Math.abs(clampedY - centerPoint.y) > 0.5) {
+        const clampedCenter = map.unproject(L.point(centerPoint.x, clampedY), zoom);
+        map.setView(clampedCenter, zoom, { animate: false });
+      }
+    };
+
+    map.on('drag', enforceVerticalBounds);
+    map.on('move', enforceVerticalBounds);
+    map.on('zoomend', enforceVerticalBounds);
+
+    const updateMapMinZoom = () => {
+      const containerH = mapContainerRef.current?.clientHeight || 800;
+      const requiredMinZoom = Math.max(3, Math.ceil(Math.log2(containerH / 256)));
+      map.setMinZoom(requiredMinZoom);
+      if (map.getZoom() < requiredMinZoom) {
+        map.setZoom(requiredMinZoom);
+      }
+      enforceVerticalBounds();
+    };
+
+    updateMapMinZoom();
+    map.on('resize', updateMapMinZoom);
 
     const activeProvider = tileProvider in TILE_SERVERS ? tileProvider : 'dark';
     const config = TILE_SERVERS[activeProvider];

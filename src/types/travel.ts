@@ -21,6 +21,7 @@ export interface TravelPhoto {
   tags: string[]; // np. ['Plaża', 'Zachód słońca', 'Góry', 'Kulinaria']
   isFavorite: boolean;
   isDemo?: boolean;
+  order?: number;
   cameraInfo?: {
     make?: string;
     model?: string;
@@ -62,6 +63,7 @@ export interface TravelAlbum {
   isDemo?: boolean;
   isSmartAlbum?: boolean;
   smartFilter?: 'favorites' | 'nature' | 'family' | 'food' | 'recent';
+  customPhotoOrder?: string[]; // Tablica identyfikatorów zdjęć w zdefiniowanej kolejności użytkownika
 }
 
 export type MapTileProvider = 'dark' | 'satellite' | 'voyager' | 'light' | 'osm' | 'streets';

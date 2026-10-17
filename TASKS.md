@@ -24,3 +24,6 @@
 | PREZ-021 | P1 | System | Obsługa natywnego otwierania folderu w Eksploratorze Windows | **DO WDROŻENIA (CODEX)**| Zadanie dla OpenAI Codex |
 | PREZ-022 | P1 | System | Wpis autostartu w rejestrze Windows (HKCU Run) | **DO WDROŻENIA (CODEX)**| Zadanie dla OpenAI Codex |
 | PREZ-023 | P2 | Mobilne | Aplikacja Android i synchronizacja lokalna przez Wi-Fi | **PRZYSZŁA WERSJA** | Odroczona do czasu stabilizacji wersji Windows |
+| PREZ-024 | P0 | Pokaz | Rozbudowany Pokaz Slajdów 2.0 (4 przejścia, drawer ustawień, 5 dźwięków Web Audio, pasek miniatur, auto-ukrywanie) | **UKOŃCZONE** | Działa w podglądzie (Vite) |
+| PREZ-025 | P0 | Katalogi | Układanie kolejności zdjęć w katalogach (Drag & Drop, przyciski, numeracja, szablony, odtwarzanie w kolejności) | **UKOŃCZONE** | Działa w podglądzie & testy Vitest |
+| PREZ-026 | P0 | Mapa | Matematyczna blokada pionowa mapy eliminująca czarną pustkę poza krawędziami | **UKOŃCZONE** | Działa w podglądzie (Vite) |

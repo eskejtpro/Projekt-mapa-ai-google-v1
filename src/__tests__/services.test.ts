@@ -178,4 +178,33 @@ describe('travelPacks', () => {
     expect(photos[0].albumId).toBe(album.id);
     expect(photos[0].location.lat).toBe(tatryPack.photos[0].lat);
   });
+
+  it('obsługuje i zapisuje własną kolejność zdjęć w katalogu (customPhotoOrder)', () => {
+    const album: TravelAlbum = {
+      id: 'album-tatry',
+      name: 'Tatry Polskie',
+      description: 'Górskie szlaki',
+      coverUrl: 'https://example.com/tatry.jpg',
+      year: 2023,
+      country: 'Polska',
+      customPhotoOrder: ['photo-3', 'photo-1', 'photo-2'],
+    };
+
+    StorageService.saveAlbums([album]);
+    const loaded = StorageService.getAlbums();
+    expect(loaded[0].customPhotoOrder).toEqual(['photo-3', 'photo-1', 'photo-2']);
+
+    // Test sortowania zdjęć według customPhotoOrder
+    const samplePhotos: TravelPhoto[] = [
+      { id: 'photo-1', title: 'Zdjęcie 1', url: '', date: '2023-01-01', location: { lat: 0, lng: 0, cityName: '', countryName: '', countryCode: '' }, albumId: 'album-tatry', notes: '', participants: [], tags: [], isFavorite: false },
+      { id: 'photo-2', title: 'Zdjęcie 2', url: '', date: '2023-01-02', location: { lat: 0, lng: 0, cityName: '', countryName: '', countryCode: '' }, albumId: 'album-tatry', notes: '', participants: [], tags: [], isFavorite: false },
+      { id: 'photo-3', title: 'Zdjęcie 3', url: '', date: '2023-01-03', location: { lat: 0, lng: 0, cityName: '', countryName: '', countryCode: '' }, albumId: 'album-tatry', notes: '', participants: [], tags: [], isFavorite: false },
+    ];
+
+    const orderMap = new Map<string, number>();
+    album.customPhotoOrder!.forEach((id, idx) => orderMap.set(id, idx));
+    const sorted = [...samplePhotos].sort((a, b) => (orderMap.get(a.id) ?? 999) - (orderMap.get(b.id) ?? 999));
+
+    expect(sorted.map(p => p.id)).toEqual(['photo-3', 'photo-1', 'photo-2']);
+  });
 });
