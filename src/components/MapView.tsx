@@ -308,12 +308,18 @@ export const MapView: React.FC<MapViewProps> = ({
 
       const badgeBg = count > 10 ? '#7c3aed' : count > 2 ? '#2563eb' : '#059669';
 
-      const safeImageUrl = /^(https?:\/\/|data:image\/(png|jpeg|gif|webp);base64,)/.test(rep.thumbnailUrl || rep.url) ? rep.thumbnailUrl || rep.url : '';
+      const candidateImageUrl = rep.thumbnailUrl || rep.url;
+      const isLocalImage = /^data:image\/(png|jpeg|gif|webp);base64,/.test(candidateImageUrl);
+      const safeImageUrl = !offlineMode && /^(https?:\/\/|data:image\/(png|jpeg|gif|webp);base64,)/.test(candidateImageUrl)
+        ? candidateImageUrl
+        : (isLocalImage ? candidateImageUrl : '');
       const escapeAttribute = (value: string) => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll("'", '&#39;');
       const iconHtml = `
         <div style="position: relative; width: 56px; height: 64px; cursor: pointer; display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.7)); transition: transform 0.2s ease;">
           <div style="width: 50px; height: 50px; border-radius: 9999px; overflow: hidden; border: 3px solid #ffffff; background: #0b1120; box-shadow: 0 0 16px rgba(245, 158, 11, 0.4);">
-            <img src="${escapeAttribute(safeImageUrl)}" alt="${escapeAttribute(rep.title)}" style="width: 50px !important; height: 50px !important; max-width: none !important; object-fit: cover; display: block;" />
+            ${safeImageUrl
+              ? `<img src="${escapeAttribute(safeImageUrl)}" alt="${escapeAttribute(rep.title)}" style="width: 50px !important; height: 50px !important; max-width: none !important; object-fit: cover; display: block;" />`
+              : '<div aria-hidden="true" style="width: 50px; height: 50px; display: grid; place-items: center; color: #f59e0b; font-size: 22px; font-weight: 800;">✦</div>'}
           </div>
           ${count > 1 ? `
             <div style="position: absolute; top: -3px; right: -3px; background: ${badgeBg}; color: #ffffff; font-size: 11px; font-weight: 900; border-radius: 9999px; min-width: 22px; height: 22px; padding: 0 5px; display: flex; align-items: center; justify-content: center; border: 2px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.8); font-family: monospace;">
@@ -341,11 +347,19 @@ export const MapView: React.FC<MapViewProps> = ({
       const imgContainer = document.createElement('div');
       imgContainer.className = 'rounded-xl overflow-hidden mb-2 relative shadow-lg bg-slate-950';
 
-      const img = document.createElement('img');
-      img.src = rep.url;
-      img.alt = rep.title || 'Wspomnienie';
-      img.className = 'w-full h-36 object-cover';
-      imgContainer.appendChild(img);
+      if (!offlineMode || /^data:image\/(png|jpeg|gif|webp);base64,/.test(rep.url)) {
+        const img = document.createElement('img');
+        img.src = rep.url;
+        img.alt = rep.title || 'Wspomnienie';
+        img.className = 'w-full h-36 object-cover';
+        imgContainer.appendChild(img);
+      } else {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'h-36 grid place-items-center text-amber-400 text-3xl';
+        placeholder.textContent = '✦';
+        placeholder.setAttribute('aria-label', 'Podgląd niedostępny offline');
+        imgContainer.appendChild(placeholder);
+      }
 
       const badge = document.createElement('div');
       badge.className = 'absolute top-2 right-2 bg-slate-950/85 backdrop-blur text-amber-400 text-[10px] px-2.5 py-0.5 rounded-full font-bold border border-amber-500/30';

@@ -1,6 +1,7 @@
 # PROGRESS.md - Rzeczywisty Stan Postępów Projektu „Prezent Mapy”
 
 ## SESSION HANDOFF — Codex 2026-10-17
+- Test bezpośredniego runtime Electron ujawnił zepsute obrazki markerów przy blokadzie sieci offline. MapView poprawiono: zewnętrzne URL-e są zastępowane placeholderem, lokalne data URL pozostają widoczne. Typecheck, build i smoke offline PASS; zrzut `reports/desktop-smoke.png` potwierdza poprawę wizualną.
 - Ostatnia iteracja: naprawiono atomowość resetu/usuwania demo i czyszczenia stanu map; usunięto fikcyjne 145 MB, a Electron zwraca rzeczywisty rozmiar przeniesionego MBTiles. Dodano blokadę drugiej instancji. Typecheck, 19 testów Vitest, 10 tooling, 9 testów backendowych i build PASS. Zmiany są jeszcze lokalne; następny krok to pełna weryfikacja i commit.
 - Aktualne pakiety z commita 9c4f45b: NSIS 131809666 B, SHA-256 `93E7D26DF57B5FAAC0BF48D4EDF7194D30F25A3408E2AC3EEA4386A35BFF0AF3`; portable 131579680 B, SHA-256 `B523E459C3CF9F7914DC1D5D3EF78265263FBC2D65860E4E102328E53A083C33`. Smoke `win-unpacked` PASS (`packaged=true`, CSP, SQLite, izolacja, 24 kafelki offline). NSIS: instalacja PASS, smoke zainstalowanej aplikacji PASS, deinstalacja PASS; test wykonany w izolowanym katalogu `release/installation-smoke-current`, bez danych użytkownika.
 - Portable: uruchomienie aktualnego `release/Prezent-Mapy-Portable-1.3.1-x64.exe --smoke-test --offline-smoke-test` PASS; `packaged=true`, CSP/SQLite/izolacja IPC i 24 lokalne kafelki potwierdzone.
