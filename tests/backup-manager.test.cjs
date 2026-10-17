@@ -1,0 +1,26 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const { mkdtempSync, readFileSync } = require('node:fs');
+const { tmpdir } = require('node:os');
+const path = require('node:path');
+const { LibraryDatabase } = require('../electron/database.cjs');
+const { BackupManager } = require('../electron/backup-manager.cjs');
+test('automatyczna kopia jest przenośna i respektuje harmonogram/miniatury', () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'prezent-backup-test-'));
+  const db = new LibraryDatabase(path.join(directory, 'library.sqlite'));
+  const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
+  db.set('prezent_travel_photos_v2', JSON.stringify([{ id: 'synthetic', url: image, thumbnailUrl: image }]));
+  db.set('prezent_app_settings_v2', JSON.stringify({ autoBackupIntervalDays: 7, includeThumbnailsInBackup: false }));
+  const manager = new BackupManager(db, directory, 'test');
+  const now = Date.UTC(2026, 9, 17);
+  const first = manager.check(now);
+  assert.equal(first.created, true);
+  const backup = JSON.parse(readFileSync(first.file, 'utf8'));
+  assert.equal(backup.photos[0].url, image);
+  assert.equal(backup.photos[0].thumbnailUrl, undefined);
+  assert.equal(manager.check(now + 86400000).created, false);
+  assert.equal(manager.check(now + 8 * 86400000).created, true);
+  db.set('prezent_app_settings_v2', JSON.stringify({ autoBackupIntervalDays: 0 }));
+  assert.equal(manager.check(now + 30 * 86400000).created, false);
+  db.close();
+});

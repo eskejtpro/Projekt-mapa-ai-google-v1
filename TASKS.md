@@ -1,6 +1,8 @@
 # TASKS.md - Rejestr Zadań i Implementacji Projektu „Prezent Mapy”
 
 ## Iteracja środowiska E0 (2026-10-17)
+REQ-10 backup: wdrożony BackupManager i katalog kopii w ustawieniach; harmonogram/0=wyłączone/miniatury test PASS. Wielodniowy test na rzeczywistej bibliotece oraz odzyskiwanie po awarii dysku NOT RUN.
+REQ-09: rozszerzona walidacja pól/enumów/relacji, regresje i legacy PASS. F10: restart dwóch procesów z odczytem zdjęcia PASS. Bezpieczeństwo: produkcyjne CSP, blokada popup i fałszywej ramki PASS w smoke. Odzyskiwanie uszkodzonego rekordu PASS; fizycznie uszkodzona baza i pełne odtwarzanie otwarte. Pozostałe narzędzia reset/czyszczenie i migracje wymagają kontroli atomowości.
 REQ-10: IN_PROGRESS — podłączono podstawowe ustawienia pokazu/EXIF/galerii/autocentrowania; smoke potwierdza ustawienia galerii i pokazu w rendererze. Pozostała część preferencji, hardware acceleration/backup i testy wyglądu nadal otwarte.
 REQ-12 pilot: IN_REVIEW — HTTP+QR+IPC i zmiana/pauza pokazu w Electron PASS; telefon fizyczny i casting nadal otwarte. REQ-06: poprawiono kryterium identycznej treści i dodano regresję dla tej samej nazwy/obcego hasha. REQ-04: atomowy import zdjęć+albumu i obsługa błędów FileReader wdrożone; rzeczywiste EXIF/D&D/folder nadal wymagają testów.
 F11: instalacja/start/deinstalacja NSIS w wydzielonym katalogu PASS. Pozostają: przebudowa po TV discovery, test portable, aktualizacja i zachowanie biblioteki oraz podpis wydawcy.

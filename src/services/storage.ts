@@ -2,7 +2,7 @@ import { TravelPhoto, TravelAlbum, TravelTrip, OfflineMapPackage, AppSettings, T
 import { DEMO_PHOTOS, DEMO_ALBUMS, DEMO_TRIPS, DEMO_OFFLINE_PACKAGES } from '../data/demoMemories';
 import { APP_VERSION } from '../version';
 import { persistence } from './persistence';
-import { validateBackup } from './backup-validation';
+import { validateBackup, validateSettings } from './backup-validation';
 
 const STORAGE_KEYS = {
   PHOTOS: 'prezent_travel_photos_v2',
@@ -11,6 +11,11 @@ const STORAGE_KEYS = {
   OFFLINE_PACKAGES: 'prezent_offline_packages_v2',
   SETTINGS: 'prezent_app_settings_v2',
 };
+function parseCollection<T>(data: string): T[] {
+  const parsed = JSON.parse(data);
+  if (!Array.isArray(parsed)) throw new Error('Nieprawidłowa kolekcja');
+  return parsed;
+}
 
 export const DEFAULT_SETTINGS: AppSettings = {
   // 1. Ogólne
@@ -87,13 +92,13 @@ export const StorageService = {
   getPhotos(): TravelPhoto[] {
     try {
       const data = persistence.getItem(STORAGE_KEYS.PHOTOS);
-      if (!data) {
-        this.savePhotos(DEMO_PHOTOS);
+      if (data === null) {
+        if (!this.savePhotos(DEMO_PHOTOS)) throw new Error('Błąd inicjalizacji');
         return DEMO_PHOTOS;
       }
-      return JSON.parse(data);
+      return parseCollection<TravelPhoto>(data);
     } catch {
-      return DEMO_PHOTOS;
+      throw new Error('Nie udało się odczytać fotografii');
     }
   },
 
@@ -111,13 +116,13 @@ export const StorageService = {
   getAlbums(): TravelAlbum[] {
     try {
       const data = persistence.getItem(STORAGE_KEYS.ALBUMS);
-      if (!data) {
-        this.saveAlbums(DEMO_ALBUMS);
+      if (data === null) {
+        if (!this.saveAlbums(DEMO_ALBUMS)) throw new Error('Błąd inicjalizacji');
         return DEMO_ALBUMS;
       }
-      return JSON.parse(data);
+      return parseCollection<TravelAlbum>(data);
     } catch {
-      return DEMO_ALBUMS;
+      throw new Error('Nie udało się odczytać albumów');
     }
   },
 
@@ -135,13 +140,13 @@ export const StorageService = {
   getTrips(): TravelTrip[] {
     try {
       const data = persistence.getItem(STORAGE_KEYS.TRIPS);
-      if (!data) {
-        this.saveTrips(DEMO_TRIPS);
+      if (data === null) {
+        if (!this.saveTrips(DEMO_TRIPS)) throw new Error('Błąd inicjalizacji');
         return DEMO_TRIPS;
       }
-      return JSON.parse(data);
+      return parseCollection<TravelTrip>(data);
     } catch {
-      return DEMO_TRIPS;
+      throw new Error('Nie udało się odczytać podróży');
     }
   },
 
@@ -159,13 +164,13 @@ export const StorageService = {
   getOfflinePackages(): OfflineMapPackage[] {
     try {
       const data = persistence.getItem(STORAGE_KEYS.OFFLINE_PACKAGES);
-      if (!data) {
-        this.saveOfflinePackages(DEMO_OFFLINE_PACKAGES);
+      if (data === null) {
+        if (!this.saveOfflinePackages(DEMO_OFFLINE_PACKAGES)) throw new Error('Błąd inicjalizacji');
         return DEMO_OFFLINE_PACKAGES;
       }
-      return JSON.parse(data);
+      return parseCollection<OfflineMapPackage>(data);
     } catch {
-      return DEMO_OFFLINE_PACKAGES;
+      throw new Error('Nie udało się odczytać pakietów map');
     }
   },
 
@@ -183,15 +188,18 @@ export const StorageService = {
   getSettings(): AppSettings {
     try {
       const data = persistence.getItem(STORAGE_KEYS.SETTINGS);
-      if (!data) return DEFAULT_SETTINGS;
-      return { ...DEFAULT_SETTINGS, ...JSON.parse(data), appVersion: DEFAULT_SETTINGS.appVersion };
+      if (data === null) return DEFAULT_SETTINGS;
+      const parsed = JSON.parse(data);
+      validateSettings(parsed);
+      return { ...DEFAULT_SETTINGS, ...parsed, appVersion: DEFAULT_SETTINGS.appVersion };
     } catch {
-      return DEFAULT_SETTINGS;
+      throw new Error('Nie udało się odczytać ustawień');
     }
   },
 
   saveSettings(settings: AppSettings): boolean {
     try {
+      validateSettings(settings);
       persistence.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
       return true;
     } catch (e) {
@@ -296,7 +304,7 @@ export const StorageService = {
       app: 'Prezent Mapy',
       version: APP_VERSION,
       exportDate: new Date().toISOString(),
-      photos: photosToExport,
+      photos: this.getSettings().includeThumbnailsInBackup ? photosToExport : photosToExport.map(({ thumbnailUrl, ...photo }) => photo),
       albums: this.getAlbums(),
       trips: stripGps ? this.getTrips().map(trip => ({ ...trip, routePoints: [] })) : this.getTrips(),
       settings: this.getSettings(),
@@ -309,11 +317,7 @@ export const StorageService = {
     try {
       const data = JSON.parse(jsonString);
       validateBackup(data);
-      if (data.settings) {
-        for (const [key, value] of Object.entries(data.settings)) {
-          if (!(key in DEFAULT_SETTINGS) || typeof value !== typeof DEFAULT_SETTINGS[key as keyof AppSettings]) throw new Error('Nieprawidłowe ustawienie');
-        }
-      }
+      validateBackup({ ...data, albums: data.albums ?? this.getAlbums(), trips: data.trips ?? this.getTrips() });
       const entries: [string, string][] = [[STORAGE_KEYS.PHOTOS, JSON.stringify(data.photos)]];
       if (data.albums) entries.push([STORAGE_KEYS.ALBUMS, JSON.stringify(data.albums)]);
       if (data.trips) entries.push([STORAGE_KEYS.TRIPS, JSON.stringify(data.trips)]);

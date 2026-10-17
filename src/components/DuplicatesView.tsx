@@ -28,7 +28,7 @@ export const DuplicatesView: React.FC<DuplicatesViewProps> = ({
             Wykrywanie Duplikatów i Serii Ujęć
           </h2>
           <p className="text-xs text-slate-400 max-w-xl">
-            Program analizuje nazwy plików, daty oraz koordynaty GPS, aby znaleźć powtarzające się fotografie i pomóc uporządkować kolekcję.
+            Program porównuje zawartość osadzonych zdjęć. Jednakowa nazwa, data lub lokalizacja nie wystarcza do potwierdzenia duplikatu. Zewnętrzne adresy zdjęć nie są traktowane jako dowód identyczności.
           </p>
         </div>
 
@@ -45,7 +45,7 @@ export const DuplicatesView: React.FC<DuplicatesViewProps> = ({
           </div>
           <h3 className="text-base font-bold text-white">Brak duplikatów w bibliotece</h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto">
-            Twoja kolekcja wspomnień jest czysta i nie zawiera powtarzających się ujęć.
+            Nie znaleziono identycznych osadzonych obrazów. Zdjęcia dostępne wyłącznie pod zewnętrznym adresem wymagają oddzielnej oceny.
           </p>
         </div>
       ) : (

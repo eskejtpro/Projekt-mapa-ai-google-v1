@@ -8,9 +8,16 @@ const { LibraryDatabase } = require('./database.cjs');
 const { OfflineMap } = require('./offline-map.cjs');
 const { discoverRenderers } = require('./tv-discovery.cjs');
 const { RemoteControl } = require('./remote-control.cjs');
+const { BackupManager } = require('./backup-manager.cjs');
 const { existsSync, copyFileSync, renameSync, statSync } = require('node:fs');
 protocol.registerSchemesAsPrivileged([{ scheme: 'prezent-tiles', privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
-if (process.argv.includes('--smoke-test')) app.setPath('userData', mkdtempSync(path.join(tmpdir(), 'prezent-desktop-smoke-')));
+if (process.argv.includes('--smoke-test')) {
+  const profileArgument = process.argv.find(argument => argument.startsWith('--smoke-profile='));
+  const profile = profileArgument ? path.resolve(profileArgument.slice('--smoke-profile='.length)) : mkdtempSync(path.join(tmpdir(), 'prezent-desktop-smoke-'));
+  if (profileArgument && (path.dirname(profile).toLowerCase() !== path.resolve(tmpdir()).toLowerCase() || !path.basename(profile).startsWith('prezent-restart-test-'))) throw new Error('Nieprawidłowy profil testowy');
+  mkdirSync(profile, { recursive: true });
+  app.setPath('userData', profile);
+}
 const page = pathToFileURL(path.join(__dirname, '../dist/index.html')).href;
 let window;
 app.whenReady().then(async () => {
@@ -39,6 +46,12 @@ app.whenReady().then(async () => {
     } catch { return new Response(null, { status: 400 }); }
   });
   const database = new LibraryDatabase(path.join(app.getPath('userData'), 'library.sqlite'));
+  const backupManager = new BackupManager(database, app.getPath('userData'), require('../package.json').version);
+  const checkBackup = () => { try { backupManager.check(); } catch { if (!window?.isDestroyed()) window?.webContents.send('backup:error'); } };
+  const backupTimer = setInterval(checkBackup, 6 * 60 * 60 * 1000);
+  backupTimer.unref();
+  app.once('will-quit', () => clearInterval(backupTimer));
+  if (process.argv.includes('--smoke-test') && process.argv.includes('--recovery-smoke-test')) database.set('prezent_travel_photos_v2', JSON.stringify([{ id: 'synthetic-invalid-record' }]));
   if (offlineSmoke) database.set('prezent_app_settings_v2', JSON.stringify({ offlineSimulationMode: true }));
   if (process.argv.includes('--smoke-test') && process.argv.includes('--preferences-smoke-test')) {
     database.set('prezent_app_settings_v2', JSON.stringify({ ...JSON.parse(database.get('prezent_app_settings_v2') || '{}'), slideshowInterval: 12, kenBurnsEnabled: false, ambientSoundEnabled: false, showMiniMapPip: false, defaultSortBy: 'title', lazyLoadImages: false }));
@@ -100,6 +113,12 @@ app.whenReady().then(async () => {
       if (error) throw new Error('Nie można otworzyć katalogu zdjęć');
       return true;
     }
+    if (action === 'open-backups') {
+      const directory = path.join(app.getPath('userData'), 'backups');
+      mkdirSync(directory, { recursive: true });
+      if (await shell.openPath(directory)) throw new Error('Nie można otworzyć kopii');
+      return true;
+    }
     if (action === 'autostart' && typeof value === 'boolean') {
       if (!app.isPackaged) throw new Error('Autostart jest dostępny w zainstalowanej aplikacji');
       app.setLoginItemSettings({ openAtLogin: value });
@@ -128,6 +147,7 @@ app.whenReady().then(async () => {
   });
   window.once('ready-to-show', () => window.show());
   await window.loadURL(page);
+  if (!process.argv.includes('--smoke-test')) setTimeout(checkBackup, 2000).unref();
   if (process.argv.includes('--smoke-test')) {
     const reportsDirectory = path.join(process.cwd(), 'reports');
     mkdirSync(reportsDirectory, { recursive: true });
@@ -136,7 +156,26 @@ app.whenReady().then(async () => {
       await window.webContents.executeJavaScript(`new Promise(resolve => { const started = Date.now(); const timer = setInterval(() => { if ((document.querySelectorAll('.leaflet-tile-loaded').length > 0 && document.body.innerText.includes('11')) || Date.now() - started > 10000) { clearInterval(timer); resolve(true); } }, 100); })`);
       const state = await window.webContents.executeJavaScript(`({ title: document.title, text: document.body.innerText.length, bridge: typeof window.electronAPI?.minimize, node: typeof window.require })`);
       state.invalidKeyRejected = await window.webContents.executeJavaScript(`(() => { try { window.electronAPI.storage.get('../invalid'); return false; } catch { return true; } })()`);
+      const forgedEvent = { sender: window.webContents, senderFrame: { url: page } };
+      ipcMain.emit('library:operation', forgedEvent, 'get', 'prezent_travel_photos_v2');
+      state.invalidFrameRejected = forgedEvent.returnValue?.ok === false;
+      state.popupDenied = await window.webContents.executeJavaScript(`window.open('https://example.com/') === null`);
+      state.productionCsp = await window.webContents.executeJavaScript(`document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content.includes("script-src 'self'") === true`);
+      if (!state.invalidFrameRejected || !state.popupDenied || !state.productionCsp) throw new Error('Nieprawidłowe zabezpieczenia Electron/CSP');
       state.sqliteReadable = await window.webContents.executeJavaScript(`Array.isArray(JSON.parse(window.electronAPI.storage.get('prezent_travel_photos_v2')))`);
+      if (process.argv.includes('--recovery-smoke-test')) {
+        state.recoveryVisible = await window.webContents.executeJavaScript(`document.body.innerText.includes('Odczyt biblioteki wstrzymany')`);
+        state.invalidDataPreserved = JSON.parse(database.get('prezent_travel_photos_v2'))[0]?.id === 'synthetic-invalid-record';
+        if (!state.recoveryVisible || !state.invalidDataPreserved) throw new Error('Nieprawidłowy stan odzyskiwania');
+      }
+      if (process.argv.includes('--persistence-write')) {
+        await window.webContents.executeJavaScript(`(() => { const photos = JSON.parse(window.electronAPI.storage.get('prezent_travel_photos_v2')); photos[0].notes = 'synthetic restart proof'; photos[0].url = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII='; window.electronAPI.storage.set('prezent_travel_photos_v2', JSON.stringify(photos)); })()`);
+        state.persistenceWritten = true;
+      }
+      if (process.argv.includes('--persistence-read')) {
+        state.persistenceAfterRestart = await window.webContents.executeJavaScript(`(() => { const photo = JSON.parse(window.electronAPI.storage.get('prezent_travel_photos_v2'))[0]; return photo.notes === 'synthetic restart proof' && photo.url === 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII='; })()`);
+        if (!state.persistenceAfterRestart) throw new Error('Zdjęcie nie przetrwało restartu procesu');
+      }
       if (offlineSmoke) {
         state.offlineTilesLoaded = await window.webContents.executeJavaScript(`Array.from(document.querySelectorAll('.leaflet-tile-loaded')).filter(image => image.src.startsWith('prezent-tiles:') && image.naturalWidth > 0).length`);
         if (!state.offlineTilesLoaded) throw new Error('Lokalne kafelki nie zostały wyrenderowane');
@@ -182,5 +221,11 @@ app.whenReady().then(async () => {
       app.exit(0);
     } catch (error) { writeFileSync(path.join(reportsDirectory, 'desktop-smoke.json'), JSON.stringify({ passed: false, error: error.message, date: new Date().toISOString() })); console.error(error); app.exit(1); }
   }
+}).catch(() => {
+  if (process.argv.includes('--smoke-test')) {
+    const reportsDirectory = path.join(process.cwd(), 'reports'); mkdirSync(reportsDirectory, { recursive: true });
+    writeFileSync(path.join(reportsDirectory, 'desktop-smoke.json'), JSON.stringify({ passed: false, error: 'Nie udało się uruchomić aplikacji' }));
+  } else dialog.showErrorBox('Nie udało się uruchomić Prezent Mapy', `Zachowaj kopię folderu danych przed przywracaniem biblioteki:\n${app.getPath('userData')}`);
+  app.exit(1);
 });
 app.on('window-all-closed', () => app.quit());

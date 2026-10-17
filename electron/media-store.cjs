@@ -32,9 +32,14 @@ class MediaStore {
     if (!fields.length) return value;
     const records = JSON.parse(value);
     if (!Array.isArray(records)) throw new Error('Nieprawidłowa kolekcja zdjęć');
+    const resolved = new Map();
     return JSON.stringify(records.map(record => {
       const result = { ...record };
-      for (const field of fields) if (result[field]) result[field] = this[operation](result[field]);
+      for (const field of fields) if (result[field]) {
+        const source = result[field];
+        if (!resolved.has(source)) resolved.set(source, this[operation](source));
+        result[field] = resolved.get(source);
+      }
       return result;
     }));
   }

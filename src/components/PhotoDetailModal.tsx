@@ -20,8 +20,8 @@ import {
 interface PhotoDetailModalProps {
   photo: TravelPhoto | null;
   onClose: () => void;
-  onUpdatePhoto: (updated: TravelPhoto) => void;
-  onDeletePhoto: (id: string) => void;
+  onUpdatePhoto: (updated: TravelPhoto) => boolean;
+  onDeletePhoto: (id: string) => boolean;
   onStartSlideshowFromThis: (photo: TravelPhoto) => void;
 }
 
@@ -49,7 +49,7 @@ export const PhotoDetailModal: React.FC<PhotoDetailModalProps> = ({
       participants: participantsStr.split(',').map(s => s.trim()).filter(Boolean),
       tags: tagsStr.split(',').map(s => s.trim()).filter(Boolean),
     };
-    onUpdatePhoto(updated);
+    if (!onUpdatePhoto(updated)) return;
     setIsEditing(false);
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 2000);
@@ -244,8 +244,7 @@ export const PhotoDetailModal: React.FC<PhotoDetailModalProps> = ({
               <>
                 <button
                   onClick={() => {
-                    onDeletePhoto(photo.id);
-                    onClose();
+                    if (onDeletePhoto(photo.id)) onClose();
                   }}
                   className="text-slate-500 hover:text-red-400 flex items-center gap-1.5 transition-colors p-1"
                 >

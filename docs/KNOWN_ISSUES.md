@@ -1,13 +1,13 @@
 # Znane problemy
 
-- P0: import .prezent może zgłosić sukces po nieudanym zapisie; brak transakcji i pełnej walidacji struktury (storage.ts).
-- P0: nazwa pliku jest kluczem duplikatów, co grozi fałszywymi dopasowaniami. Kolejka dodatkowo porównuje rozmiar zaokrąglony do MB.
-- P0: localStorage przechowuje pełne fotografie jako base64 i nie zastępuje biblioteki dyskowej.
-- P1: odczyt FileReader nie ma obsługi onerror/onabort i może pozostawić import w oczekiwaniu.
-- P1: Nominatim otrzymuje współrzędne; kafelki map i obrazy demo wymagają sieci. Deklaracja pełnego offline/prywatności nie jest obecnie spełniona.
-- P1: mapy offline są symulowane timerem. TV nie wyszukuje urządzeń LAN; QR jest prototypem.
-- P1: część ustawień nie steruje docelowym systemem Windows. Default windowsPhotosPath wskazuje fikcyjny katalog rodziny.
-- P1: brak testów UI, monitora 4K, SQLite, instalatora i Windows 10.
-- P2: web bundle przekracza 500 kB; brak wiarygodnego pomiaru RAM/startu i galerii 100–50000 zdjęć.
+- P0: narzędzia resetowania/czyszczenia danych i pozostałe operacje wielokolekcyjne wymagają kontroli atomowości. Import zdjęć+albumu, .prezent i pojedyncze edycje/usuwanie uwzględniają już błąd zapisu.
+- P1: stan odzyskiwania po błędzie odczytu jest wdrożony i testowany na uszkodzonym rekordzie. Pozostaje pełna procedura odtwarzania po uszkodzeniu fizycznego SQLite lub braku wielu plików zdjęć.
+- P1: Windows zapisuje SQLite i pliki zdjęć, lecz obrazy są nadal odtwarzane jako base64 w pamięci UI. Podgląd Vite nadal ma limit localStorage.
+- P1: brak pełnych testów importu JPEG z GPS/bez GPS/uszkodzonych obrazów, schowka i przeciągania folderów. FileReader ma już obsługę błędu i anulowania.
+- P1: kafelki online i obrazy demo wymagają sieci. Automatyczne wysyłanie koordynatów z mapy/PiP usunięte; tryb offline blokuje HTTP(S). Import MBTiles działa; źródła/licencje rzeczywistych pakietów regionalnych nieustalone.
+- P1: DLNA discovery oraz pilot QR/HTTP działają w testach; brak fizycznego TV i telefonu do potwierdzenia kompatybilności. Casting niezaimplementowany. Pilot HTTP wyłącznie do zaufanej sieci LAN.
+- P1: pozostałe ustawienia wymagają macierzy efektów, zwłaszcza język, motywy i akceleracja. Folder/autostart i harmonogram backupów podłączone; autostart zainstalowanej aplikacji i wielodniowa eksploatacja kopii nieprzetestowane. Kopie pozostają na tym samym dysku i nie zastępują kopii zewnętrznej.
+- P1: instalacja/start/deinstalacja NSIS przetestowane na Windows 10; aktualizacja istniejącej biblioteki, portable, 4K/drugi monitor i Windows 11 pozostają otwarte. Pakiety lokalne poprzedzają aktualny kod.
+- P2: wymagane dalsze pomiary rzeczywistych zdjęć, wydajności galerii/mapy i szczytowej pamięci. Pomiar syntetycznych metadanych nie dowodzi 60 FPS ani kosztu pełnowymiarowych obrazów.
 
-To rejestr audytu, nie deklaracja naprawy funkcji. Pierwsza iteracja naprawia konfigurację weryfikacji, a funkcje produktowe będą realizowane w kolejnych etapach.
+Aktualne dowody: TESTING.md i reports/. Stan funkcji: docs/FEATURE_MATRIX.md. Historia wcześniejszych usterek pozostaje w Git.

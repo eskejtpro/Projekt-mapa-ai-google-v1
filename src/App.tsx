@@ -27,6 +27,7 @@ import {
 
 import { TravelPhoto, TravelAlbum, TravelTrip, OfflineMapPackage, MapTileProvider, AppSettings, TravelStats } from './types/travel';
 import { StorageService, DEFAULT_SETTINGS } from './services/storage';
+import { validateBackup } from './services/backup-validation';
 
 import { WindowsTitleBar } from './components/WindowsTitleBar';
 import { SidebarDock, ActiveNavTab } from './components/SidebarDock';
@@ -52,6 +53,7 @@ export default function App() {
   const [trips, setTrips] = useState<TravelTrip[]>([]);
   const [offlinePackages, setOfflinePackages] = useState<OfflineMapPackage[]>([]);
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [libraryError, setLibraryError] = useState<string | null>(null);
 
   // Okno Windows 10/11
   const [isWindowMaximized, setIsWindowMaximized] = useState<boolean>(true);
@@ -98,26 +100,32 @@ export default function App() {
   // Załadowanie danych
   useEffect(() => {
     loadAllData();
+    const unsubscribeBackup = window.electronAPI?.onBackupError(() => showToast('Nie udało się utworzyć automatycznej kopii. Sprawdź wolne miejsce i uprawnienia folderu danych.', 'warning'));
     if (window.electronAPI) {
       void window.electronAPI.systemInfo().then(info => {
         setSettings(previous => ({ ...previous, windowsPhotosPath: info.photosPath, autoStartWithWindows: info.autoStart }));
         if (!info.offlineMapAvailable) setOfflinePackages(previous => previous.map(pkg => ({ ...pkg, isDownloaded: false })));
       }).catch(() => showToast('Nie udało się odczytać ustawień Windows.', 'warning'));
     }
+    return () => unsubscribeBackup?.();
   }, []);
 
   const loadAllData = () => {
+    try {
     const p = StorageService.getPhotos();
     const a = StorageService.getAlbums();
     const t = StorageService.getTrips();
     const pkg = StorageService.getOfflinePackages();
     const s = StorageService.getSettings();
+    validateBackup({ app: 'Prezent Mapy', photos: p, albums: a, trips: t, settings: s });
 
     setPhotos(p);
     setAlbums(a);
     setTrips(t);
     setOfflinePackages(pkg);
     setSettings(s);
+    setLibraryError(null);
+    } catch { setLibraryError('Nie udało się odczytać biblioteki. Zachowaj kopię plików danych przed przywracaniem.'); }
   };
 
   // Statystyki
@@ -175,23 +183,26 @@ export default function App() {
   // Ulubione
   const handleToggleFavorite = (id: string) => {
     const updated = photos.map(p => p.id === id ? { ...p, isFavorite: !p.isFavorite } : p);
+    if (!StorageService.savePhotos(updated)) { showToast('Nie zapisano zmiany ulubionych.', 'warning'); return false; }
     setPhotos(updated);
-    StorageService.savePhotos(updated);
+    return true;
   };
 
   // Usunięcie zdjęcia
   const handleDeletePhoto = (id: string) => {
     const updated = photos.filter(p => p.id !== id);
+    if (!StorageService.savePhotos(updated)) { showToast('Nie zapisano usunięcia zdjęcia.', 'warning'); return false; }
     setPhotos(updated);
-    StorageService.savePhotos(updated);
+    return true;
   };
 
   // Aktualizacja zdjęcia po edycji
   const handleUpdatePhoto = (updatedPhoto: TravelPhoto) => {
     const updated = photos.map(p => p.id === updatedPhoto.id ? updatedPhoto : p);
+    if (!StorageService.savePhotos(updated)) { showToast('Nie zapisano edycji zdjęcia.', 'warning'); return false; }
     setPhotos(updated);
-    StorageService.savePhotos(updated);
     setSelectedPhotoForDetail(updatedPhoto);
+    return true;
   };
 
   // Zapis ustawień
@@ -284,6 +295,7 @@ export default function App() {
     <div className={`min-h-screen text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950 overflow-hidden ${
       settings.interfaceTheme === 'light' ? 'bg-slate-100' : 'bg-[#070b14]'
     }`}>
+      {libraryError && <div role="alert" className="fixed inset-x-0 top-9 bottom-6 z-[100] bg-slate-950/95 flex items-center justify-center p-8"><div className="max-w-lg border border-amber-500/40 rounded-2xl bg-slate-900 p-6 space-y-4"><h2 className="text-xl font-bold text-amber-300">Odczyt biblioteki wstrzymany</h2><p>{libraryError}</p><button onClick={loadAllData} className="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold">Spróbuj ponownie</button><p className="text-xs text-slate-400">Zamknij aplikację i zachowaj folder danych Prezent Mapy w profilu Windows. Nie usuwaj library.sqlite ani katalogu photos.</p></div></div>}
       {/* TŁO PULPITU WINDOWS 11 GDY OKNO NIE JEST ZMAKSYMALIZOWANE */}
       {!isWindowMaximized && (
         <div className="absolute inset-0 bg-gradient-to-tr from-slate-950 via-[#0a1224] to-[#122345] flex items-center justify-center p-3 sm:p-5 pointer-events-none">

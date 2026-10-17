@@ -10,12 +10,18 @@ contextBridge.exposeInMainWorld('electronAPI', Object.freeze({
   close: () => ipcRenderer.invoke('window:action', 'close'),
   systemInfo: () => ipcRenderer.invoke('system:action', 'info'),
   openPhotos: () => ipcRenderer.invoke('system:action', 'open-photos'),
+  openBackups: () => ipcRenderer.invoke('system:action', 'open-backups'),
   setAutoStart: enabled => ipcRenderer.invoke('system:action', 'autostart', enabled),
   importOfflineMap: () => ipcRenderer.invoke('maps:import'),
   removeOfflineMap: () => ipcRenderer.invoke('system:action', 'remove-offline-map'),
   discoverTVs: () => ipcRenderer.invoke('tv:discover'),
   startRemote: () => ipcRenderer.invoke('remote:session', 'start'),
   stopRemote: () => ipcRenderer.invoke('remote:session', 'stop'),
+  onBackupError: callback => {
+    const listener = () => callback();
+    ipcRenderer.on('backup:error', listener);
+    return () => ipcRenderer.removeListener('backup:error', listener);
+  },
   onRemoteCommand: callback => {
     const listener = (_event, command) => { if (['next', 'previous', 'toggle-play', 'close'].includes(command)) callback(command); };
     ipcRenderer.on('remote:command', listener);

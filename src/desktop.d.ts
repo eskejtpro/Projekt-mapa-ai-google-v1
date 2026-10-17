@@ -2,6 +2,7 @@ export {};
 declare global {
   interface Window {
     electronAPI?: {
+      onBackupError(callback: () => void): () => void;
       startRemote(): Promise<{ urls: string[]; port: number }>;
       stopRemote(): Promise<void>;
       onRemoteCommand(callback: (command: 'next' | 'previous' | 'toggle-play' | 'close') => void): () => void;
@@ -10,6 +11,7 @@ declare global {
       removeOfflineMap(): Promise<boolean>;
       systemInfo(): Promise<{ photosPath: string; autoStart: boolean; packaged: boolean; offlineMapAvailable: boolean }>;
       openPhotos(): Promise<boolean>;
+      openBackups(): Promise<boolean>;
       setAutoStart(enabled: boolean): Promise<boolean>;
       storage: {
         get(key: string): string | null;

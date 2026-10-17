@@ -11,6 +11,8 @@
   "main": "electron/main.cjs",
   "scripts": {
     "desktop": "npm run build && electron .",
+    "test:desktop-restart": "npm run build && node scripts/desktop-restart-test.mjs",
+    "benchmark:library": "node scripts/benchmark-library.cjs",
     "package:windows": "npm run build && electron-builder --win nsis portable --x64 --publish never",
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
@@ -18,7 +20,7 @@
     "clean": "node scripts/clean.mjs",
     "typecheck": "tsc --noEmit",
     "test:tooling": "node --test tests/tooling.test.mjs",
-    "test:database": "node --test tests/database.test.cjs tests/media-store.test.cjs tests/offline-map.test.cjs tests/tv-discovery.test.cjs tests/remote-control.test.cjs",
+    "test:database": "node --test tests/database.test.cjs tests/media-store.test.cjs tests/offline-map.test.cjs tests/tv-discovery.test.cjs tests/remote-control.test.cjs tests/backup-manager.test.cjs",
     "test:integration": "vitest run src/__tests__/storage.integration.test.ts",
     "verify": "node scripts/verify.mjs",
     "project:check": "node scripts/project-check.mjs",

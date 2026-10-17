@@ -9,7 +9,7 @@ Stan odniesienia: 1be0136. PARTIAL oznacza kod bez pełnego dowodu docelowego ru
 | F03 / REQ-06 | Duplikaty; storage, ImportModal | PARTIAL | Grupowanie po identycznej treści, SHA-256 importu; zewnętrzne URL nie są potwierdzonym duplikatem | Regresja tej samej nazwy/obcego hasha PASS; usuwanie UI otwarte | P0 |
 | F04 / REQ-07 | Galeria, albumy, timeline; GalleryView | PARTIAL | Brak testu interakcji i dużej biblioteki | Filtrowanie, edycja i ponowny odczyt | P0 |
 | F05 / REQ-08 | Pokaz, audio; SlideshowModal, audioAmbient | PARTIAL | PiP mapy online, brak testu 4K i monitora | Klawiatura, pauza, fullscreen, drugi monitor | P1 |
-| F06 / REQ-09 | .prezent; storage | PARTIAL | Atomowy zapis i walidacja rekordów wdrożone; relacje i pełne ograniczenia ustawień otwarte | Round-trip/quota/rollback PASS; pełny schemat otwarty | P0 |
+| F06 / REQ-09 | .prezent; storage | PARTIAL | Atomowy zapis, walidacja pól, relacji i ustawień wdrożone; pełny UI round-trip rzeczywistych zdjęć otwarty | Round-trip/quota/rollback, daty, enumy, relacje i legacy PASS | P0 |
 | F07 / REQ-10 | Ustawienia; SettingsView, App | PARTIAL | Folder/autostart podłączone; test zainstalowanego autostartu i pozostałe preferencje otwarte | Macierz każdej preferencji → efekt → trwałość | P0 |
 | F08 / REQ-11 | Mapy offline; OfflineMapsModal | PARTIAL | Import własnego MBTiles, czytnik i lokalna warstwa wdrożone; render offline i źródła pakietów otwarte | Czytnik TMS/XYZ PASS; render przy odłączonej sieci NOT RUN | P1 |
 | F09 / REQ-12 | TV, QR; TvModeModal | PARTIAL | DLNA discovery, filtr oraz pilot HTTP/QR wdrożone; smoke steruje pokazem; telefon/TV/casting otwarte | Wykrycie fizycznego TV, kontrola połączenia i pokaz | P1 |

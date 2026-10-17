@@ -5,6 +5,14 @@ const data = new Map<string, string>();
 Object.defineProperty(globalThis, 'localStorage', { value: { getItem: (key: string) => data.get(key) ?? null, setItem: (key: string, value: string) => data.set(key, value), clear: () => data.clear() }, configurable: true });
 describe('biblioteka → kopia → przywrócenie', () => {
   beforeEach(() => data.clear());
+  it('uszkodzona kolekcja nie jest zastępowana demonstracją', () => {
+    data.set('prezent_travel_photos_v2', '{broken');
+    expect(() => StorageService.getPhotos()).toThrow();
+    expect(data.get('prezent_travel_photos_v2')).toBe('{broken');
+    data.set('prezent_travel_photos_v2', '{}');
+    expect(() => StorageService.getPhotos()).toThrow();
+    expect(data.get('prezent_travel_photos_v2')).toBe('{}');
+  });
   it('stara wersja zapisana w ustawieniach nie nadpisuje wersji aplikacji', () => {
     StorageService.saveSettings({ ...StorageService.getSettings(), appVersion: '1.0.0' });
     expect(StorageService.getSettings().appVersion).toContain(APP_VERSION);
