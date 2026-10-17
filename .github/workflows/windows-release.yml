@@ -13,5 +13,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run verify
+      - run: node node_modules/electron/install.js
+      - run: npm run package:windows
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-candidate
+          path: release/*.exe
       - run: npm run release:check
 # Bramka zatrzymuje publikację do wdrożenia Electron/NSIS i testów Windows.

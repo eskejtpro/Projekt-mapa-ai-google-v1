@@ -89,6 +89,7 @@ Aplikacja **„Prezent Mapy”** jest zaprojektowana według wzorca **Separacji 
 2. **Obsługa limitu pamięci przeglądarki**: `StorageService.savePhotos()` i metody pokrewne zwracają status `boolean`. Przy wystąpieniu `QuotaExceededError` aplikacja nie ulega awarii, a użytkownik otrzymuje czytelne powiadomienie z propozycją pobrania kopii `.prezent`.
 3. **Izolacja IPC w Electronie**: W kolejnym etapie OpenAI Codex zaimplementuje `preload.ts` z `contextIsolation: true` i `nodeIntegration: false`, udostępniając bezpieczne API `window.electronAPI`.
 # Aktualizacja powłoki Windows — 2026-10-17
+- OfflineMap odczytuje raster MBTiles readOnly i przelicza XYZ na TMS. Natywny dialog wybiera plik, kopia trafia do userData/offline.mbtiles; lokalny protokół obsługuje wyłącznie numeryczne współrzędne. Tryb offline blokuje HTTP(S) sesji Electron. Jeden aktywny pakiet; poprzednie kopie są zachowane. Build NSIS i portable trafia do release, bez publikacji.
 - MediaStore zamienia osadzone obrazy na referencje SHA-256 w SQLite i zapisuje pliki w userData/photos. Odczyt weryfikuje hash i odtwarza data URL; kopie JSON pozostają przenośne dla obrazów osadzonych. Referencje HTTPS pozostają sieciowe. Nie usuwamy plików po rollbacku, aby nie ryzykować utraty współdzielonych zdjęć; sprzątanie osieroconych plików jest otwarte.
 - Import .prezent używa jednego batch SQLite; Vite zapisuje jeden atomowy snapshot kolekcji w localStorage. Walidacja rekordów poprzedza zapis. Duże obrazy nadal są odtwarzane w pamięci renderera; pomiary pozostają otwarte.
 

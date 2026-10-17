@@ -17,7 +17,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   familyName: 'Nasza Rodzina',
   language: 'pl',
   distanceUnit: 'km',
-  autoStartWithWindows: true,
+  autoStartWithWindows: false,
 
   // 2. Wygląd i personalizacja
   interfaceTheme: 'dark',
@@ -39,7 +39,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   autoDetectDuplicates: true,
 
   // 5. Import oraz foldery
-  windowsPhotosPath: 'C:\\Users\\Rodzina\\Obrazy\\Prezent-Wspomnienia',
+  windowsPhotosPath: 'Biblioteka przeglądarki — brak katalogu Windows',
   autoScanNewPhotos: true,
   readExifOnImport: true,
   compressLocalThumbnails: false,

@@ -98,6 +98,12 @@ export default function App() {
   // Załadowanie danych
   useEffect(() => {
     loadAllData();
+    if (window.electronAPI) {
+      void window.electronAPI.systemInfo().then(info => {
+        setSettings(previous => ({ ...previous, windowsPhotosPath: info.photosPath, autoStartWithWindows: info.autoStart }));
+        if (!info.offlineMapAvailable) setOfflinePackages(previous => previous.map(pkg => ({ ...pkg, isDownloaded: false })));
+      }).catch(() => showToast('Nie udało się odczytać ustawień Windows.', 'warning'));
+    }
   }, []);
 
   const loadAllData = () => {
@@ -202,9 +208,12 @@ export default function App() {
   };
 
   // Zapis ustawień
-  const handleUpdateSettings = (newSettings: AppSettings) => {
-    setSettings(newSettings);
-    StorageService.saveSettings(newSettings);
+  const handleUpdateSettings = async (newSettings: AppSettings) => {
+    try {
+      if (window.electronAPI && newSettings.autoStartWithWindows !== settings.autoStartWithWindows) await window.electronAPI.setAutoStart(newSettings.autoStartWithWindows);
+      if (!StorageService.saveSettings(newSettings)) throw new Error('Błąd zapisu');
+      setSettings(newSettings);
+    } catch { showToast('Nie udało się zapisać ustawień. Autostart wymaga zainstalowanej wersji Windows.', 'warning'); }
   };
 
   // Czyszczenie pamięci podręcznej kafelków
@@ -264,8 +273,10 @@ export default function App() {
     });
   };
 
-  const handleOpenWindowsFolder = () => {
-    showToast(`Otwieranie folderu w Eksploratorze Windows: ${settings.windowsPhotosPath}`, 'info');
+  const handleOpenWindowsFolder = async () => {
+    if (!window.electronAPI) { showToast('Folder Windows jest dostępny w aplikacji desktopowej.', 'info'); return; }
+    try { await window.electronAPI.openPhotos(); }
+    catch { showToast('Nie udało się otworzyć folderu zdjęć.', 'warning'); }
   };
 
   const handleCloseApp = () => {
@@ -371,6 +382,7 @@ export default function App() {
                     tileProvider={settings.defaultMapLayer}
                     onChangeTileProvider={(p) => handleUpdateSettings({ ...settings, defaultMapLayer: p })}
                     showAnimatedRoutes={settings.showAnimatedRoutes}
+                    offlineMode={settings.offlineSimulationMode}
                     onOpenImport={handleOpenImportWithLocation}
                     onShowToast={showToast}
                     onDropPhotosOnMap={handleDropPhotosOnMap}

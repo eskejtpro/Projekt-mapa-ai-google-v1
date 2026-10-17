@@ -1,6 +1,7 @@
 # CHANGELOG.md - Historia Zmian Projektu „Prezent Mapy”
 
 ## Unreleased — środowisko Codex
+- Dodano konfigurację NSIS/portable, natywny folder i autostart; autostart domyślnie wyłączony. Dodano import rastrowego MBTiles i lokalną warstwę; wyłączono automatyczne wysyłanie współrzędnych i zabezpieczono atrybuty pinezek.
 - Zdjęcia osadzane w kopii mogą być przechowywane w osobnych plikach z SHA-256; import .prezent waliduje rekordy i zapisuje atomowo. Eksport bez GPS usuwa również punkty tras.
 - Dodano SQLite w procesie głównym, ograniczony mostek danych, transakcyjny zapis wsadu i migrację z kopią źródła; podgląd Vite nadal używa localStorage.
 - Rozpoczęto powłokę Electron: izolowany preload, walidacja nadawcy IPC, natywne kontrolki okna, blokada nowych okien i nawigacji. Dodano tryb testu uruchomienia ze zrzutem renderera.

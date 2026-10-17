@@ -38,6 +38,7 @@ interface MapViewProps {
   tileProvider: MapTileProvider;
   onChangeTileProvider: (provider: MapTileProvider) => void;
   showAnimatedRoutes?: boolean;
+  offlineMode?: boolean;
   onOpenImport?: (location?: InitialImportLocation, mode?: ImportTabMode) => void;
   onShowToast?: (message: string, type: 'info' | 'success' | 'warning') => void;
   onDropPhotosOnMap?: (files: File[], lat: number, lng: number) => void;
@@ -105,6 +106,7 @@ export const MapView: React.FC<MapViewProps> = ({
   tileProvider,
   onChangeTileProvider,
   showAnimatedRoutes = true,
+  offlineMode = false,
   onOpenImport,
   onShowToast,
   onDropPhotosOnMap,
@@ -150,7 +152,7 @@ export const MapView: React.FC<MapViewProps> = ({
     });
 
     const activeProvider = tileProvider in TILE_SERVERS ? tileProvider : 'dark';
-    const config = TILE_SERVERS[activeProvider];
+    const config = offlineMode ? { url: 'prezent-tiles://local/{z}/{x}/{y}', attribution: 'Lokalny pakiet MBTiles — licencja dostawcy pakietu', maxZoom: 22, subdomains: '' } : TILE_SERVERS[activeProvider];
     const tileLayer = L.tileLayer(config.url, {
       attribution: config.attribution,
       maxZoom: config.maxZoom,
@@ -193,9 +195,7 @@ export const MapView: React.FC<MapViewProps> = ({
       });
 
       // Asynchronicznie próbujemy pobrać pełną nazwę z geokodowania online
-      reverseGeocodeOnline(lat, lng).then(onlineGuess => {
-        setContextMenu(prev => (prev && prev.lat === lat && prev.lng === lng ? { ...prev, guess: onlineGuess } : prev));
-      }).catch(() => {});
+      // Nazwy przybliżone lokalnie; współrzędne użytkownika nie opuszczają aplikacji.
     });
 
     // Zamknięcie menu kontekstowego przy standardowym kliknięciu lub przesunięciu mapy
@@ -250,7 +250,7 @@ export const MapView: React.FC<MapViewProps> = ({
   useEffect(() => {
     if (!mapInstanceRef.current) return;
     const activeProvider = tileProvider in TILE_SERVERS ? tileProvider : 'dark';
-    const config = TILE_SERVERS[activeProvider];
+    const config = offlineMode ? { url: 'prezent-tiles://local/{z}/{x}/{y}', attribution: 'Lokalny pakiet MBTiles — licencja dostawcy pakietu', maxZoom: 22, subdomains: '' } : TILE_SERVERS[activeProvider];
 
     if (tileLayerRef.current) {
       mapInstanceRef.current.removeLayer(tileLayerRef.current);
@@ -268,7 +268,7 @@ export const MapView: React.FC<MapViewProps> = ({
     setTimeout(() => {
       mapInstanceRef.current?.invalidateSize({ animate: false });
     }, 50);
-  }, [tileProvider]);
+  }, [tileProvider, offlineMode]);
 
   // Filtrowanie zdjęć
   const visiblePhotos = photos.filter(photo => {
@@ -308,10 +308,12 @@ export const MapView: React.FC<MapViewProps> = ({
 
       const badgeBg = count > 10 ? '#7c3aed' : count > 2 ? '#2563eb' : '#059669';
 
+      const safeImageUrl = /^(https?:\/\/|data:image\/(png|jpeg|gif|webp);base64,)/.test(rep.thumbnailUrl || rep.url) ? rep.thumbnailUrl || rep.url : '';
+      const escapeAttribute = (value: string) => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll("'", '&#39;');
       const iconHtml = `
         <div style="position: relative; width: 56px; height: 64px; cursor: pointer; display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.7)); transition: transform 0.2s ease;">
           <div style="width: 50px; height: 50px; border-radius: 9999px; overflow: hidden; border: 3px solid #ffffff; background: #0b1120; box-shadow: 0 0 16px rgba(245, 158, 11, 0.4);">
-            <img src="${rep.thumbnailUrl || rep.url}" alt="${rep.title}" style="width: 50px !important; height: 50px !important; max-width: none !important; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=150&q=80'" />
+            <img src="${escapeAttribute(safeImageUrl)}" alt="${escapeAttribute(rep.title)}" style="width: 50px !important; height: 50px !important; max-width: none !important; object-fit: cover; display: block;" />
           </div>
           ${count > 1 ? `
             <div style="position: absolute; top: -3px; right: -3px; background: ${badgeBg}; color: #ffffff; font-size: 11px; font-weight: 900; border-radius: 9999px; min-width: 22px; height: 22px; padding: 0 5px; display: flex; align-items: center; justify-content: center; border: 2px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.8); font-family: monospace;">

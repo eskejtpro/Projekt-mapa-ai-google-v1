@@ -1,6 +1,7 @@
 # TASKS.md - Rejestr Zadań i Implementacji Projektu „Prezent Mapy”
 
 ## Iteracja środowiska E0 (2026-10-17)
+PREZ-018: IN_PROGRESS — import rastrowego MBTiles, lokalny czytnik i warstwa Leaflet; test renderowania bez sieci otwarty. PREZ-021/022: IN_PROGRESS — podłączono folder/autostart; autostart wymaga testu zainstalowanej wersji. F11: IN_PROGRESS — NSIS/portable zbudowane, spakowany program startuje; instalacja/deinstalacja i przebudowa po offline do wykonania.
 PREZ-020: dodano pliki obrazów pod SHA-256 i odczyt z kontrolą integralności; test powtórnego otwarcia PASS. PREZ-010: walidacja rekordów .prezent, atomowy zapis i błąd quota PASS; pełne relacje i ograniczenia ustawień pozostają IN_PROGRESS.
 Aktywna implementacja: PREZ-019 / REQ-13 — dodano proces main, izolowany preload oraz sterowanie oknem. Status IN_PROGRESS: test uruchomienia Electron i odrzucania nieprawidłowego IPC wymagany przed DONE.
 PREZ-020 / REQ-13 — IN_PROGRESS: SQLite podłączone do StorageService; test plikowy trwałości/rollback oraz migracji PASS. Przechowywanie obrazów w osobnych plikach i pełny test restartu całej aplikacji pozostają otwarte.

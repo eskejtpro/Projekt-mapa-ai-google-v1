@@ -1,0 +1,20 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const { DatabaseSync } = require('node:sqlite');
+const { mkdtempSync } = require('node:fs');
+const { tmpdir } = require('node:os');
+const path = require('node:path');
+const { OfflineMap } = require('../electron/offline-map.cjs');
+test('MBTiles odczytuje kafelek XYZ z wiersza TMS bez sieci', () => {
+  const file = path.join(mkdtempSync(path.join(tmpdir(), 'prezent-mbtiles-test-')), 'test.mbtiles');
+  const db = new DatabaseSync(file);
+  db.exec("CREATE TABLE metadata(name TEXT,value TEXT); INSERT INTO metadata VALUES('format','png'); CREATE TABLE tiles(zoom_level INTEGER,tile_column INTEGER,tile_row INTEGER,tile_data BLOB);");
+  db.prepare('INSERT INTO tiles VALUES(?,?,?,?)').run(2, 1, 3, Buffer.from('synthetic-tile'));
+  db.close();
+  const map = new OfflineMap(file);
+  assert.equal(map.tile(2, 1, 0).toString(), 'synthetic-tile');
+  assert.equal(map.tile(2, 1, 1), null);
+  assert.throws(() => map.tile(2, 4, 0));
+  assert.throws(() => map.tile(-1, 0, 0));
+  map.close();
+});

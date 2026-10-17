@@ -1,6 +1,8 @@
 {
   "name": "prezent-mapy",
   "private": true,
+  "description": "Rodzinne zdjęcia i podróże na mapie — aplikacja Windows",
+  "author": "eskejtpro",
   "version": "1.3.1",
   "engines": {
     "node": ">=24 <27"
@@ -9,13 +11,14 @@
   "main": "electron/main.cjs",
   "scripts": {
     "desktop": "npm run build && electron .",
+    "package:windows": "npm run build && electron-builder --win nsis portable --x64 --publish never",
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "node scripts/clean.mjs",
     "typecheck": "tsc --noEmit",
     "test:tooling": "node --test tests/tooling.test.mjs",
-    "test:database": "node --test tests/database.test.cjs tests/media-store.test.cjs",
+    "test:database": "node --test tests/database.test.cjs tests/media-store.test.cjs tests/offline-map.test.cjs",
     "test:integration": "vitest run src/__tests__/storage.integration.test.ts",
     "verify": "node scripts/verify.mjs",
     "project:check": "node scripts/project-check.mjs",
@@ -23,6 +26,38 @@
     "release:check": "node scripts/release-check.mjs",
     "lint": "tsc --noEmit",
     "test": "vitest run src/__tests__"
+  },
+  "build": {
+    "appId": "pl.eskejtpro.prezentmapy",
+    "productName": "Prezent Mapy",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "electronDist": "node_modules/electron/dist",
+    "npmRebuild": false,
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "Prezent-Mapy-Setup-${version}-${arch}.${ext}"
+    },
+    "portable": {
+      "artifactName": "Prezent-Mapy-Portable-${version}-${arch}.${ext}"
+    }
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -48,6 +83,7 @@
     "@types/react-dom": "^19.3.0",
     "autoprefixer": "^10.4.21",
     "electron": "^44.9.0",
+    "electron-builder": "^26.15.3",
     "esbuild": "^0.28.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.21.0",
