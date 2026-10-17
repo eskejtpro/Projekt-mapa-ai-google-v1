@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import QRCode from 'qrcode';
 import { TravelPhoto, TravelTrip, TravelAlbum } from '../types/travel';
 import { 
   Tv, 
@@ -35,6 +36,27 @@ export const TvModeModal: React.FC<TvModeModalProps> = ({
   const [selectedTripId, setSelectedTripId] = useState<string>(trips[0]?.id || 'ALL');
   const [devices, setDevices] = useState<{ id: string; address: string; description: string; protocol: string }[]>([]);
   const [discoveryStatus, setDiscoveryStatus] = useState('');
+  const [remoteUrls, setRemoteUrls] = useState<string[]>([]);
+  const [remoteUrl, setRemoteUrl] = useState('');
+  const [remoteQr, setRemoteQr] = useState('');
+  const [remoteError, setRemoteError] = useState('');
+  const [remoteBusy, setRemoteBusy] = useState(false);
+  useEffect(() => {
+    let active = true;
+    if (!remoteUrl) { setRemoteQr(''); return; }
+    void QRCode.toDataURL(remoteUrl, { width: 192, margin: 2 }).then(image => { if (active) setRemoteQr(image); }).catch(() => { if (active) setRemoteError('Nie udało się wygenerować kodu QR. Użyj adresu.'); });
+    return () => { active = false; };
+  }, [remoteUrl]);
+  const toggleRemote = async () => {
+    if (!window.electronAPI) { setRemoteError('Pilot jest dostępny w aplikacji Windows.'); return; }
+    setRemoteBusy(true);
+    setRemoteError('');
+    try {
+      if (remoteUrl) { await window.electronAPI.stopRemote(); setRemoteUrl(''); setRemoteUrls([]); }
+      else { const session = await window.electronAPI.startRemote(); setRemoteUrls(session.urls); setRemoteUrl(session.urls[0]); }
+    } catch { setRemoteError('Nie udało się uruchomić pilota. Sprawdź sieć i zaporę Windows.'); }
+    finally { setRemoteBusy(false); }
+  };
   useEffect(() => {
     if (!isOpen || !window.electronAPI) return;
     let cancelled = false;
@@ -170,15 +192,19 @@ export const TvModeModal: React.FC<TvModeModalProps> = ({
                   Sterowanie pilotem z telefonu (Smart Remote)
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/30">
-                  Prototyp UI (Wymaga serwera Electron)
+                  {remoteUrl ? 'Sesja aktywna' : 'Uruchamiany na żądanie'}
                 </span>
               </div>
               <p className="text-[11px] text-slate-300 leading-relaxed">
-                Podgląd interfejsu pilota. W docelowej aplikacji Windows Codex uruchomi lekki lokalny serwer HTTP/WebSocket w sieci domowej Wi-Fi. W bieżącym oknie nawiguj klawiszami strzałek <kbd className="bg-slate-800 px-1 py-0.5 rounded text-white font-mono">←</kbd> <kbd className="bg-slate-800 px-1 py-0.5 rounded text-white font-mono">→</kbd> i spacją.
+                Włącz pilota i zeskanuj kod telefonem w tej samej zaufanej sieci Wi-Fi. Pilot zmienia slajdy, pauzuje i zamyka pokaz na komputerze. Sesja wygasa po 2 godzinach; adres z kodem daje dostęp do sterowania. Połączenie lokalne HTTP nie jest szyfrowane.
               </p>
+              <button disabled={remoteBusy} onClick={() => void toggleRemote()} className="px-4 py-2 bg-amber-500 text-slate-950 rounded-xl font-bold disabled:opacity-50">{remoteBusy ? 'Proszę czekać…' : remoteUrl ? 'Wyłącz pilota' : 'Włącz pilota z telefonu'}</button>
+              {remoteUrls.length > 1 && <select aria-label="Adres sieci pilota" value={remoteUrl} onChange={event => setRemoteUrl(event.target.value)} className="block bg-slate-900 border border-slate-700 rounded p-2 max-w-full">{remoteUrls.map(url => <option key={url} value={url}>{new URL(url).host}</option>)}</select>}
+              {remoteUrl && <input aria-label="Adres parowania pilota" readOnly value={remoteUrl} onFocus={event => event.target.select()} className="block w-full bg-slate-950 rounded p-2 text-[10px]" />}
+              {remoteError && <p role="alert" className="text-amber-300">{remoteError}</p>}
             </div>
-            <div className="w-16 h-16 rounded-xl bg-white p-1 shadow-lg shrink-0 flex items-center justify-center">
-              <QrCode className="w-14 h-14 text-slate-900" />
+            <div className="w-32 h-32 rounded-xl bg-white p-1 shadow-lg shrink-0 flex items-center justify-center">
+              {remoteQr ? <img src={remoteQr} alt="Kod QR parowania pilota" className="w-full h-full" /> : <QrCode className="w-14 h-14 text-slate-900" />}
             </div>
           </div>
         </div>

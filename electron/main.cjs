@@ -7,6 +7,7 @@ const { tmpdir } = require('node:os');
 const { LibraryDatabase } = require('./database.cjs');
 const { OfflineMap } = require('./offline-map.cjs');
 const { discoverRenderers } = require('./tv-discovery.cjs');
+const { RemoteControl } = require('./remote-control.cjs');
 const { existsSync, copyFileSync, renameSync, statSync } = require('node:fs');
 protocol.registerSchemesAsPrivileged([{ scheme: 'prezent-tiles', privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
 if (process.argv.includes('--smoke-test')) app.setPath('userData', mkdtempSync(path.join(tmpdir(), 'prezent-desktop-smoke-')));
@@ -49,6 +50,16 @@ app.whenReady().then(async () => {
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, sandbox: true, nodeIntegration: false, webSecurity: true },
   });
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  const remoteControl = new RemoteControl(command => {
+    if (!window.isDestroyed()) window.webContents.send('remote:command', command);
+  });
+  window.once('closed', () => { void remoteControl.stop(); });
+  ipcMain.handle('remote:session', (event, action) => {
+    if (event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== page) throw new Error('Niedozwolony nadawca IPC');
+    if (action === 'start') return remoteControl.start();
+    if (action === 'stop') return remoteControl.stop();
+    throw new Error('Nieznana operacja pilota');
+  });
   let pendingDiscovery = null;
   ipcMain.handle('tv:discover', event => {
     if (event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== page) throw new Error('Niedozwolony nadawca IPC');
@@ -126,6 +137,26 @@ app.whenReady().then(async () => {
       }
       if (!state.invalidKeyRejected || !state.sqliteReadable) throw new Error('Nieprawidłowa integracja SQLite');
       if (state.text < 100 || state.bridge !== 'function' || state.node !== 'undefined') throw new Error('Nieprawidłowy renderer lub izolacja');
+      if (process.argv.includes('--remote-smoke-test')) {
+        const waitFor = expression => window.webContents.executeJavaScript(`new Promise((resolve, reject) => { const started = Date.now(); const timer = setInterval(() => { if (${expression}) { clearInterval(timer); resolve(true); } else if (Date.now() - started > 6000) { clearInterval(timer); reject(new Error('Timeout testu pilota')); } }, 50); })`);
+        await window.webContents.executeJavaScript(`document.querySelector('button[title="Tryb TV / Salon 4K"]').click()`);
+        await waitFor(`Array.from(document.querySelectorAll('button')).some(button => button.textContent.includes('Włącz pilota z telefonu'))`);
+        await window.webContents.executeJavaScript(`Array.from(document.querySelectorAll('button')).find(button => button.textContent.includes('Włącz pilota z telefonu')).click()`);
+        await waitFor(`document.querySelector('input[aria-label="Adres parowania pilota"]')?.value`);
+        const remoteUrl = new URL(await window.webContents.executeJavaScript(`document.querySelector('input[aria-label="Adres parowania pilota"]').value`));
+        await waitFor(`document.querySelector('img[alt="Kod QR parowania pilota"]')?.complete`);
+        await window.webContents.executeJavaScript(`Array.from(document.querySelectorAll('button')).find(button => button.textContent.includes('Rozpocznij prezentację na TV')).click()`);
+        await waitFor(`document.querySelector('h2')`);
+        const command = action => fetch(`http://127.0.0.1:${remoteUrl.port}/command`, { method: 'POST', headers: { Authorization: `Bearer ${remoteUrl.hash.slice(1)}` }, body: JSON.stringify({ command: action }) });
+        if (!(await command('toggle-play')).ok) throw new Error('Polecenie pauzy odrzucone');
+        await waitFor(`document.querySelector('button[title="Wznów (Spacja)"]')`);
+        const previousTitle = await window.webContents.executeJavaScript(`document.querySelector('h2').textContent`);
+        if (!(await command('next')).ok) throw new Error('Polecenie zmiany slajdu odrzucone');
+        await waitFor(`document.querySelector('h2').textContent !== ${JSON.stringify(previousTitle)}`);
+        state.remoteChangedSlide = true;
+        state.remotePausedSlideshow = true;
+        await remoteControl.stop();
+      }
       const reportsDirectory = path.join(process.cwd(), 'reports');
       mkdirSync(reportsDirectory, { recursive: true });
       await new Promise(resolve => setTimeout(resolve, 1500));

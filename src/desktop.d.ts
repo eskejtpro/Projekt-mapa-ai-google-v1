@@ -2,6 +2,9 @@ export {};
 declare global {
   interface Window {
     electronAPI?: {
+      startRemote(): Promise<{ urls: string[]; port: number }>;
+      stopRemote(): Promise<void>;
+      onRemoteCommand(callback: (command: 'next' | 'previous' | 'toggle-play' | 'close') => void): () => void;
       discoverTVs(): Promise<{ id: string; address: string; description: string; protocol: string }[]>;
       importOfflineMap(): Promise<{ name: string; sizeMb: number } | null>;
       removeOfflineMap(): Promise<boolean>;

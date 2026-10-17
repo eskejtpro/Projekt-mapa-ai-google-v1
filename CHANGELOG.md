@@ -1,6 +1,7 @@
 # CHANGELOG.md - Historia Zmian Projektu „Prezent Mapy”
 
 ## Unreleased — środowisko Codex
+- Wdrożono pilot HTTP z lokalnym QR/parowaniem, tokenem, ograniczonymi komendami i integracją pokazu slajdów. Zastąpiono sieciową minimapę lokalną. Naprawiono rozpoznawanie duplikatów oraz atomowy import zdjęć i albumu, błąd/anulowanie FileReader.
 - Dodano odświeżane na żądanie panelu wyszukiwanie DLNA/SSDP w LAN i relacyjny filtr zdjęć pokazu TV. Test renderowania MBTiles przy zablokowanej sieci PASS na syntetycznych kafelkach.
 - Dodano konfigurację NSIS/portable, natywny folder i autostart; autostart domyślnie wyłączony. Dodano import rastrowego MBTiles i lokalną warstwę; wyłączono automatyczne wysyłanie współrzędnych i zabezpieczono atrybuty pinezek.
 - Zdjęcia osadzane w kopii mogą być przechowywane w osobnych plikach z SHA-256; import .prezent waliduje rekordy i zapisuje atomowo. Eksport bez GPS usuwa również punkty tras.

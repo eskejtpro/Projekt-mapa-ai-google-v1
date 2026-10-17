@@ -79,6 +79,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
 };
 
 export const StorageService = {
+  saveLibrary(photos: TravelPhoto[], albums: TravelAlbum[]): boolean {
+    try { persistence.batch([[STORAGE_KEYS.PHOTOS, JSON.stringify(photos)], [STORAGE_KEYS.ALBUMS, JSON.stringify(albums)]]); return true; }
+    catch { return false; }
+  },
   // Zdjęcia
   getPhotos(): TravelPhoto[] {
     try {
@@ -237,9 +241,8 @@ export const StorageService = {
 
     photos.forEach(p => {
       // Klucz dopasowania: zbliżona lokalizacja + ta sama data LUB identyczna nazwa pliku
-      const key = p.fileName 
-        ? `name_${p.fileName}` 
-        : `geo_${p.location.lat.toFixed(3)}_${p.location.lng.toFixed(3)}_${p.date}`;
+      const key = p.url.startsWith('data:image/') ? p.url : null;
+      if (!key) return;
 
       const existing = map.get(key) || [];
       existing.push(p);
@@ -249,7 +252,7 @@ export const StorageService = {
     const duplicateGroups: { groupKey: string; duplicates: TravelPhoto[] }[] = [];
     map.forEach((items, key) => {
       if (items.length > 1) {
-        duplicateGroups.push({ groupKey: key, duplicates: items });
+        duplicateGroups.push({ groupKey: key.startsWith('sha256_') ? key : `identical-image-${duplicateGroups.length + 1}`, duplicates: items });
       }
     });
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { TravelPhoto } from '../types/travel';
 import { ambientSound } from '../services/audioAmbient';
+import { LocalMiniMap } from './LocalMiniMap';
 import { 
   Play, 
   Pause, 
@@ -38,6 +39,15 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
   const [kenBurnsActive, setKenBurnsActive] = useState<boolean>(true);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isOpen || !photos.length || !window.electronAPI) return;
+    return window.electronAPI.onRemoteCommand(command => {
+      if (command === 'next') setCurrentIndex(index => (index + 1) % photos.length);
+      if (command === 'previous') setCurrentIndex(index => (index - 1 + photos.length) % photos.length);
+      if (command === 'toggle-play') setIsPlaying(playing => !playing);
+      if (command === 'close') { onClose(); void window.electronAPI?.stopRemote(); }
+    });
+  }, [isOpen, photos.length, onClose]);
 
   // Zresetuj indeks gdy modal się otwiera
   useEffect(() => {
@@ -89,7 +99,7 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
 
   if (!isOpen || photos.length === 0) return null;
 
-  const currentPhoto = photos[currentIndex];
+  const currentPhoto = photos[Math.min(currentIndex, photos.length - 1)];
 
   const toggleSound = () => {
     if (isMuted) {
@@ -252,11 +262,7 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
         <div className="flex flex-col items-end gap-3 shrink-0">
           {/* Mini-Mapa PiP */}
           <div className="w-48 h-32 rounded-2xl overflow-hidden border border-amber-400/50 shadow-2xl bg-slate-900 relative">
-            <iframe
-              title="Mini Map"
-              className="w-full h-full pointer-events-none filter brightness-90 contrast-125"
-              src={`https://www.openstreetmap.org/export/embed.html?bbox=${currentPhoto.location.lng - 0.2}%2C${currentPhoto.location.lat - 0.2}%2C${currentPhoto.location.lng + 0.2}%2C${currentPhoto.location.lat + 0.2}&layer=mapnik&marker=${currentPhoto.location.lat}%2C${currentPhoto.location.lng}`}
-            />
+            <LocalMiniMap lat={currentPhoto.location.lat} lng={currentPhoto.location.lng} />
             <div className="absolute top-2 left-2 bg-black/80 backdrop-blur text-[10px] px-2 py-0.5 rounded-full font-bold text-amber-400 border border-amber-500/30 flex items-center gap-1">
               <Compass className="w-3 h-3" /> Lokalizacja
             </div>

@@ -132,33 +132,20 @@ export default function App() {
 
   // Obsługa dodania zdjęć z importu z zabezpieczeniem przed duplikatami i obsługą limitu pamięci
   const handleImportComplete = (newPhotos: TravelPhoto[], newAlbum?: TravelAlbum) => {
-    setPhotos(prev => {
-      const existingSignatures = new Set(
-        prev.map(p => `${p.fileName || p.title}_${p.location.lat.toFixed(3)}_${p.location.lng.toFixed(3)}`)
-      );
-      const uniqueNew = newPhotos.filter(
-        np => !existingSignatures.has(`${np.fileName || np.title}_${np.location.lat.toFixed(3)}_${np.location.lng.toFixed(3)}`)
-      );
-
-      const updatedPhotos = [...uniqueNew, ...prev];
-      const saved = StorageService.savePhotos(updatedPhotos);
-      if (!saved) {
-        showToast('Uwaga: Limit pamięci podręcznej przeglądarki (localStorage) został osiągnięty. Zalecany eksport .prezent.', 'warning');
-      }
-      return updatedPhotos;
+    const identities = new Set(photos.filter(photo => photo.url.startsWith('data:image/')).map(photo => photo.url));
+    const uniqueNew = newPhotos.filter(photo => {
+      if (!settings.autoDetectDuplicates || !photo.url.startsWith('data:image/')) return true;
+      if (identities.has(photo.url)) return false;
+      identities.add(photo.url); return true;
     });
-
-    if (newAlbum) {
-      setAlbums(prev => {
-        if (prev.some(a => a.id === newAlbum.id)) return prev;
-        const updatedAlbums = [newAlbum, ...prev];
-        StorageService.saveAlbums(updatedAlbums);
-        return updatedAlbums;
-      });
-    }
-
+    const updatedPhotos = [...uniqueNew, ...photos];
+    const updatedAlbums = newAlbum && !albums.some(album => album.id === newAlbum.id) ? [newAlbum, ...albums] : albums;
+    if (!StorageService.saveLibrary(updatedPhotos, updatedAlbums)) { showToast('Nie zapisano importu. Sprawdź miejsce na dysku lub limit pamięci przeglądarki.', 'warning'); return false; }
+    setPhotos(updatedPhotos);
+    setAlbums(updatedAlbums);
     setImportInitialFiles([]);
     setImportInitialLocation(null);
+    return true;
   };
 
   // Otwarcie centrum importu zdjęć z predefiniowaną lokalizacją (np. kliknięcie PPM na mapie lub z menu)

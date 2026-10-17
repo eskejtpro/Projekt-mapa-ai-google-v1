@@ -30,6 +30,7 @@ export interface TravelPhoto {
   fileSize?: string;
   fileSizeBytes?: number;
   fileName?: string;
+  contentHash?: string; // SHA-256 oryginalnej zawartości pliku
   localFilePath?: string; // np. "C:\Prezent\Zdjecia\Santorini_2024.jpg"
   duplicateGroup?: string;
 }
