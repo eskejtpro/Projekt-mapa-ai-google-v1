@@ -14,3 +14,8 @@
 | PREZ-010 | P1 | TV | Tryb TV Salon 4K i pilot QR ze smartfona | UKOŃCZONE | Działa w podglądzie |
 | PREZ-011 | P0 | Windows | Okno Windows 10/11 z paskiem tytułowym, menu systemowym i paskiem stanu | UKOŃCZONE | Działa w podglądzie |
 | PREZ-012 | P1 | Android | Eksport i import pliku .prezent zgodnego z Room Database | UKOŃCZONE | Działa w podglądzie |
+| PREZ-013 | P0 | Mapa | Naprawa kafelków Leaflet (CSS reset Tailwind), obsługa Retina i szybki pasek stylów | UKOŃCZONE | Działa w podglądzie |
+| PREZ-014 | P1 | Windows | Windows 11 Action Center Toasts, dialogi potwierdzeń i okno skrótów klawiszowych | UKOŃCZONE | Działa w podglądzie |
+| PREZ-015 | P0 | Mapa | Menu kontekstowe PPM na mapie z dodawaniem zdjęć, katalogu, schowka w punkcie | UKOŃCZONE | Działa w podglądzie |
+| PREZ-016 | P0 | Import | 5 trybów dodawania zdjęć (pliki, katalog, schowek Ctrl+V, URL, pakiety) i Drag&Drop | UKOŃCZONE | Działa w podglądzie |
+

@@ -17,7 +17,10 @@ Status: **ROZBUDOWANY, ZGODNY ZE WZORCAMI WIZUALNYMI I ZWERYFIKOWANY**
 | **Narzędzia użytkownika: Wykrywanie duplikatów** | UKOŃCZONE | Diagnostyka powtarzających się ujęć (`DuplicatesView`) z możliwością usunięcia zbędnych fotografii. |
 | **Natywna ramka okna Windows 10/11** | UKOŃCZONE | Pasek tytułowy Windows, rozwijane menu Plik/Widok/Narzędzia/Pomoc, przyciski systemowe (—, 🗖, ✕), pasek stanu na dole okna. |
 | **Prezentacja wspomnień (Pokaz slajdów & TV)** | UKOŃCZONE | Kinowy Ken Burns, mini-mapa PiP, szum oceanu Web Audio API, tryb salonowy TV 4K i pilot QR. |
-| **Kopia zapasowa & Synchronizacja** | UKOŃCZONE | Eksport/import `.prezent` i schemat bazy gotowy na Android Room. |
+| **Naprawa i optymalizacja wyglądu mapy (Leaflet)** | UKOŃCZONE | Wyeliminowano konflikt z resetem Tailwind CSS (`max-width: none !important`), dodano bezpośredni pasek zmiany wyglądu mapy (Nocny CartoDB, Satelita Esri, Teren/Kolor Voyager OSM, Drogi Esri, Dzień), zabezpieczono serwery kafelków przed blokadami i dodano wieloetapowe odświeżanie rozmiaru. |
+| **Menu kontekstowe PPM na mapie świata** | UKOŃCZONE | Kliknięcie prawym przyciskiem myszy w dowolnym miejscu na mapie otwiera menu z opcjami: dodanie zdjęć w punkcie, dodanie całego katalogu, wklejenie ze schowka (Ctrl+V), dodanie gotowej paczki, link URL oraz kopiowanie współrzędnych. |
+| **Wielofunkcyjne centrum dodawania zdjęć (ImportModal)** | UKOŃCZONE | 5 zakładek: pliki zdjęć, cały katalog/folder z podkatalogami (`webkitdirectory`), wklejanie ze schowka systemowego (Clipboard API), dodawanie z linku URL oraz gotowe pakiety podróżnicze (Tatry, Bałtyk, Cinque Terre, Paryż, Dalmacja). |
+| **Przeciągnij i upuść (Drag & Drop) na mapę** | UKOŃCZONE | Bezpośrednie upuszczenie plików na mapę przypisuje współrzędne geograficzne punktu pod kursorem do fotografii bez GPS w EXIF. |
 
 ---
 

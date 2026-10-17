@@ -1,5 +1,5 @@
 {
-  "name": "Prezent – Rodzinne Wspomnienia na Mapie",
+  "name": "Prezent Mapy",
   "description": "Nowoczesna aplikacja do prezentowania podróży po świecie, rodzinnych wspomnień i zdjęć z wakacji na interaktywnej mapie świata, z pokazem slajdów i trybem TV.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

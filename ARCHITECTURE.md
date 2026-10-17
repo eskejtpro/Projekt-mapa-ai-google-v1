@@ -25,6 +25,8 @@ Aplikacja **„Prezent”** została zaprojektowana zgodnie z zasadami **Offline
 |  • AudioAmbientEngine (Synteza fal i natury przez Web Audio API)         |
 |  • ExifParserService (Biblioteka exifr dla współrzędnych i aparatów)    |
 |  • OfflineMapCacheService (Zarządzanie kafelkami regionalnymi)          |
+|  • GeoService (Odwrotne geokodowanie, schowek i detekcja miast)         |
+|  • TravelPacksEngine (Zestawy gotowych kolekcji fotografii)             |
 +-------------------------------------------------------------------------+
                                     │
             ┌───────────────────────┴───────────────────────┐

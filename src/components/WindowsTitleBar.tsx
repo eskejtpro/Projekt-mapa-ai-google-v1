@@ -30,6 +30,7 @@ interface WindowsTitleBarProps {
   onOpenOfflineMaps: () => void;
   onOpenAndroidSync: () => void;
   onOpenAbout: () => void;
+  onOpenShortcuts?: () => void;
   onOpenWindowsFolder: () => void;
   onSelectTab: (tab: 'map' | 'gallery' | 'trips' | 'windows') => void;
 }
@@ -45,6 +46,7 @@ export const WindowsTitleBar: React.FC<WindowsTitleBarProps> = ({
   onOpenOfflineMaps,
   onOpenAndroidSync,
   onOpenAbout,
+  onOpenShortcuts,
   onOpenWindowsFolder,
   onSelectTab,
 }) => {
@@ -239,8 +241,8 @@ export const WindowsTitleBar: React.FC<WindowsTitleBarProps> = ({
                     <Info className="w-3.5 h-3.5" /> O programie Prezent Mapy
                   </button>
                   <button
-                    onClick={() => { closeMenu(); alert('Skróty klawiszowe programu Prezent Mapy:\n\n• Spacja: Uruchom/Pauza pokazu slajdów\n• Strzałki ← / →: Następne/poprzednie zdjęcie\n• F11: Pełny ekran\n• Esc: Wyjście z pokazu\n• Ctrl+O: Import zdjęć z dysku\n• Win+K: Przesyłanie na TV'); }}
-                    className="w-full px-3 py-1.5 hover:bg-amber-500 hover:text-slate-950 flex items-center gap-2 transition-colors text-left"
+                    onClick={() => { closeMenu(); onOpenShortcuts?.(); }}
+                    className="w-full px-3 py-1.5 hover:bg-amber-500 hover:text-slate-950 flex items-center gap-2 transition-colors text-left cursor-pointer"
                   >
                     <HelpCircle className="w-3.5 h-3.5" /> Skróty klawiszowe
                   </button>

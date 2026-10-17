@@ -31,12 +31,14 @@ import { StorageService, DEFAULT_SETTINGS } from './services/storage';
 import { WindowsTitleBar } from './components/WindowsTitleBar';
 import { SidebarDock, ActiveNavTab } from './components/SidebarDock';
 import { AboutModal } from './components/AboutModal';
+import { ShortcutsModal } from './components/ShortcutsModal';
 import { MapView } from './components/MapView';
 import { GalleryView } from './components/GalleryView';
 import { SettingsView } from './components/SettingsView';
 import { StatsView } from './components/StatsView';
 import { DuplicatesView } from './components/DuplicatesView';
-import { ImportModal } from './components/ImportModal';
+import { ImportModal, InitialImportLocation, ImportTabMode } from './components/ImportModal';
+import { guessNearestLocation } from './services/geoService';
 import { SlideshowModal } from './components/SlideshowModal';
 import { TvModeModal } from './components/TvModeModal';
 import { OfflineMapsModal } from './components/OfflineMapsModal';
@@ -63,13 +65,34 @@ export default function App() {
 
   // Modale narzędziowe
   const [isImportOpen, setIsImportOpen] = useState<boolean>(false);
+  const [importInitialLocation, setImportInitialLocation] = useState<InitialImportLocation | null>(null);
+  const [importInitialMode, setImportInitialMode] = useState<ImportTabMode>('files');
   const [isSlideshowOpen, setIsSlideshowOpen] = useState<boolean>(false);
   const [slideshowPhotos, setSlideshowPhotos] = useState<TravelPhoto[]>([]);
   const [slideshowStartIndex, setSlideshowStartIndex] = useState<number>(0);
   const [isTvModeOpen, setIsTvModeOpen] = useState<boolean>(false);
   const [isOfflineModalOpen, setIsOfflineModalOpen] = useState<boolean>(false);
   const [isAndroidSyncOpen, setIsAndroidSyncOpen] = useState<boolean>(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState<boolean>(false);
   const [selectedPhotoForDetail, setSelectedPhotoForDetail] = useState<TravelPhoto | null>(null);
+
+  // System powiadomień i potwierdzeń w stylu Windows (zamiast alert / confirm)
+  const [toast, setToast] = useState<{ message: string; type: 'info' | 'success' | 'warning' } | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    cancelLabel?: string;
+    onConfirm: () => void;
+    isDanger?: boolean;
+  } | null>(null);
+
+  const showToast = (message: string, type: 'info' | 'success' | 'warning' = 'info') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(t => (t?.message === message ? null : t));
+    }, 4000);
+  };
 
   // Załadowanie danych
   useEffect(() => {
@@ -113,6 +136,28 @@ export default function App() {
     }
   };
 
+  // Otwarcie centrum importu zdjęć z predefiniowaną lokalizacją (np. kliknięcie PPM na mapie lub z menu)
+  const handleOpenImportWithLocation = (location?: InitialImportLocation, mode: ImportTabMode = 'files') => {
+    setImportInitialLocation(location || null);
+    setImportInitialMode(mode);
+    setIsImportOpen(true);
+  };
+
+  // Upuszczenie plików bezpośrednio na określony punkt mapy świata (Drag & Drop)
+  const handleDropPhotosOnMap = (_files: File[], lat: number, lng: number) => {
+    const guess = guessNearestLocation(lat, lng);
+    setImportInitialLocation({
+      lat,
+      lng,
+      cityName: guess.cityName,
+      countryName: guess.countryName,
+      countryCode: guess.countryCode,
+    });
+    setImportInitialMode('files');
+    setIsImportOpen(true);
+    showToast(`Przeciągnięto pliki na mapę: ${guess.cityName} (${lat.toFixed(4)}, ${lng.toFixed(4)})`, 'info');
+  };
+
   // Ulubione
   const handleToggleFavorite = (id: string) => {
     const updated = photos.map(p => p.id === id ? { ...p, isFavorite: !p.isFavorite } : p);
@@ -145,14 +190,20 @@ export default function App() {
   const handleClearCache = () => {
     const freed = StorageService.clearMapCache();
     loadAllData();
-    alert(`Wyczyszczono pamięć podręczną map offline. Zwolniono ~${freed} MB.`);
+    showToast(`Wyczyszczono pamięć podręczną map offline. Zwolniono ~${freed} MB.`, 'success');
   };
 
   // Reset ustawień
   const handleResetSettings = () => {
-    if (confirm('Czy chcesz przywrócić domyślne ustawienia programu Prezent?')) {
-      handleUpdateSettings(DEFAULT_SETTINGS);
-    }
+    setConfirmDialog({
+      title: 'Przywracanie ustawień',
+      message: 'Czy na pewno chcesz przywrócić domyślne ustawienia programu Prezent Mapy?',
+      confirmLabel: 'Przywróć domyślne',
+      onConfirm: () => {
+        handleUpdateSettings(DEFAULT_SETTINGS);
+        showToast('Przywrócono domyślne ustawienia programu.', 'info');
+      },
+    });
   };
 
   // Start pokazu slajdów
@@ -165,28 +216,46 @@ export default function App() {
 
   // Reset do demo
   const handleResetDemo = () => {
-    if (confirm('Czy na pewno chcesz przywrócić fabryczny zestaw demonstracyjnych podróży rodzinnych?')) {
-      StorageService.resetToDemo();
-      loadAllData();
-    }
+    setConfirmDialog({
+      title: 'Fabryczny zestaw wspomnień',
+      message: 'Czy na pewno chcesz przywrócić fabryczny zestaw demonstracyjnych podróży rodzinnych?',
+      confirmLabel: 'Przywróć demo',
+      onConfirm: () => {
+        StorageService.resetToDemo();
+        loadAllData();
+        showToast('Przywrócono demonstracyjny zestaw wypraw.', 'success');
+      },
+    });
   };
 
   // Wyczyszczenie demo
   const handleClearDemo = () => {
-    if (confirm('Czy chcesz usunąć wszystkie przykładowe wspomnienia demonstracyjne i zostawić tylko swoje własne zdjęcia?')) {
-      StorageService.clearDemoData();
-      loadAllData();
-    }
+    setConfirmDialog({
+      title: 'Usunięcie danych demonstracyjnych',
+      message: 'Czy chcesz usunąć wszystkie przykładowe wspomnienia demonstracyjne i zostawić tylko swoje własne zdjęcia?',
+      confirmLabel: 'Usuń dane demonstracyjne',
+      isDanger: true,
+      onConfirm: () => {
+        StorageService.clearDemoData();
+        loadAllData();
+        showToast('Usunięto dane demonstracyjne.', 'info');
+      },
+    });
   };
 
   const handleOpenWindowsFolder = () => {
-    alert(`Otwieranie folderu w systemie Windows:\nexplorer.exe "${settings.windowsPhotosPath}"`);
+    showToast(`Otwieranie folderu w Eksploratorze Windows: ${settings.windowsPhotosPath}`, 'info');
   };
 
   const handleCloseApp = () => {
-    if (confirm('Czy chcesz zamknąć aplikację Prezent Mapy?')) {
-      setIsWindowMinimized(true);
-    }
+    setConfirmDialog({
+      title: 'Zamykanie aplikacji',
+      message: 'Czy chcesz zminimalizować i zamknąć okno programu Prezent Mapy?',
+      confirmLabel: 'Zamknij okno',
+      onConfirm: () => {
+        setIsWindowMinimized(true);
+      },
+    });
   };
 
   const demoPhotosCount = photos.filter(p => p.isDemo).length;
@@ -246,6 +315,7 @@ export default function App() {
             onOpenOfflineMaps={() => setIsOfflineModalOpen(true)}
             onOpenAndroidSync={() => setIsAndroidSyncOpen(true)}
             onOpenAbout={() => setIsAboutOpen(true)}
+            onOpenShortcuts={() => setIsShortcutsOpen(true)}
             onOpenWindowsFolder={handleOpenWindowsFolder}
             onSelectTab={(tab) => setActiveTab(tab)}
           />
@@ -267,10 +337,10 @@ export default function App() {
             />
 
             {/* Obszar Roboczy Wybranego Widoku */}
-            <main className="flex-1 flex flex-col p-4 md:p-5 overflow-y-auto bg-[#070b14]">
+            <main className={`flex-1 flex flex-col ${activeTab === 'map' ? 'p-3 md:p-4 overflow-hidden h-full' : 'p-4 md:p-5 overflow-y-auto'} bg-[#070b14]`}>
               {/* WIDOK 1: MAPA ŚWIATA (Wzorowana na Obrazie 3) */}
               {activeTab === 'map' && (
-                <div className="flex-1 flex flex-col space-y-3 min-h-[500px]">
+                <div className="flex-1 flex flex-col space-y-2.5 h-full min-h-0">
                   <MapView
                     photos={photos}
                     trips={trips}
@@ -280,10 +350,13 @@ export default function App() {
                     tileProvider={settings.defaultMapLayer}
                     onChangeTileProvider={(p) => handleUpdateSettings({ ...settings, defaultMapLayer: p })}
                     showAnimatedRoutes={settings.showAnimatedRoutes}
+                    onOpenImport={handleOpenImportWithLocation}
+                    onShowToast={showToast}
+                    onDropPhotosOnMap={handleDropPhotosOnMap}
                   />
 
                   {/* Szybki filtr tras pod mapą */}
-                  <div className="bg-[#0f172a] border border-slate-800 rounded-2xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="bg-[#0f172a] border border-slate-800 rounded-2xl p-2 sm:p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
                     <div className="flex items-center gap-2">
                       <span className="text-slate-400 font-semibold flex items-center gap-1.5">
                         <MapPin className="w-3.5 h-3.5 text-amber-400" /> Wyprawa na mapie:
@@ -726,9 +799,15 @@ export default function App() {
 
       <ImportModal
         isOpen={isImportOpen}
-        onClose={() => setIsImportOpen(false)}
+        onClose={() => {
+          setIsImportOpen(false);
+          setImportInitialLocation(null);
+        }}
         albums={albums}
         onImportComplete={handleImportComplete}
+        initialLocation={importInitialLocation}
+        initialMode={importInitialMode}
+        onShowToast={showToast}
       />
 
       <SlideshowModal
@@ -776,6 +855,77 @@ export default function App() {
           handleStartSlideshow(photos, Math.max(0, idx));
         }}
       />
+
+      <ShortcutsModal
+        isOpen={isShortcutsOpen}
+        onClose={() => setIsShortcutsOpen(false)}
+      />
+
+      {/* Okno dialogowe potwierdzenia akcji (zastępujące window.confirm) */}
+      {confirmDialog && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[#1e293b] border border-slate-700 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150">
+            <div className="bg-[#0f172a] px-4 py-2.5 border-b border-slate-800 flex items-center justify-between">
+              <span className="font-semibold text-xs text-white">{confirmDialog.title}</span>
+              <button
+                onClick={() => setConfirmDialog(null)}
+                className="text-slate-400 hover:text-white p-1 hover:bg-slate-800 rounded transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-5 text-xs text-slate-300 leading-relaxed">
+              {confirmDialog.message}
+            </div>
+            <div className="bg-[#0f172a] p-3 border-t border-slate-800 flex items-center justify-end gap-2">
+              <button
+                onClick={() => setConfirmDialog(null)}
+                className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors cursor-pointer"
+              >
+                {confirmDialog.cancelLabel || 'Anuluj'}
+              </button>
+              <button
+                onClick={() => {
+                  const action = confirmDialog.onConfirm;
+                  setConfirmDialog(null);
+                  action();
+                }}
+                className={`px-4 py-1.5 rounded-lg font-bold text-xs shadow-md transition-all cursor-pointer ${
+                  confirmDialog.isDanger
+                    ? 'bg-rose-600 hover:bg-rose-500 text-white'
+                    : 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+                }`}
+              >
+                {confirmDialog.confirmLabel || 'Zatwierdź'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Powiadomienie Toast w stylu Windows 11 Action Center */}
+      {toast && (
+        <div className="fixed bottom-5 right-5 z-50 max-w-sm w-full bg-[#111827]/95 backdrop-blur-md border border-slate-700 rounded-2xl p-3.5 shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-4 duration-200">
+          <div
+            className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+              toast.type === 'success'
+                ? 'bg-emerald-400 animate-pulse'
+                : toast.type === 'warning'
+                ? 'bg-amber-400'
+                : 'bg-blue-400'
+            }`}
+          />
+          <div className="flex-1 text-xs text-slate-200 font-medium">
+            {toast.message}
+          </div>
+          <button
+            onClick={() => setToast(null)}
+            className="text-slate-400 hover:text-white p-1 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer text-xs"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 }

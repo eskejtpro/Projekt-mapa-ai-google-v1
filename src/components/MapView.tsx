@@ -3,19 +3,31 @@ import L from 'leaflet';
 import { TravelPhoto, TravelTrip, MapTileProvider } from '../types/travel';
 import { 
   Layers, 
-  Navigation, 
-  Compass, 
-  Play, 
   MapPin, 
   Plus, 
   Minus, 
-  Maximize2, 
   Locate, 
-  Search,
-  Globe,
+  Search, 
+  Globe, 
+  Play, 
+  Sun, 
+  Moon, 
+  Compass, 
+  Map as MapIcon, 
+  Check,
+  FolderPlus,
+  Upload,
+  Clipboard,
+  Link,
+  Package,
+  Copy,
+  ChevronDown,
   Sparkles,
-  ExternalLink
+  Info,
+  X
 } from 'lucide-react';
+import { InitialImportLocation, ImportTabMode } from './ImportModal';
+import { formatCoordinates, guessNearestLocation, reverseGeocodeOnline, GeoGuess, readImageFromClipboard } from '../services/geoService';
 
 interface MapViewProps {
   photos: TravelPhoto[];
@@ -26,30 +38,63 @@ interface MapViewProps {
   tileProvider: MapTileProvider;
   onChangeTileProvider: (provider: MapTileProvider) => void;
   showAnimatedRoutes?: boolean;
+  onOpenImport?: (location?: InitialImportLocation, mode?: ImportTabMode) => void;
+  onShowToast?: (message: string, type: 'info' | 'success' | 'warning') => void;
+  onDropPhotosOnMap?: (files: File[], lat: number, lng: number) => void;
 }
 
-const TILE_SERVERS: Record<MapTileProvider, { url: string; attribution: string; maxZoom: number }> = {
+interface TileServerConfig {
+  url: string;
+  attribution: string;
+  maxZoom: number;
+  subdomains?: string;
+}
+
+// 100% stabilne, szybkie i niezawodne serwery kafelków w wysokiej rozdzielczości
+const TILE_SERVERS: Record<MapTileProvider, TileServerConfig> = {
   dark: {
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; OpenStreetMap &copy; CARTO',
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
     maxZoom: 19,
+    subdomains: 'abcd',
   },
   satellite: {
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: 'Tiles &copy; Esri &mdash; Earthstar Geographics',
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
     maxZoom: 18,
   },
-  light: {
-    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; OpenStreetMap &copy; CARTO',
+  voyager: {
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
     maxZoom: 19,
+    subdomains: 'abcd',
   },
   osm: {
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; OpenStreetMap contributors',
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    maxZoom: 19,
+    subdomains: 'abcd',
+  },
+  light: {
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    maxZoom: 19,
+    subdomains: 'abcd',
+  },
+  streets: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles &copy; Esri &mdash; Sources: Esri, DeLorme, NAVTEQ',
     maxZoom: 19,
   },
 };
+
+const MAP_STYLES: { id: MapTileProvider; label: string; sub: string; icon: any }[] = [
+  { id: 'dark', label: 'Nocny', sub: 'Dark Matter', icon: Moon },
+  { id: 'satellite', label: 'Satelita', sub: 'Esri World Imagery', icon: Globe },
+  { id: 'voyager', label: 'Kolor / Teren', sub: 'OpenStreetMap', icon: Compass },
+  { id: 'streets', label: 'Ulice', sub: 'Esri Streets', icon: MapIcon },
+  { id: 'light', label: 'Dzień', sub: 'Positron Light', icon: Sun },
+];
 
 export const MapView: React.FC<MapViewProps> = ({
   photos,
@@ -60,6 +105,9 @@ export const MapView: React.FC<MapViewProps> = ({
   tileProvider,
   onChangeTileProvider,
   showAnimatedRoutes = true,
+  onOpenImport,
+  onShowToast,
+  onDropPhotosOnMap,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -69,26 +117,44 @@ export const MapView: React.FC<MapViewProps> = ({
 
   const [mapSearchQuery, setMapSearchQuery] = useState<string>('');
   const [showLayerMenu, setShowLayerMenu] = useState<boolean>(false);
+  const [showAddMenu, setShowAddMenu] = useState<boolean>(false);
   const [activeCountryFilter, setActiveCountryFilter] = useState<string>('ALL');
+  const [searchFeedback, setSearchFeedback] = useState<string | null>(null);
 
-  // Inicjalizacja instancji Leaflet
+  // Stan menu kontekstowego prawego przycisku myszy (Right-Click Context Menu)
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    lat: number;
+    lng: number;
+    guess: GeoGuess;
+  } | null>(null);
+
+  // Stan przeciągania plików nad mapą (Drag & Drop)
+  const [isDragOverMap, setIsDragOverMap] = useState<boolean>(false);
+  const [dragHoverCoords, setDragHoverCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Inicjalizacja instancji Leaflet z obsługą prawego przycisku myszy
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
     const map = L.map(mapContainerRef.current, {
-      center: [34.0, 15.0],
+      center: [36.0, 15.0],
       zoom: 3,
       minZoom: 2,
       maxZoom: 18,
       zoomControl: false,
       worldCopyJump: true,
+      fadeAnimation: true,
+      zoomAnimation: true,
     });
 
-    const initialConfig = TILE_SERVERS[tileProvider];
-    const tileLayer = L.tileLayer(initialConfig.url, {
-      attribution: initialConfig.attribution,
-      maxZoom: initialConfig.maxZoom,
-      subdomains: 'abcd',
+    const activeProvider = tileProvider in TILE_SERVERS ? tileProvider : 'dark';
+    const config = TILE_SERVERS[activeProvider];
+    const tileLayer = L.tileLayer(config.url, {
+      attribution: config.attribution,
+      maxZoom: config.maxZoom,
+      subdomains: config.subdomains || 'abc',
     }).addTo(map);
 
     tileLayerRef.current = tileLayer;
@@ -100,7 +166,81 @@ export const MapView: React.FC<MapViewProps> = ({
     routesLayerRef.current = routesLayer;
     mapInstanceRef.current = map;
 
+    // OBSŁUGA PRAWEGO PRZYCISKU MYSZY NA MAPIE (Context Menu)
+    map.on('contextmenu', (e: L.LeafletMouseEvent) => {
+      e.originalEvent.preventDefault();
+      const { lat, lng } = e.latlng;
+      const initialGuess = guessNearestLocation(lat, lng);
+
+      // Obliczamy pozycję menu tak, aby nie wychodziło poza krawędzie kontenera
+      const container = mapContainerRef.current;
+      let posX = e.containerPoint.x;
+      let posY = e.containerPoint.y;
+
+      if (container) {
+        const maxX = container.clientWidth - 290;
+        const maxY = container.clientHeight - 360;
+        if (posX > maxX) posX = Math.max(10, posX - 280);
+        if (posY > maxY) posY = Math.max(10, posY - 320);
+      }
+
+      setContextMenu({
+        x: posX,
+        y: posY,
+        lat,
+        lng,
+        guess: initialGuess,
+      });
+
+      // Asynchronicznie próbujemy pobrać pełną nazwę z geokodowania online
+      reverseGeocodeOnline(lat, lng).then(onlineGuess => {
+        setContextMenu(prev => (prev && prev.lat === lat && prev.lng === lng ? { ...prev, guess: onlineGuess } : prev));
+      }).catch(() => {});
+    });
+
+    // Zamknięcie menu kontekstowego przy standardowym kliknięciu lub przesunięciu mapy
+    map.on('click', () => setContextMenu(null));
+    map.on('movestart', () => setContextMenu(null));
+
+    // Wielostopniowe invalidateSize
+    const t0 = setTimeout(() => map.invalidateSize({ animate: false }), 20);
+    const t1 = setTimeout(() => map.invalidateSize({ animate: false }), 150);
+    const t2 = setTimeout(() => map.invalidateSize({ animate: false }), 400);
+    const t3 = setTimeout(() => map.invalidateSize({ animate: false }), 800);
+
+    const handleWindowResize = () => {
+      map.invalidateSize({ animate: false });
+    };
+    window.addEventListener('resize', handleWindowResize);
+
+    // Klawisz Escape zamyka menu kontekstowe
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setContextMenu(null);
+        setShowAddMenu(false);
+        setShowLayerMenu(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined' && mapContainerRef.current) {
+      resizeObserver = new ResizeObserver(() => {
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize({ animate: false });
+        }
+      });
+      resizeObserver.observe(mapContainerRef.current);
+    }
+
     return () => {
+      clearTimeout(t0);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      window.removeEventListener('resize', handleWindowResize);
+      window.removeEventListener('keydown', handleKeyDown);
+      if (resizeObserver) resizeObserver.disconnect();
       map.remove();
       mapInstanceRef.current = null;
     };
@@ -108,9 +248,26 @@ export const MapView: React.FC<MapViewProps> = ({
 
   // Zmiana warstwy kafelków
   useEffect(() => {
-    if (!mapInstanceRef.current || !tileLayerRef.current) return;
-    const config = TILE_SERVERS[tileProvider];
-    tileLayerRef.current.setUrl(config.url);
+    if (!mapInstanceRef.current) return;
+    const activeProvider = tileProvider in TILE_SERVERS ? tileProvider : 'dark';
+    const config = TILE_SERVERS[activeProvider];
+
+    if (tileLayerRef.current) {
+      mapInstanceRef.current.removeLayer(tileLayerRef.current);
+    }
+
+    const newLayer = L.tileLayer(config.url, {
+      attribution: config.attribution,
+      maxZoom: config.maxZoom,
+      subdomains: config.subdomains || 'abc',
+    }).addTo(mapInstanceRef.current);
+
+    newLayer.bringToBack();
+    tileLayerRef.current = newLayer;
+
+    setTimeout(() => {
+      mapInstanceRef.current?.invalidateSize({ animate: false });
+    }, 50);
   }, [tileProvider]);
 
   // Filtrowanie zdjęć
@@ -128,14 +285,13 @@ export const MapView: React.FC<MapViewProps> = ({
     return true;
   });
 
-  // Renderowanie pinezek i tras (wzorowane na załączonym Zrzucie 3)
+  // Renderowanie pinezek ze zdjęciami oraz tras podróży
   useEffect(() => {
     if (!mapInstanceRef.current || !markersLayerRef.current || !routesLayerRef.current) return;
 
     markersLayerRef.current.clearLayers();
     routesLayerRef.current.clearLayers();
 
-    // Grupowanie geograficzne według punktów
     const locationGroups: Record<string, TravelPhoto[]> = {};
     visiblePhotos.forEach(p => {
       const key = `${p.location.lat.toFixed(2)}_${p.location.lng.toFixed(2)}`;
@@ -145,45 +301,41 @@ export const MapView: React.FC<MapViewProps> = ({
 
     const bounds: L.LatLngBounds = L.latLngBounds([]);
 
-    // Dodawanie okrągłych pinezek klastrów jak na Obrazie 3 (z fioletowo-niebieskim badge)
     Object.values(locationGroups).forEach(group => {
       const rep = group[0];
       const count = group.length;
       bounds.extend([rep.location.lat, rep.location.lng]);
 
-      // Plakietka z liczbą zdjęć (dokładnie jak w załączonym zrzucie 3: np. 40, 8, 4)
-      const badgeColor = count > 20 ? 'bg-purple-600' : count > 5 ? 'bg-indigo-600' : 'bg-cyan-600';
+      const badgeBg = count > 10 ? '#7c3aed' : count > 2 ? '#2563eb' : '#059669';
 
       const iconHtml = `
-        <div class="relative group cursor-pointer transition-transform duration-300 hover:scale-125 hover:z-50">
-          <div class="w-13 h-13 rounded-full overflow-hidden border-2 border-white/80 shadow-[0_0_20px_rgba(168,85,247,0.5)] bg-slate-950 flex items-center justify-center relative">
-            <img src="${rep.thumbnailUrl || rep.url}" alt="${rep.title}" class="w-full h-full object-cover" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+        <div style="position: relative; width: 56px; height: 64px; cursor: pointer; display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.7)); transition: transform 0.2s ease;">
+          <div style="width: 50px; height: 50px; border-radius: 9999px; overflow: hidden; border: 3px solid #ffffff; background: #0b1120; box-shadow: 0 0 16px rgba(245, 158, 11, 0.4);">
+            <img src="${rep.thumbnailUrl || rep.url}" alt="${rep.title}" style="width: 50px !important; height: 50px !important; max-width: none !important; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=150&q=80'" />
           </div>
           ${count > 1 ? `
-            <div class="absolute -top-1.5 -right-1.5 ${badgeColor} text-white text-[11px] font-black rounded-full min-w-5 h-5 px-1.5 flex items-center justify-center border border-white/60 shadow-lg font-mono">
+            <div style="position: absolute; top: -3px; right: -3px; background: ${badgeBg}; color: #ffffff; font-size: 11px; font-weight: 900; border-radius: 9999px; min-width: 22px; height: 22px; padding: 0 5px; display: flex; align-items: center; justify-content: center; border: 2px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.8); font-family: monospace;">
               ${count}
             </div>
           ` : ''}
-          <div class="w-2.5 h-2.5 rounded-full bg-white shadow-md mx-auto -mt-1 border border-slate-900"></div>
+          <div style="width: 8px; height: 8px; background: #ffffff; border-radius: 9999px; box-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-top: 3px;"></div>
         </div>
       `;
 
       const customIcon = L.divIcon({
         className: 'custom-cluster-pin',
         html: iconHtml,
-        iconSize: [52, 60],
-        iconAnchor: [26, 56],
-        popupAnchor: [0, -50],
+        iconSize: [56, 64],
+        iconAnchor: [28, 60],
+        popupAnchor: [0, -56],
       });
 
       const marker = L.marker([rep.location.lat, rep.location.lng], { icon: customIcon });
 
-      // Popup
       const popupHtml = document.createElement('div');
       popupHtml.className = 'p-3 text-slate-100 max-w-xs';
       popupHtml.innerHTML = `
-        <div class="rounded-xl overflow-hidden mb-2 relative shadow-lg">
+        <div class="rounded-xl overflow-hidden mb-2 relative shadow-lg bg-slate-950">
           <img src="${rep.url}" alt="${rep.title}" class="w-full h-36 object-cover" />
           <div class="absolute top-2 right-2 bg-slate-950/85 backdrop-blur text-amber-400 text-[10px] px-2.5 py-0.5 rounded-full font-bold border border-amber-500/30">
             ${rep.location.cityName}, ${rep.location.countryName}
@@ -207,7 +359,6 @@ export const MapView: React.FC<MapViewProps> = ({
       markersLayerRef.current?.addLayer(marker);
     });
 
-    // Rysowanie tras
     if (showAnimatedRoutes) {
       trips.forEach(trip => {
         if (selectedTripId && trip.id !== selectedTripId) return;
@@ -216,8 +367,8 @@ export const MapView: React.FC<MapViewProps> = ({
 
           const polyline = L.polyline(latLngs, {
             color: trip.color || '#f59e0b',
-            weight: 3.5,
-            opacity: 0.85,
+            weight: 4,
+            opacity: 0.95,
             dashArray: '8, 8',
           });
 
@@ -232,7 +383,7 @@ export const MapView: React.FC<MapViewProps> = ({
             const stepIcon = L.divIcon({
               className: 'step-pin',
               html: `
-                <div class="w-6 h-6 rounded-full bg-slate-900 border-2 border-amber-400 text-amber-400 text-[10px] font-black flex items-center justify-center shadow-lg">
+                <div style="width: 24px; height: 24px; border-radius: 9999px; background: #0f172a; border: 2px solid #f59e0b; color: #f59e0b; font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.6);">
                   ${idx + 1}
                 </div>
               `,
@@ -253,23 +404,26 @@ export const MapView: React.FC<MapViewProps> = ({
     }
   }, [visiblePhotos, selectedTripId, showAnimatedRoutes, trips]);
 
-  // Wyszukiwanie na mapie (Animowane flyTo)
+  // Wyszukiwanie z animowanym flyTo
   const handleMapSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!mapSearchQuery.trim() || !mapInstanceRef.current) return;
-    const q = mapSearchQuery.toLowerCase();
+    const q = mapSearchQuery.toLowerCase().trim();
 
     const matchedPhoto = photos.find(p => 
       p.location.cityName.toLowerCase().includes(q) || 
-      p.location.countryName.toLowerCase().includes(q)
+      p.location.countryName.toLowerCase().includes(q) ||
+      p.title.toLowerCase().includes(q)
     );
 
     if (matchedPhoto) {
+      setSearchFeedback(null);
       mapInstanceRef.current.flyTo([matchedPhoto.location.lat, matchedPhoto.location.lng], 8, {
         duration: 1.5,
       });
     } else {
-      alert(`Nie znaleziono w bazie zdjęć z miejsca: "${mapSearchQuery}".`);
+      setSearchFeedback(`Nie znaleziono w bibliotece zdjęć z: "${mapSearchQuery}".`);
+      setTimeout(() => setSearchFeedback(null), 3500);
     }
   };
 
@@ -288,51 +442,256 @@ export const MapView: React.FC<MapViewProps> = ({
     }
   };
 
-  return (
-    <div className="relative w-full h-full min-h-[520px] flex-1 bg-slate-950 overflow-hidden rounded-2xl border border-slate-800 shadow-2xl">
-      {/* Kontener Leaflet */}
-      <div ref={mapContainerRef} className="w-full h-full z-0" />
+  // Obsługa przeciągania plików nad mapą (Drag & Drop)
+  const handleDragOverMap = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOverMap(true);
+    if (mapContainerRef.current && mapInstanceRef.current) {
+      const rect = mapContainerRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const latLng = mapInstanceRef.current.containerPointToLatLng(L.point(x, y));
+      setDragHoverCoords({ lat: latLng.lat, lng: latLng.lng });
+    }
+  };
 
-      {/* Pływający pasek wyszukiwania w lewym górnym rogu (jak na Obrazie 3) */}
-      <div className="absolute top-4 left-4 z-10 max-w-sm w-full">
-        <form onSubmit={handleMapSearch} className="relative">
+  const handleDragLeaveMap = () => {
+    setIsDragOverMap(false);
+    setDragHoverCoords(null);
+  };
+
+  const handleDropOnMap = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOverMap(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0 && mapContainerRef.current && mapInstanceRef.current) {
+      const rect = mapContainerRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const latLng = mapInstanceRef.current.containerPointToLatLng(L.point(x, y));
+      const guess = guessNearestLocation(latLng.lat, latLng.lng);
+
+      if (onDropPhotosOnMap) {
+        onDropPhotosOnMap(Array.from(e.dataTransfer.files), latLng.lat, latLng.lng);
+      } else if (onOpenImport) {
+        onOpenImport({
+          lat: latLng.lat,
+          lng: latLng.lng,
+          cityName: guess.cityName,
+          countryName: guess.countryName,
+          countryCode: guess.countryCode,
+        }, 'files');
+      }
+    }
+    setDragHoverCoords(null);
+  };
+
+  return (
+    <div 
+      className="relative w-full h-full min-h-[500px] flex-1 bg-[#080d1a] overflow-hidden rounded-2xl border border-slate-800 shadow-2xl flex flex-col"
+      onDragOver={handleDragOverMap}
+      onDragLeave={handleDragLeaveMap}
+      onDrop={handleDropOnMap}
+    >
+      {/* Kontener Leaflet na pełną wysokość i szerokość */}
+      <div 
+        ref={mapContainerRef} 
+        className="w-full h-full flex-1 z-0" 
+        style={{ width: '100%', height: '100%', minHeight: '480px' }} 
+      />
+
+      {/* Nakładka wizualna Drag & Drop nad mapą */}
+      {isDragOverMap && (
+        <div className="absolute inset-0 z-40 bg-amber-500/10 backdrop-blur-[2px] border-4 border-dashed border-amber-400/80 rounded-2xl flex flex-col items-center justify-center pointer-events-none animate-in fade-in">
+          <div className="bg-slate-950/90 border border-amber-500/60 p-5 rounded-3xl shadow-2xl text-center space-y-2 max-w-sm">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
+              <MapPin className="w-6 h-6 animate-bounce" />
+            </div>
+            <div className="text-white font-bold text-sm">
+              Upuść zdjęcia tutaj na mapie
+            </div>
+            <p className="text-slate-300 text-xs font-mono">
+              {dragHoverCoords ? formatCoordinates(dragHoverCoords.lat, dragHoverCoords.lng) : 'Współrzędne pod kursorem'}
+            </p>
+            <p className="text-slate-400 text-[11px]">
+              Zdjęcia bez GPS otrzymają automatycznie ten punkt na mapie świata!
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Pływający pasek wyszukiwania oraz przycisk dodawania w lewym górnym rogu */}
+      <div className="absolute top-3 left-3 z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-md w-full pr-14 sm:pr-0">
+        <form onSubmit={handleMapSearch} className="relative flex-1">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={mapSearchQuery}
             onChange={e => setMapSearchQuery(e.target.value)}
-            placeholder="Szukaj na mapie: Rzym, Santorini, Zakopane..."
-            className="w-full bg-[#0c101c]/90 backdrop-blur-md border border-slate-700/80 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-2xl"
+            placeholder="Szukaj na mapie: Rzym, Santorini, Tatry..."
+            className="w-full bg-[#0c101c]/90 backdrop-blur-md border border-slate-700/80 rounded-2xl pl-10 pr-4 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-2xl"
           />
         </form>
+
+        {/* Przycisk DODAJ ZDJĘCIA / KATALOG na mapie */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowAddMenu(!showAddMenu)}
+            className="px-3 py-2 rounded-2xl bg-gradient-to-r from-amber-500 to-emerald-500 hover:brightness-110 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-xl transition-all cursor-pointer whitespace-nowrap"
+            title="Dodaj zdjęcia, cały folder lub kolekcję"
+          >
+            <FolderPlus className="w-3.5 h-3.5" />
+            <span>Dodaj zdjęcia / katalog</span>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAddMenu ? 'rotate-180' : ''}`} />
+          </button>
+
+          {/* Menu rozwijane dodawania zdjęć */}
+          {showAddMenu && (
+            <div 
+              onMouseLeave={() => setShowAddMenu(false)}
+              className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1.5 w-64 bg-[#0c111e]/95 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl p-2 space-y-1 text-xs text-slate-200 z-50 animate-in fade-in"
+            >
+              <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                Opcje dodawania do mapy:
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddMenu(false);
+                  onOpenImport?.(undefined, 'files');
+                }}
+                className="w-full px-2.5 py-2 rounded-xl text-left hover:bg-slate-800 flex items-center gap-2.5 transition-colors cursor-pointer"
+              >
+                <Upload className="w-4 h-4 text-amber-400" />
+                <div>
+                  <div className="font-semibold text-white">Wybierz pliki ze zdjęciami</div>
+                  <div className="text-[10px] text-slate-400">JPG, PNG, WebP z odczytem EXIF</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddMenu(false);
+                  onOpenImport?.(undefined, 'folder');
+                }}
+                className="w-full px-2.5 py-2 rounded-xl text-left hover:bg-slate-800 flex items-center gap-2.5 transition-colors cursor-pointer"
+              >
+                <FolderPlus className="w-4 h-4 text-emerald-400" />
+                <div>
+                  <div className="font-semibold text-white">Wybierz cały katalog / folder</div>
+                  <div className="text-[10px] text-slate-400">Wraz ze strukturą podkatalogów</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  setShowAddMenu(false);
+                  try {
+                    const res = await readImageFromClipboard();
+                    if (res) {
+                      onDropPhotosOnMap?.([res.file], 54.352, 18.6466);
+                      onShowToast?.('Pomyślnie dodano obraz ze schowka systemowego!', 'success');
+                    } else {
+                      onOpenImport?.(undefined, 'clipboard');
+                    }
+                  } catch {
+                    onOpenImport?.(undefined, 'clipboard');
+                  }
+                }}
+                className="w-full px-2.5 py-2 rounded-xl text-left hover:bg-slate-800 flex items-center gap-2.5 transition-colors cursor-pointer"
+              >
+                <Clipboard className="w-4 h-4 text-indigo-400" />
+                <div>
+                  <div className="font-semibold text-white">Wklej ze schowka (Ctrl+V)</div>
+                  <div className="text-[10px] text-slate-400">Zrzut ekranu lub obrazek</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddMenu(false);
+                  onOpenImport?.(undefined, 'packs');
+                }}
+                className="w-full px-2.5 py-2 rounded-xl text-left hover:bg-slate-800 flex items-center gap-2.5 transition-colors cursor-pointer"
+              >
+                <Package className="w-4 h-4 text-cyan-400" />
+                <div>
+                  <div className="font-semibold text-white">Gotowe pakiety podróżnicze</div>
+                  <div className="text-[10px] text-slate-400">Tatry, Bałtyk, Rzym, Paryż, Dalmacja</div>
+                </div>
+              </button>
+
+              <div className="p-2 border-t border-slate-800 mt-1 text-[11px] text-amber-300/90 flex items-start gap-1.5 bg-amber-500/10 rounded-xl">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Wskazówka:</strong> Kliknij prawym przyciskiem myszy w wybranym miejscu na mapie, aby dodać zdjęcia dokładnie w tym punkcie!
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {searchFeedback && (
+          <div className="mt-1.5 px-3 py-1.5 bg-red-950/90 border border-red-500/40 text-red-200 text-xs rounded-xl shadow-lg backdrop-blur-md animate-in fade-in">
+            {searchFeedback}
+          </div>
+        )}
       </div>
 
-      {/* Pływające kontrolki mapy po prawej stronie (dokładnie jak w Zrzucie 3) */}
-      <div className="absolute top-4 right-4 z-10 flex flex-col items-center gap-2">
+      {/* Pływający pasek bezpośredniego wyboru stylu mapy */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 hidden lg:flex items-center gap-1 bg-[#0c101c]/90 backdrop-blur-md border border-slate-700/80 p-1 rounded-2xl shadow-2xl">
+        {MAP_STYLES.map(style => {
+          const Icon = style.icon;
+          const isActive = tileProvider === style.id || (style.id === 'voyager' && tileProvider === 'osm');
+          return (
+            <button
+              key={style.id}
+              onClick={() => onChangeTileProvider(style.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                isActive
+                  ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+              }`}
+              title={`${style.label} (${style.sub})`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>{style.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Pływające kontrolki mapy po prawej stronie */}
+      <div className="absolute top-3 right-3 z-10 flex flex-col items-center gap-2">
         {/* Grupa Zoom: Plus / Minus */}
         <div className="bg-[#0c101c]/90 backdrop-blur-md border border-slate-700/80 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
           <button
             onClick={zoomIn}
-            className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 border-b border-slate-700/70 transition-colors cursor-pointer"
+            className="w-9 h-9 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 border-b border-slate-700/70 transition-colors cursor-pointer"
             title="Przybliż (+)"
           >
             <Plus className="w-4 h-4" />
           </button>
           <button
             onClick={zoomOut}
-            className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            className="w-9 h-9 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
             title="Oddal (—)"
           >
             <Minus className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Warstwy mapy */}
+        {/* Warstwy mapy - rozwijane menu */}
         <div className="relative">
           <button
             onClick={() => setShowLayerMenu(!showLayerMenu)}
-            className="w-10 h-10 rounded-2xl bg-[#0c101c]/90 backdrop-blur-md border border-slate-700/80 text-slate-300 hover:text-amber-400 flex items-center justify-center shadow-2xl transition-all cursor-pointer"
-            title="Zmień styl mapy"
+            className="w-9 h-9 rounded-2xl bg-[#0c101c]/90 backdrop-blur-md border border-slate-700/80 text-slate-300 hover:text-amber-400 flex items-center justify-center shadow-2xl transition-all cursor-pointer"
+            title="Wybierz styl mapy"
           >
             <Layers className="w-4 h-4" />
           </button>
@@ -340,48 +699,42 @@ export const MapView: React.FC<MapViewProps> = ({
           {showLayerMenu && (
             <div
               onMouseLeave={() => setShowLayerMenu(false)}
-              className="absolute right-12 top-0 bg-[#0c101c] border border-slate-700 rounded-2xl shadow-2xl p-2 w-44 space-y-1 text-xs text-slate-200 z-50 animate-in fade-in"
+              className="absolute right-11 top-0 bg-[#0c101c] border border-slate-700 rounded-2xl shadow-2xl p-2 w-52 space-y-1 text-xs text-slate-200 z-50 animate-in fade-in"
             >
-              <button
-                onClick={() => { onChangeTileProvider('dark'); setShowLayerMenu(false); }}
-                className={`w-full px-2.5 py-1.5 rounded-xl text-left transition-colors ${
-                  tileProvider === 'dark' ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-800'
-                }`}
-              >
-                CartoDB Noc (Dark)
-              </button>
-              <button
-                onClick={() => { onChangeTileProvider('satellite'); setShowLayerMenu(false); }}
-                className={`w-full px-2.5 py-1.5 rounded-xl text-left transition-colors ${
-                  tileProvider === 'satellite' ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-800'
-                }`}
-              >
-                Esri Satelita
-              </button>
-              <button
-                onClick={() => { onChangeTileProvider('light'); setShowLayerMenu(false); }}
-                className={`w-full px-2.5 py-1.5 rounded-xl text-left transition-colors ${
-                  tileProvider === 'light' ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-800'
-                }`}
-              >
-                CartoDB Dzień (Light)
-              </button>
-              <button
-                onClick={() => { onChangeTileProvider('osm'); setShowLayerMenu(false); }}
-                className={`w-full px-2.5 py-1.5 rounded-xl text-left transition-colors ${
-                  tileProvider === 'osm' ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-800'
-                }`}
-              >
-                OpenStreetMap
-              </button>
+              <div className="text-[10px] text-slate-400 font-bold px-2 py-1 uppercase tracking-wider">Styl i podkład mapy:</div>
+              {MAP_STYLES.map(style => {
+                const Icon = style.icon;
+                const isActive = tileProvider === style.id || (style.id === 'voyager' && tileProvider === 'osm');
+                return (
+                  <button
+                    key={style.id}
+                    onClick={() => {
+                      onChangeTileProvider(style.id);
+                      setShowLayerMenu(false);
+                    }}
+                    className={`w-full px-2.5 py-2 rounded-xl text-left transition-colors flex items-center justify-between cursor-pointer ${
+                      isActive ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon className="w-3.5 h-3.5" />
+                      <div>
+                        <div>{style.label}</div>
+                        <div className={`text-[10px] ${isActive ? 'text-slate-900' : 'text-slate-400'}`}>{style.sub}</div>
+                      </div>
+                    </div>
+                    {isActive && <Check className="w-3.5 h-3.5" />}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* Reset do kuli ziemskiej */}
+        {/* Reset do widoku świata */}
         <button
           onClick={resetToWorld}
-          className="w-10 h-10 rounded-2xl bg-[#0c101c]/90 backdrop-blur-md border border-slate-700/80 text-slate-300 hover:text-white flex items-center justify-center shadow-2xl transition-all cursor-pointer"
+          className="w-9 h-9 rounded-2xl bg-[#0c101c]/90 backdrop-blur-md border border-slate-700/80 text-slate-300 hover:text-white flex items-center justify-center shadow-2xl transition-all cursor-pointer"
           title="Widok na cały świat"
         >
           <Globe className="w-4 h-4" />
@@ -390,7 +743,7 @@ export const MapView: React.FC<MapViewProps> = ({
         {/* Centrowanie na zdjęciach */}
         <button
           onClick={centerOnPhotos}
-          className="w-10 h-10 rounded-2xl bg-[#0c101c]/90 backdrop-blur-md border border-slate-700/80 text-slate-300 hover:text-emerald-400 flex items-center justify-center shadow-2xl transition-all cursor-pointer"
+          className="w-9 h-9 rounded-2xl bg-[#0c101c]/90 backdrop-blur-md border border-slate-700/80 text-slate-300 hover:text-emerald-400 flex items-center justify-center shadow-2xl transition-all cursor-pointer"
           title="Wycentruj na Twoich zdjęciach"
         >
           <Locate className="w-4 h-4" />
@@ -399,20 +752,209 @@ export const MapView: React.FC<MapViewProps> = ({
         {/* Pokaz slajdów */}
         <button
           onClick={() => onStartSlideshow(visiblePhotos)}
-          className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-emerald-500 text-slate-950 flex items-center justify-center shadow-2xl shadow-amber-500/30 transition-all hover:scale-105 cursor-pointer font-bold"
+          className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-amber-500 to-emerald-500 text-slate-950 flex items-center justify-center shadow-2xl shadow-amber-500/30 transition-all hover:scale-105 cursor-pointer font-bold"
           title="Uruchom pokaz slajdów z widocznych zdjęć"
         >
           <Play className="w-4 h-4 fill-current ml-0.5" />
         </button>
       </div>
 
-      {/* Pływający dolny pasek podsumowania mapy */}
-      <div className="absolute bottom-4 left-4 z-10 flex items-center gap-2 bg-[#0c101c]/90 backdrop-blur-md border border-slate-700/80 px-3.5 py-2 rounded-2xl shadow-2xl text-xs">
+      {/* MENU KONTEKSTOWE PRAWEGO PRZYCISKU MYSZY (Right Click Context Menu) */}
+      {contextMenu && (
+        <div
+          style={{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }}
+          className="absolute z-50 w-72 bg-[#0b101d]/95 backdrop-blur-2xl border border-slate-700/90 rounded-2xl shadow-2xl p-2 space-y-1 text-xs text-slate-200 animate-in fade-in zoom-in-95 select-none"
+        >
+          {/* Nagłówek lokalizacji */}
+          <div className="p-2 border-b border-slate-800/80 mb-1 bg-slate-950/60 rounded-xl">
+            <div className="flex items-center justify-between text-amber-400 font-bold">
+              <span className="flex items-center gap-1.5 truncate">
+                <MapPin className="w-3.5 h-3.5 shrink-0" />
+                {contextMenu.guess.cityName}
+              </span>
+              <button
+                type="button"
+                onClick={() => setContextMenu(null)}
+                className="text-slate-400 hover:text-white p-0.5 rounded cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="text-[11px] text-slate-400 font-mono mt-0.5 flex items-center justify-between">
+              <span>{formatCoordinates(contextMenu.lat, contextMenu.lng)}</span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const coordStr = `${contextMenu.lat.toFixed(5)}, ${contextMenu.lng.toFixed(5)}`;
+                  if (navigator.clipboard) navigator.clipboard.writeText(coordStr).catch(() => {});
+                  onShowToast?.(`Skopiowano współrzędne: ${coordStr}`, 'success');
+                  setContextMenu(null);
+                }}
+                className="text-amber-400 hover:text-amber-300 p-0.5 rounded cursor-pointer"
+                title="Kopiuj współrzędne"
+              >
+                <Copy className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+
+          {/* Opcja 1: Dodaj zdjęcia w tym punkcie */}
+          <button
+            type="button"
+            onClick={() => {
+              onOpenImport?.({
+                lat: contextMenu.lat,
+                lng: contextMenu.lng,
+                cityName: contextMenu.guess.cityName,
+                countryName: contextMenu.guess.countryName,
+                countryCode: contextMenu.guess.countryCode,
+              }, 'files');
+              setContextMenu(null);
+            }}
+            className="w-full px-2.5 py-2 rounded-xl text-left hover:bg-amber-500 hover:text-slate-950 font-semibold flex items-center gap-2.5 transition-colors cursor-pointer group"
+          >
+            <Upload className="w-4 h-4 text-amber-400 group-hover:text-slate-950" />
+            <div>
+              <div className="leading-tight">Dodaj zdjęcia w tym miejscu</div>
+              <div className="text-[10px] opacity-75 font-normal">Wybierz pliki ze zdjęciami z komputera</div>
+            </div>
+          </button>
+
+          {/* Opcja 2: Dodaj cały katalog / folder w tym miejscu */}
+          <button
+            type="button"
+            onClick={() => {
+              onOpenImport?.({
+                lat: contextMenu.lat,
+                lng: contextMenu.lng,
+                cityName: contextMenu.guess.cityName,
+                countryName: contextMenu.guess.countryName,
+                countryCode: contextMenu.guess.countryCode,
+              }, 'folder');
+              setContextMenu(null);
+            }}
+            className="w-full px-2.5 py-2 rounded-xl text-left hover:bg-amber-500 hover:text-slate-950 font-semibold flex items-center gap-2.5 transition-colors cursor-pointer group"
+          >
+            <FolderPlus className="w-4 h-4 text-emerald-400 group-hover:text-slate-950" />
+            <div>
+              <div className="leading-tight">Dodaj cały katalog / folder tutaj</div>
+              <div className="text-[10px] opacity-75 font-normal">Zaimportuj wszystkie pliki z podkatalogami</div>
+            </div>
+          </button>
+
+          {/* Opcja 3: Wklej ze schowka (Ctrl+V) */}
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const res = await readImageFromClipboard();
+                if (res) {
+                  onDropPhotosOnMap?.([res.file], contextMenu.lat, contextMenu.lng);
+                  onShowToast?.('Pomyślnie dodano obraz ze schowka w wybranym punkcie!', 'success');
+                } else {
+                  onOpenImport?.({
+                    lat: contextMenu.lat,
+                    lng: contextMenu.lng,
+                    cityName: contextMenu.guess.cityName,
+                    countryName: contextMenu.guess.countryName,
+                    countryCode: contextMenu.guess.countryCode,
+                  }, 'clipboard');
+                }
+              } catch {
+                onOpenImport?.({
+                  lat: contextMenu.lat,
+                  lng: contextMenu.lng,
+                  cityName: contextMenu.guess.cityName,
+                  countryName: contextMenu.guess.countryName,
+                  countryCode: contextMenu.guess.countryCode,
+                }, 'clipboard');
+              }
+              setContextMenu(null);
+            }}
+            className="w-full px-2.5 py-2 rounded-xl text-left hover:bg-amber-500 hover:text-slate-950 font-semibold flex items-center gap-2.5 transition-colors cursor-pointer group"
+          >
+            <Clipboard className="w-4 h-4 text-indigo-400 group-hover:text-slate-950" />
+            <div>
+              <div className="leading-tight">Wklej ze schowka (Ctrl+V)</div>
+              <div className="text-[10px] opacity-75 font-normal">Zrzut ekranu lub skopiowana grafika</div>
+            </div>
+          </button>
+
+          {/* Opcja 4: Gotowa paczka podróżnicza */}
+          <button
+            type="button"
+            onClick={() => {
+              onOpenImport?.({
+                lat: contextMenu.lat,
+                lng: contextMenu.lng,
+                cityName: contextMenu.guess.cityName,
+                countryName: contextMenu.guess.countryName,
+                countryCode: contextMenu.guess.countryCode,
+              }, 'packs');
+              setContextMenu(null);
+            }}
+            className="w-full px-2.5 py-2 rounded-xl text-left hover:bg-amber-500 hover:text-slate-950 font-semibold flex items-center gap-2.5 transition-colors cursor-pointer group"
+          >
+            <Package className="w-4 h-4 text-cyan-400 group-hover:text-slate-950" />
+            <div>
+              <div className="leading-tight">Dodaj gotową paczkę podróżniczą</div>
+              <div className="text-[10px] opacity-75 font-normal">Tatry, Bałtyk, Rzym, Paryż, Chorwacja</div>
+            </div>
+          </button>
+
+          {/* Opcja 5: Link URL */}
+          <button
+            type="button"
+            onClick={() => {
+              onOpenImport?.({
+                lat: contextMenu.lat,
+                lng: contextMenu.lng,
+                cityName: contextMenu.guess.cityName,
+                countryName: contextMenu.guess.countryName,
+                countryCode: contextMenu.guess.countryCode,
+              }, 'url');
+              setContextMenu(null);
+            }}
+            className="w-full px-2.5 py-2 rounded-xl text-left hover:bg-amber-500 hover:text-slate-950 font-semibold flex items-center gap-2.5 transition-colors cursor-pointer group"
+          >
+            <Link className="w-4 h-4 text-violet-400 group-hover:text-slate-950" />
+            <div>
+              <div className="leading-tight">Dodaj z linku URL...</div>
+              <div className="text-[10px] opacity-75 font-normal">Zdjęcie z sieci lub serwera domowego</div>
+            </div>
+          </button>
+
+          <div className="border-t border-slate-800/80 my-1 pt-1">
+            {/* Opcja 6: Przybliż i wycentruj tutaj */}
+            <button
+              type="button"
+              onClick={() => {
+                mapInstanceRef.current?.flyTo([contextMenu.lat, contextMenu.lng], 10, { duration: 1.2 });
+                setContextMenu(null);
+              }}
+              className="w-full px-2.5 py-1.5 rounded-lg text-left hover:bg-slate-800 text-slate-300 hover:text-white flex items-center gap-2 transition-colors cursor-pointer"
+            >
+              <Locate className="w-3.5 h-3.5 text-amber-400" />
+              <span>Przybliż i wyśrodkuj na tym punkcie</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Pływający dolny pasek podsumowania mapy z podpowiedzią prawego przycisku */}
+      <div className="absolute bottom-3 left-3 z-10 flex flex-wrap items-center gap-2 bg-[#0c101c]/90 backdrop-blur-md border border-slate-700/80 px-3.5 py-1.5 rounded-2xl shadow-2xl text-xs">
         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
         <span className="text-slate-300 font-medium">Widok mapy:</span>
         <span className="font-bold text-white">{visiblePhotos.length} wspomnień</span>
-        <span className="text-slate-500">|</span>
-        <span className="text-slate-400">{selectedTripId ? trips.find(t => t.id === selectedTripId)?.title : 'Wszystkie wyprawy'}</span>
+        <span className="text-slate-500 hidden sm:inline">|</span>
+        <span className="text-slate-400 truncate max-w-[150px] sm:max-w-none hidden sm:inline">
+          {selectedTripId ? trips.find(t => t.id === selectedTripId)?.title : 'Wszystkie wyprawy'}
+        </span>
+        <span className="text-slate-500 hidden md:inline">|</span>
+        <span className="text-amber-400/90 text-[11px] hidden md:inline-flex items-center gap-1 font-medium">
+          <Sparkles className="w-3 h-3" /> Kliknij PPM na mapie, aby dodać zdjęcia lub katalog w danym punkcie
+        </span>
       </div>
     </div>
   );

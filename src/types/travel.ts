@@ -64,7 +64,7 @@ export interface TravelAlbum {
   smartFilter?: 'favorites' | 'nature' | 'family' | 'food' | 'recent';
 }
 
-export type MapTileProvider = 'dark' | 'satellite' | 'osm' | 'light';
+export type MapTileProvider = 'dark' | 'satellite' | 'voyager' | 'light' | 'osm' | 'streets';
 
 export interface OfflineMapPackage {
   id: string;

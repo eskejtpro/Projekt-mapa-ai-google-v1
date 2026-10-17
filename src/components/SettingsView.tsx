@@ -43,6 +43,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [activeCategory, setActiveCategory] = useState<string>('appearance');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [saveBanner, setSaveBanner] = useState<boolean>(false);
+  const [folderStatusMsg, setFolderStatusMsg] = useState<string | null>(null);
 
   const update = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     const updated = { ...settings, [key]: value };
@@ -349,7 +350,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 >
                   <option value="dark">CartoDB Dark Matter (Nocny luksusowy)</option>
                   <option value="satellite">Esri World Imagery (Fotorealistyczna satelita)</option>
-                  <option value="light">CartoDB Positron (Minimalistyczny jasny)</option>
+                  <option value="voyager">OpenStreetMap Voyager (Kolorowy teren i ulice)</option>
+                  <option value="streets">Esri World Street Map (Klasyczna mapa drogowa)</option>
+                  <option value="light">CartoDB Positron (Minimalistyczny jasny dzień)</option>
                   <option value="osm">OpenStreetMap Standard</option>
                 </select>
               </div>
@@ -454,12 +457,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono text-xs"
                   />
                   <button
-                    onClick={() => alert(`Folder roboczy: ${settings.windowsPhotosPath}`)}
-                    className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs"
+                    onClick={() => {
+                      if (navigator.clipboard) {
+                        navigator.clipboard.writeText(settings.windowsPhotosPath).catch(() => {});
+                      }
+                      setFolderStatusMsg(`Skopiowano ścieżkę do schowka: ${settings.windowsPhotosPath}`);
+                      setTimeout(() => setFolderStatusMsg(null), 3500);
+                    }}
+                    className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs cursor-pointer transition-colors"
                   >
-                    Przeglądaj
+                    Kopiuj ścieżkę
                   </button>
                 </div>
+                {folderStatusMsg && (
+                  <div className="mt-1.5 text-[11px] text-emerald-400 font-mono bg-emerald-950/40 border border-emerald-800/50 p-2 rounded-lg">
+                    ✓ {folderStatusMsg}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-between border-t border-slate-800 pt-3">

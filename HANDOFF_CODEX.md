@@ -24,6 +24,11 @@ Projekt został rozbudowany w oparciu o trzy kluczowe wzorce interfejsu przesła
 4. **Narzędzia analityczne i porządkowe**:
    - `/src/components/StatsView.tsx` (Paszport podróżnika, dystans km, odwiedzone kraje i miasta).
    - `/src/components/DuplicatesView.tsx` (Wykrywanie i usuwanie powtarzających się fotografii).
+5. **Menu Kontekstowe Mapy (PPM) & Wielofunkcyjny Import Zdjęć**:
+   - `/src/components/MapView.tsx` (obsługa prawego przycisku myszy, geokodowanie współrzędnych, dodawanie zdjęć/katalogu w klikniętym punkcie, Drag & Drop na mapę).
+   - `/src/components/ImportModal.tsx` (5 zakładek: pliki zdjęć, cały katalog/folder z podkatalogami, schowek systemowy Ctrl+V, URL grafiki, gotowe pakiety podróżnicze, szybki wybór miast).
+   - `/src/services/geoService.ts` (odwrotne geokodowanie, odczyt obrazu ze schowka `readImageFromClipboard`, lokalna baza miast).
+   - `/src/data/travelPacks.ts` (gotowe pakiety podróżnicze: Tatry, Bałtyk, Cinque Terre, Paryż, Dalmacja).
 
 ---
 
