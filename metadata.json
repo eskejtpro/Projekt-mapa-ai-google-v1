@@ -1,0 +1,6 @@
+{
+  "name": "Android Architecture & Advisory Studio",
+  "description": "Profesjonalne środowisko starszego architekta Android do audytu kodu, oceny architektury Jetpack Compose, MVVM, Room, DataStore i zarządzania zadaniami projektu.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
