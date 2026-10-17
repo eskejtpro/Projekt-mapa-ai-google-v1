@@ -1,6 +1,7 @@
 # TASKS.md - Rejestr Zadań i Implementacji Projektu „Prezent Mapy”
 
 ## Iteracja środowiska E0 (2026-10-17)
+REQ-10: IN_PROGRESS — podłączono podstawowe ustawienia pokazu/EXIF/galerii/autocentrowania; smoke potwierdza ustawienia galerii i pokazu w rendererze. Pozostała część preferencji, hardware acceleration/backup i testy wyglądu nadal otwarte.
 REQ-12 pilot: IN_REVIEW — HTTP+QR+IPC i zmiana/pauza pokazu w Electron PASS; telefon fizyczny i casting nadal otwarte. REQ-06: poprawiono kryterium identycznej treści i dodano regresję dla tej samej nazwy/obcego hasha. REQ-04: atomowy import zdjęć+albumu i obsługa błędów FileReader wdrożone; rzeczywiste EXIF/D&D/folder nadal wymagają testów.
 F11: instalacja/start/deinstalacja NSIS w wydzielonym katalogu PASS. Pozostają: przebudowa po TV discovery, test portable, aktualizacja i zachowanie biblioteki oraz podpis wydawcy.
 REQ-TV-LAN: IN_PROGRESS — wyszukiwanie DLNA/SSDP w otwartym panelu wdrożone, test parsera PASS, skan LAN 0 odpowiedzi; test fizycznego TV/casting/pilot pozostają otwarte. PREZ-018: smoke lokalnego renderu MBTiles przy blokadzie HTTP(S) PASS (24 kafelki syntetyczne); prawdziwe regionalne pakiety i test importu dialogiem otwarte.

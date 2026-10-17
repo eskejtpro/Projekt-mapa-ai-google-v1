@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import L from 'leaflet';
-import { TravelPhoto, TravelTrip, MapTileProvider } from '../types/travel';
+import { TravelPhoto, TravelTrip, TravelAlbum, MapTileProvider } from '../types/travel';
 import { 
   Layers, 
   MapPin, 
@@ -32,6 +32,7 @@ import { formatCoordinates, guessNearestLocation, reverseGeocodeOnline, GeoGuess
 interface MapViewProps {
   photos: TravelPhoto[];
   trips: TravelTrip[];
+  albums: TravelAlbum[];
   selectedTripId: string | null;
   onSelectPhoto: (photo: TravelPhoto) => void;
   onStartSlideshow: (filteredPhotos?: TravelPhoto[]) => void;
@@ -39,6 +40,7 @@ interface MapViewProps {
   onChangeTileProvider: (provider: MapTileProvider) => void;
   showAnimatedRoutes?: boolean;
   offlineMode?: boolean;
+  autoCenterOnPhotos?: boolean;
   onOpenImport?: (location?: InitialImportLocation, mode?: ImportTabMode) => void;
   onShowToast?: (message: string, type: 'info' | 'success' | 'warning') => void;
   onDropPhotosOnMap?: (files: File[], lat: number, lng: number) => void;
@@ -100,6 +102,7 @@ const MAP_STYLES: { id: MapTileProvider; label: string; sub: string; icon: any }
 export const MapView: React.FC<MapViewProps> = ({
   photos,
   trips,
+  albums,
   selectedTripId,
   onSelectPhoto,
   onStartSlideshow,
@@ -107,6 +110,7 @@ export const MapView: React.FC<MapViewProps> = ({
   onChangeTileProvider,
   showAnimatedRoutes = true,
   offlineMode = false,
+  autoCenterOnPhotos = true,
   onOpenImport,
   onShowToast,
   onDropPhotosOnMap,
@@ -271,19 +275,15 @@ export const MapView: React.FC<MapViewProps> = ({
   }, [tileProvider, offlineMode]);
 
   // Filtrowanie zdjęć
-  const visiblePhotos = photos.filter(photo => {
+  const visiblePhotos = useMemo(() => photos.filter(photo => {
     if (selectedTripId) {
-      if (selectedTripId === 'trip-italy-2024' && photo.location.countryCode !== 'IT') return false;
-      if (selectedTripId === 'trip-greece-2023' && photo.location.countryCode !== 'GR') return false;
-      if (selectedTripId === 'trip-poland-tatry' && photo.location.countryCode !== 'PL') return false;
-      if (selectedTripId === 'trip-japan-spring' && photo.location.countryCode !== 'JP') return false;
-      if (selectedTripId === 'trip-norway-fjords' && photo.location.countryCode !== 'NO') return false;
+      if (!albums.some(album => album.id === photo.albumId && album.tripId === selectedTripId)) return false;
     }
     if (activeCountryFilter !== 'ALL' && photo.location.countryCode !== activeCountryFilter) {
       return false;
     }
     return true;
-  });
+  }), [photos, selectedTripId, activeCountryFilter, albums]);
 
   // Renderowanie pinezek ze zdjęciami oraz tras podróży
   useEffect(() => {
@@ -408,7 +408,9 @@ export const MapView: React.FC<MapViewProps> = ({
             dashArray: '8, 8',
           });
 
-          polyline.bindTooltip(`📍 ${trip.title} (~${trip.totalDistanceKm || 500} km)`, {
+          const tripLabel = document.createElement('span');
+          tripLabel.textContent = `📍 ${trip.title} (${trip.totalDistanceKm ?? 'Brak danych'} km)`;
+          polyline.bindTooltip(tripLabel, {
             sticky: true,
             className: 'bg-slate-900 text-white text-xs border border-slate-700 px-2 py-1 rounded-lg',
           });
@@ -428,17 +430,19 @@ export const MapView: React.FC<MapViewProps> = ({
             });
 
             const stepMarker = L.marker([pt.lat, pt.lng], { icon: stepIcon });
-            stepMarker.bindTooltip(`${idx + 1}. ${pt.name}`, { direction: 'top' });
+            const pointLabel = document.createElement('span');
+            pointLabel.textContent = `${idx + 1}. ${pt.name}`;
+            stepMarker.bindTooltip(pointLabel, { direction: 'top' });
             routesLayerRef.current?.addLayer(stepMarker);
           });
         }
       });
     }
 
-    if (bounds.isValid() && visiblePhotos.length > 0 && selectedTripId) {
+    if (bounds.isValid() && visiblePhotos.length > 0 && autoCenterOnPhotos && selectedTripId) {
       mapInstanceRef.current.fitBounds(bounds, { padding: [60, 60], maxZoom: 9 });
     }
-  }, [visiblePhotos, selectedTripId, showAnimatedRoutes, trips]);
+  }, [visiblePhotos, selectedTripId, showAnimatedRoutes, trips, autoCenterOnPhotos]);
 
   // Wyszukiwanie z animowanym flyTo
   const handleMapSearch = (e: React.FormEvent) => {

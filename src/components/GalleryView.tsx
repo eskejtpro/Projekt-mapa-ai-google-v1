@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TravelPhoto, TravelAlbum, TravelTrip } from '../types/travel';
 import { 
   Heart, 
@@ -32,6 +32,8 @@ interface GalleryViewProps {
   selectedAlbumId: string | null;
   density?: 'default' | 'compact' | 'large';
   showExifBadges?: boolean;
+  defaultSortBy?: 'date-desc' | 'date-asc' | 'title' | 'location';
+  lazyLoadImages?: boolean;
 }
 
 export const GalleryView: React.FC<GalleryViewProps> = ({
@@ -46,13 +48,16 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   selectedAlbumId,
   density = 'default',
   showExifBadges = true,
+  defaultSortBy = 'date-desc',
+  lazyLoadImages = true,
 }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'timeline' | 'albums'>('grid');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [onlyFavorites, setOnlyFavorites] = useState<boolean>(false);
   const [countryFilter, setCountryFilter] = useState<string>('ALL');
   const [yearFilter, setYearFilter] = useState<string>('ALL');
-  const [sortBy, setSortBy] = useState<'date-desc' | 'date-asc' | 'title'>('date-desc');
+  const [sortBy, setSortBy] = useState<'date-desc' | 'date-asc' | 'title' | 'location'>(defaultSortBy);
+  useEffect(() => { setSortBy(defaultSortBy); }, [defaultSortBy]);
 
   const availableCountries = Array.from(new Set(photos.map(p => p.location.countryName))).sort();
   const availableYears = Array.from(new Set(photos.map(p => p.date.substring(0, 4)))).sort().reverse();
@@ -81,6 +86,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
     .sort((a, b) => {
       if (sortBy === 'date-desc') return b.date.localeCompare(a.date);
       if (sortBy === 'date-asc') return a.date.localeCompare(b.date);
+      if (sortBy === 'location') return a.location.cityName.localeCompare(b.location.cityName, 'pl');
       return a.title.localeCompare(b.title);
     });
 
@@ -157,6 +163,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
             <option value="date-desc">Najnowsze</option>
             <option value="date-asc">Najstarsze</option>
             <option value="title">Tytuł A-Z</option>
+            <option value="location">Miejscowość A-Z</option>
           </select>
 
           {/* Ulubione */}
@@ -250,7 +257,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                         <img
                           src={photo.thumbnailUrl || photo.url}
                           alt={photo.title}
-                          loading="lazy"
+                          loading={lazyLoadImages ? 'lazy' : 'eager'}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
 

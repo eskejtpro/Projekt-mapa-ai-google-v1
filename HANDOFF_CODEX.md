@@ -3,6 +3,7 @@
 > Aktualny handoff sesji: PROGRESS.md / SESSION HANDOFF. Aktualne funkcje: docs/FEATURE_MATRIX.md; testy: TESTING.md. Poniższy dokument to historyczne przekazanie i projekt architektury AI Studio; jego deklaracje 100%, 4K, offline i bezpłatnych kafelków nie są świeżymi dowodami. Nie pobieraj masowo kafelków bez sprawdzenia licencji dostawcy.
 
 **Projekt**: Prezent Mapy  
+Ustawienia podstawowe podłączone; smoke preferences+offline+remote PASS. Kolejne otwarte obszary: pełny schemat .prezent, pozostałe preferencje, testy importu plików/EXIF, casting fizycznego TV i pakiety aktualnej wersji.
 Pilot QR/HTTP działa w teście Electron: pauza i zmiana slajdu PASS. 32 testy + verify PASS; zdjęcia+album importują się atomowo, PiP lokalne. Fizyczny telefon/TV/casting i aktualne pakiety wymagają dalszej pracy. Serwer uruchamia użytkownik w panelu TV, token nie jest zapisywany w raportach.
 NSIS: test instalacji/startu offline/deinstalacji PASS w katalogu testowym. Pakiet poprzedza TV discovery; aktualizację/zachowanie danych i portable trzeba sprawdzić oddzielnie. Następny zakres to pilot TV, pełna walidacja/duplikaty i pozostałe kryteria macierzy.
 Kontynuacja: offline smoke renderuje 24 lokalne kafelki; dodano tv-discovery.cjs, parser i listę odświeżaną w panelu. Rzeczywisty skan LAN: 0 odpowiedzi, casting i pilot nadal otwarte. Trwający build package:windows uruchomiono przed zmianami TV; jego pakiety wymagają późniejszej przebudowy przed wydaniem.

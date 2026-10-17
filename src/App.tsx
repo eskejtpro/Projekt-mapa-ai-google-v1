@@ -362,6 +362,7 @@ export default function App() {
                 <div className="flex-1 flex flex-col space-y-2.5 h-full min-h-0">
                   <MapView
                     photos={photos}
+                    albums={albums}
                     trips={trips}
                     selectedTripId={selectedTripId}
                     onSelectPhoto={(photo) => setSelectedPhotoForDetail(photo)}
@@ -370,6 +371,7 @@ export default function App() {
                     onChangeTileProvider={(p) => handleUpdateSettings({ ...settings, defaultMapLayer: p })}
                     showAnimatedRoutes={settings.showAnimatedRoutes}
                     offlineMode={settings.offlineSimulationMode}
+                    autoCenterOnPhotos={settings.autoCenterOnPhotos}
                     onOpenImport={handleOpenImportWithLocation}
                     onShowToast={showToast}
                     onDropPhotosOnMap={handleDropPhotosOnMap}
@@ -433,6 +435,8 @@ export default function App() {
                   selectedAlbumId={selectedAlbumId}
                   density={settings.galleryDensity}
                   showExifBadges={settings.showExifBadges}
+                  defaultSortBy={settings.defaultSortBy}
+                  lazyLoadImages={settings.lazyLoadImages}
                 />
               )}
 
@@ -818,6 +822,7 @@ export default function App() {
       />
 
       <ImportModal
+        readExif={settings.readExifOnImport}
         isOpen={isImportOpen}
         onClose={() => {
           setIsImportOpen(false);
@@ -837,6 +842,7 @@ export default function App() {
         onClose={() => setIsSlideshowOpen(false)}
         photos={slideshowPhotos}
         initialIndex={slideshowStartIndex}
+        settings={settings}
       />
 
       <TvModeModal

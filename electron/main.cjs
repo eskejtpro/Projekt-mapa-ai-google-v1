@@ -40,6 +40,9 @@ app.whenReady().then(async () => {
   });
   const database = new LibraryDatabase(path.join(app.getPath('userData'), 'library.sqlite'));
   if (offlineSmoke) database.set('prezent_app_settings_v2', JSON.stringify({ offlineSimulationMode: true }));
+  if (process.argv.includes('--smoke-test') && process.argv.includes('--preferences-smoke-test')) {
+    database.set('prezent_app_settings_v2', JSON.stringify({ ...JSON.parse(database.get('prezent_app_settings_v2') || '{}'), slideshowInterval: 12, kenBurnsEnabled: false, ambientSoundEnabled: false, showMiniMapPip: false, defaultSortBy: 'title', lazyLoadImages: false }));
+  }
   let offlineNetworkBlocked = JSON.parse(database.get('prezent_app_settings_v2') || '{}').offlineSimulationMode === true;
   session.defaultSession.webRequest.onBeforeRequest({ urls: ['http://*/*', 'https://*/*'] }, (_details, callback) => callback({ cancel: offlineNetworkBlocked }));
   app.once('will-quit', () => database.close());
@@ -126,6 +129,9 @@ app.whenReady().then(async () => {
   window.once('ready-to-show', () => window.show());
   await window.loadURL(page);
   if (process.argv.includes('--smoke-test')) {
+    const reportsDirectory = path.join(process.cwd(), 'reports');
+    mkdirSync(reportsDirectory, { recursive: true });
+    writeFileSync(path.join(reportsDirectory, 'desktop-smoke.json'), JSON.stringify({ passed: false, status: 'RUNNING', date: new Date().toISOString() }));
     try {
       await window.webContents.executeJavaScript(`new Promise(resolve => { const started = Date.now(); const timer = setInterval(() => { if ((document.querySelectorAll('.leaflet-tile-loaded').length > 0 && document.body.innerText.includes('11')) || Date.now() - started > 10000) { clearInterval(timer); resolve(true); } }, 100); })`);
       const state = await window.webContents.executeJavaScript(`({ title: document.title, text: document.body.innerText.length, bridge: typeof window.electronAPI?.minimize, node: typeof window.require })`);
@@ -138,7 +144,15 @@ app.whenReady().then(async () => {
       if (!state.invalidKeyRejected || !state.sqliteReadable) throw new Error('Nieprawidłowa integracja SQLite');
       if (state.text < 100 || state.bridge !== 'function' || state.node !== 'undefined') throw new Error('Nieprawidłowy renderer lub izolacja');
       if (process.argv.includes('--remote-smoke-test')) {
-        const waitFor = expression => window.webContents.executeJavaScript(`new Promise((resolve, reject) => { const started = Date.now(); const timer = setInterval(() => { if (${expression}) { clearInterval(timer); resolve(true); } else if (Date.now() - started > 6000) { clearInterval(timer); reject(new Error('Timeout testu pilota')); } }, 50); })`);
+        const waitFor = async expression => {
+          try { return await window.webContents.executeJavaScript(`new Promise((resolve, reject) => { const started = Date.now(); const timer = setInterval(() => { if (${expression}) { clearInterval(timer); resolve(true); } else if (Date.now() - started > 6000) { clearInterval(timer); reject(new Error('Timeout testu pilota')); } }, 50); })`); }
+          catch { throw new Error(`Niespełniony warunek runtime: ${expression.slice(0, 160)}`); }
+        };
+        if (process.argv.includes('--preferences-smoke-test')) {
+          await window.webContents.executeJavaScript(`document.querySelector('button[title="Wszystkie Zdjęcia & Galeria"]').click()`);
+          await waitFor(`Array.from(document.querySelectorAll('select')).some(select => select.value === 'title') && document.querySelector('img[loading="eager"]')`);
+          state.galleryPreferencesApplied = true;
+        }
         await window.webContents.executeJavaScript(`document.querySelector('button[title="Tryb TV / Salon 4K"]').click()`);
         await waitFor(`Array.from(document.querySelectorAll('button')).some(button => button.textContent.includes('Włącz pilota z telefonu'))`);
         await window.webContents.executeJavaScript(`Array.from(document.querySelectorAll('button')).find(button => button.textContent.includes('Włącz pilota z telefonu')).click()`);
@@ -146,25 +160,27 @@ app.whenReady().then(async () => {
         const remoteUrl = new URL(await window.webContents.executeJavaScript(`document.querySelector('input[aria-label="Adres parowania pilota"]').value`));
         await waitFor(`document.querySelector('img[alt="Kod QR parowania pilota"]')?.complete`);
         await window.webContents.executeJavaScript(`Array.from(document.querySelectorAll('button')).find(button => button.textContent.includes('Rozpocznij prezentację na TV')).click()`);
-        await waitFor(`document.querySelector('h2')`);
+        await waitFor(`document.querySelector('[data-testid="slideshow"] h2')`);
         const command = action => fetch(`http://127.0.0.1:${remoteUrl.port}/command`, { method: 'POST', headers: { Authorization: `Bearer ${remoteUrl.hash.slice(1)}` }, body: JSON.stringify({ command: action }) });
         if (!(await command('toggle-play')).ok) throw new Error('Polecenie pauzy odrzucone');
         await waitFor(`document.querySelector('button[title="Wznów (Spacja)"]')`);
-        const previousTitle = await window.webContents.executeJavaScript(`document.querySelector('h2').textContent`);
+        const previousTitle = await window.webContents.executeJavaScript(`document.querySelector('[data-testid="slideshow"] h2').textContent`);
         if (!(await command('next')).ok) throw new Error('Polecenie zmiany slajdu odrzucone');
-        await waitFor(`document.querySelector('h2').textContent !== ${JSON.stringify(previousTitle)}`);
+        await waitFor(`document.querySelector('[data-testid="slideshow"] h2').textContent !== ${JSON.stringify(previousTitle)}`);
         state.remoteChangedSlide = true;
         state.remotePausedSlideshow = true;
+        if (process.argv.includes('--preferences-smoke-test')) {
+          state.slideshowPreferencesApplied = await window.webContents.executeJavaScript(`!!document.querySelector('select[title="Czas wyświetlania slajdu"] option[value="12"]:checked') && !document.querySelector('.animate-ken-burns') && !document.querySelector('[data-testid="slideshow-minimap"]') && !!document.querySelector('button[title="Włącz nastrojowy ambient dźwiękowy"]')`);
+          if (!state.slideshowPreferencesApplied) throw new Error('Ustawienia pokazu nie zostały zastosowane');
+        }
         await remoteControl.stop();
       }
-      const reportsDirectory = path.join(process.cwd(), 'reports');
-      mkdirSync(reportsDirectory, { recursive: true });
       await new Promise(resolve => setTimeout(resolve, 1500));
       const screenshot = await window.webContents.capturePage();
       writeFileSync(path.join(reportsDirectory, 'desktop-smoke.png'), screenshot.toPNG());
       writeFileSync(path.join(reportsDirectory, 'desktop-smoke.json'), JSON.stringify({ ...state, passed: true, electron: process.versions.electron, packaged: app.isPackaged }, null, 2));
       app.exit(0);
-    } catch (error) { console.error(error); app.exit(1); }
+    } catch (error) { writeFileSync(path.join(reportsDirectory, 'desktop-smoke.json'), JSON.stringify({ passed: false, error: error.message, date: new Date().toISOString() })); console.error(error); app.exit(1); }
   }
 });
 app.on('window-all-closed', () => app.quit());

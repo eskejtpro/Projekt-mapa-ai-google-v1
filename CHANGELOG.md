@@ -1,6 +1,7 @@
 # CHANGELOG.md - Historia Zmian Projektu „Prezent Mapy”
 
 ## Unreleased — środowisko Codex
+- Podłączono ustawienia pokazu, sortowania/lazy-load galerii, EXIF i autocentrowania wypraw. Mapa korzysta z relacji albumów; nazwy tras i punktów renderowane jako tekst. Wzmocniono raportowanie błędów testu runtime.
 - Wdrożono pilot HTTP z lokalnym QR/parowaniem, tokenem, ograniczonymi komendami i integracją pokazu slajdów. Zastąpiono sieciową minimapę lokalną. Naprawiono rozpoznawanie duplikatów oraz atomowy import zdjęć i albumu, błąd/anulowanie FileReader.
 - Dodano odświeżane na żądanie panelu wyszukiwanie DLNA/SSDP w LAN i relacyjny filtr zdjęć pokazu TV. Test renderowania MBTiles przy zablokowanej sieci PASS na syntetycznych kafelkach.
 - Dodano konfigurację NSIS/portable, natywny folder i autostart; autostart domyślnie wyłączony. Dodano import rastrowego MBTiles i lokalną warstwę; wyłączono automatyczne wysyłanie współrzędnych i zabezpieczono atrybuty pinezek.

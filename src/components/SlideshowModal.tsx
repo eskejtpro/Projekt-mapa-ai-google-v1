@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { TravelPhoto } from '../types/travel';
+import { TravelPhoto, AppSettings } from '../types/travel';
 import { ambientSound } from '../services/audioAmbient';
 import { LocalMiniMap } from './LocalMiniMap';
 import { 
@@ -24,6 +24,7 @@ interface SlideshowModalProps {
   onClose: () => void;
   photos: TravelPhoto[];
   initialIndex?: number;
+  settings: AppSettings;
 }
 
 export const SlideshowModal: React.FC<SlideshowModalProps> = ({
@@ -31,6 +32,7 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
   onClose,
   photos,
   initialIndex = 0,
+  settings,
 }) => {
   const [currentIndex, setCurrentIndex] = useState<number>(initialIndex);
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
@@ -54,7 +56,10 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
     if (isOpen) {
       setCurrentIndex(initialIndex);
       setIsPlaying(true);
-      if (!isMuted) {
+      setIntervalSec(settings.slideshowInterval);
+      setKenBurnsActive(settings.kenBurnsEnabled);
+      setIsMuted(!settings.ambientSoundEnabled);
+      if (settings.ambientSoundEnabled) {
         ambientSound.startOceanAmbient();
       }
     } else {
@@ -63,7 +68,7 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
     return () => {
       ambientSound.stop();
     };
-  }, [isOpen, initialIndex]);
+  }, [isOpen, initialIndex, settings.slideshowInterval, settings.kenBurnsEnabled, settings.ambientSoundEnabled]);
 
   // Timer automatycznego zmieniania slajdów
   useEffect(() => {
@@ -127,10 +132,12 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
   return (
     <div
       ref={containerRef}
+      data-testid="slideshow"
       className="fixed inset-0 z-50 bg-black text-white flex flex-col justify-between overflow-hidden select-none font-sans"
     >
       {/* TŁO ZDJĘCIA: Płynne skalowanie Ken Burns */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div key={currentPhoto.id} className="w-full h-full" style={{ animation: `slideshow-${settings.slideshowTransition} 700ms ease-out` }}>
         <img
           key={currentPhoto.id}
           src={currentPhoto.url}
@@ -139,6 +146,7 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
             kenBurnsActive ? 'animate-ken-burns' : ''
           }`}
         />
+        </div>
         {/* Winieta kinowa i przyciemnienie dolnej strefy na napisy */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-black/60" />
       </div>
@@ -261,13 +269,14 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
         {/* Prawa strona: Mini-Mapa Picture-in-Picture & Pilot */}
         <div className="flex flex-col items-end gap-3 shrink-0">
           {/* Mini-Mapa PiP */}
-          <div className="w-48 h-32 rounded-2xl overflow-hidden border border-amber-400/50 shadow-2xl bg-slate-900 relative">
+          {settings.showMiniMapPip && <div data-testid="slideshow-minimap" className="w-48 h-32 rounded-2xl overflow-hidden border border-amber-400/50 shadow-2xl bg-slate-900 relative">
             <LocalMiniMap lat={currentPhoto.location.lat} lng={currentPhoto.location.lng} />
             <div className="absolute top-2 left-2 bg-black/80 backdrop-blur text-[10px] px-2 py-0.5 rounded-full font-bold text-amber-400 border border-amber-500/30 flex items-center gap-1">
               <Compass className="w-3 h-3" /> Lokalizacja
             </div>
           </div>
 
+          }
           {/* Pływający pilot odtwarzania */}
           <div className="flex items-center gap-2 bg-black/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 shadow-2xl">
             <button

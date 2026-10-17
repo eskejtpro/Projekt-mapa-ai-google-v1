@@ -41,6 +41,7 @@ interface ImportModalProps {
   onClose: () => void;
   albums: TravelAlbum[];
   onImportComplete: (photos: TravelPhoto[], newAlbum?: TravelAlbum) => boolean;
+  readExif?: boolean;
   initialLocation?: InitialImportLocation | null;
   initialMode?: ImportTabMode;
   initialFiles?: File[];
@@ -66,6 +67,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   onClose,
   albums,
   onImportComplete,
+  readExif = true,
   initialLocation,
   initialMode = 'files',
   initialFiles,
@@ -200,11 +202,11 @@ export const ImportModal: React.FC<ImportModalProps> = ({
       try {
         let exifData: Record<string, unknown> | null = null;
         try {
-          exifData = await exifr.parse(file, {
+          exifData = readExif ? await exifr.parse(file, {
             gps: true,
             tiff: true,
             exif: true,
-          });
+          }) : null;
         } catch {
           // Brak lub uszkodzony EXIF w pliku
         }
