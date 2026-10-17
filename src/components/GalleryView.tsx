@@ -27,6 +27,8 @@ interface GalleryViewProps {
   onSelectPhoto: (photo: TravelPhoto) => void;
   onToggleFavorite: (id: string) => void;
   onDeletePhoto: (id: string) => void;
+  onDeletePhotos?: (ids: string[]) => void;
+  onDeleteAlbum?: (id: string, deletePhotos: boolean) => void;
   onStartSlideshow: (photos: TravelPhoto[]) => void;
   onSelectAlbum: (albumId: string | null) => void;
   selectedAlbumId: string | null;
@@ -43,6 +45,8 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   onSelectPhoto,
   onToggleFavorite,
   onDeletePhoto,
+  onDeletePhotos,
+  onDeleteAlbum,
   onStartSlideshow,
   onSelectAlbum,
   selectedAlbumId,
@@ -54,6 +58,8 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   const [viewMode, setViewMode] = useState<'grid' | 'timeline' | 'albums'>('grid');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [onlyFavorites, setOnlyFavorites] = useState<boolean>(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  useEffect(() => { setSelectedIds(ids => ids.filter(id => photos.some(photo => photo.id === id))); }, [photos]);
   const [countryFilter, setCountryFilter] = useState<string>('ALL');
   const [yearFilter, setYearFilter] = useState<string>('ALL');
   const [sortBy, setSortBy] = useState<'date-desc' | 'date-asc' | 'title' | 'location'>(defaultSortBy);
@@ -192,6 +198,13 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
       </div>
 
       {/* Aktywny filtr albumu */}
+      <div className="flex flex-wrap gap-3 items-center text-xs text-slate-200">
+        <button className="px-3 py-2 rounded-xl bg-slate-800" onClick={() => setSelectedIds(filteredPhotos.map(photo => photo.id))}>Zaznacz widoczne ({filteredPhotos.length})</button>
+        <button className="px-3 py-2 rounded-xl bg-slate-800" onClick={() => setSelectedIds([])}>Odznacz wszystkie</button>
+        <button disabled={!selectedIds.length || !onDeletePhotos} className="px-3 py-2 rounded-xl bg-red-950 text-red-200 disabled:opacity-40" onClick={() => onDeletePhotos?.(selectedIds)}>Usuń zaznaczone z biblioteki ({selectedIds.length})</button>
+        <span>Pliki źródłowe na dysku pozostają bez zmian.</span>
+      </div>
+      {onDeleteAlbum && <div className="flex flex-wrap gap-2">{albums.map(album => <details key={album.id} className="text-xs bg-slate-900 border border-slate-700 rounded-xl p-2 text-slate-200"><summary className="cursor-pointer">{album.name} — opcje albumu</summary><div className="flex gap-2 pt-2"><button onClick={() => onDeleteAlbum(album.id, false)}>Usuń album, zachowaj zdjęcia</button><button className="text-red-300" onClick={() => onDeleteAlbum(album.id, true)}>Usuń album i jego zdjęcia</button></div></details>)}</div>}
       {selectedAlbumId && (
         <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-2 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
@@ -250,6 +263,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                       }`}
                     >
                       {/* Obraz miniatury */}
+                      <input type="checkbox" aria-label={`Zaznacz zdjęcie: ${photo.title}`} checked={selectedIds.includes(photo.id)} onChange={event => setSelectedIds(ids => event.target.checked ? [...ids, photo.id] : ids.filter(id => id !== photo.id))} className="absolute top-3 right-3 z-20 w-5 h-5 accent-amber-500" />
                       <div
                         onClick={() => onSelectPhoto(photo)}
                         className="w-full h-full cursor-pointer relative overflow-hidden bg-slate-950"

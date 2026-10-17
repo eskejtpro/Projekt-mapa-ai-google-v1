@@ -11,8 +11,6 @@ const { RemoteControl } = require('./remote-control.cjs');
 const { BackupManager } = require('./backup-manager.cjs');
 const { existsSync, copyFileSync, renameSync, statSync } = require('node:fs');
 protocol.registerSchemesAsPrivileged([{ scheme: 'prezent-tiles', privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
-const hasSingleInstanceLock = app.requestSingleInstanceLock();
-if (!hasSingleInstanceLock) app.quit();
 if (process.argv.includes('--smoke-test')) {
   const profileArgument = process.argv.find(argument => argument.startsWith('--smoke-profile='));
   const profile = profileArgument ? path.resolve(profileArgument.slice('--smoke-profile='.length)) : mkdtempSync(path.join(tmpdir(), 'prezent-desktop-smoke-'));
@@ -20,6 +18,8 @@ if (process.argv.includes('--smoke-test')) {
   mkdirSync(profile, { recursive: true });
   app.setPath('userData', profile);
 }
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+if (!hasSingleInstanceLock) app.quit();
 const page = pathToFileURL(path.join(__dirname, '../dist/index.html')).href;
 let window;
 if (hasSingleInstanceLock) app.on('second-instance', () => {
@@ -192,6 +192,38 @@ app.whenReady().then(async () => {
       }
       if (!state.invalidKeyRejected || !state.sqliteReadable) throw new Error('Nieprawidłowa integracja SQLite');
       if (state.text < 100 || state.bridge !== 'function' || state.node !== 'undefined') throw new Error('Nieprawidłowy renderer lub izolacja');
+      if (process.argv.includes('--map-layers-smoke-test')) {
+        state.mapLayers = [];
+        for (const label of ['Nocny', 'Dzień', 'Kolor / Teren']) {
+          await window.webContents.executeJavaScript(`Array.from(document.querySelectorAll('button')).find(button => button.textContent.trim() === ${JSON.stringify(label)}).click()`);
+          await new Promise(resolve => setTimeout(resolve, 300));
+          const loaded = await window.webContents.executeJavaScript(`new Promise(resolve => { const started = Date.now(); const timer = setInterval(() => { const images = Array.from(document.querySelectorAll('.leaflet-tile-loaded')).filter(image => image.naturalWidth >= 256); if (images.length || Date.now() - started > 15000) { clearInterval(timer); resolve(images.length); } }, 100); })`);
+          if (!loaded) throw new Error(`Nie załadowano kafelków: ${label}`);
+          state.mapLayers.push({ label, loaded });
+        }
+      }
+      if (process.argv.includes('--library-actions-smoke-test')) {
+        const wait = async expression => window.webContents.executeJavaScript(`new Promise((resolve, reject) => { const start = Date.now(); const timer = setInterval(() => { if (${expression}) { clearInterval(timer); resolve(true); } else if (Date.now() - start > 6000) { clearInterval(timer); reject(new Error('Timeout testu biblioteki')); } }, 50); })`);
+        await window.webContents.executeJavaScript(`document.querySelector('button[title="Wszystkie Zdjęcia & Galeria"]').click()`);
+        await wait(`document.querySelector('input[aria-label^="Zaznacz zdjęcie:"]')`);
+        const before = JSON.parse(database.get('prezent_travel_photos_v2')).length;
+        await window.webContents.executeJavaScript(`document.querySelector('input[aria-label^="Zaznacz zdjęcie:"]').click()`);
+        await wait(`Array.from(document.querySelectorAll('button')).some(button => button.textContent.includes('Usuń zaznaczone z biblioteki (1)') && !button.disabled)`);
+        await window.webContents.executeJavaScript(`Array.from(document.querySelectorAll('button')).find(button => button.textContent.includes('Usuń zaznaczone z biblioteki (1)')).click()`);
+        await wait(`Array.from(document.querySelectorAll('button')).some(button => button.textContent.trim() === 'Usuń zdjęcia')`);
+        await window.webContents.executeJavaScript(`Array.from(document.querySelectorAll('button')).find(button => button.textContent.trim() === 'Usuń zdjęcia').click()`);
+        await wait(`JSON.parse(window.electronAPI.storage.get('prezent_travel_photos_v2')).length === ${before - 1}`);
+        state.bulkDeletionPersisted = true;
+        const albumId = JSON.parse(database.get('prezent_travel_albums_v2'))[0].id;
+        const remaining = JSON.parse(database.get('prezent_travel_photos_v2')).length;
+        await window.webContents.executeJavaScript(`document.querySelector('details').open = true; Array.from(document.querySelectorAll('button')).find(button => button.textContent.trim() === 'Usuń album, zachowaj zdjęcia').click()`);
+        await wait(`Array.from(document.querySelectorAll('button')).some(button => button.textContent.trim() === 'Usuń album')`);
+        await window.webContents.executeJavaScript(`Array.from(document.querySelectorAll('button')).find(button => button.textContent.trim() === 'Usuń album').click()`);
+        await wait(`!JSON.parse(window.electronAPI.storage.get('prezent_travel_albums_v2')).some(album => album.id === ${JSON.stringify(albumId)})`);
+        const finalPhotos = JSON.parse(database.get('prezent_travel_photos_v2'));
+        if (finalPhotos.length !== remaining || finalPhotos.some(photo => photo.albumId === albumId)) throw new Error('Nieprawidłowe usunięcie albumu');
+        state.albumDeletedPhotosPreserved = true;
+      }
       if (process.argv.includes('--remote-smoke-test')) {
         const waitFor = async expression => {
           try { return await window.webContents.executeJavaScript(`new Promise((resolve, reject) => { const started = Date.now(); const timer = setInterval(() => { if (${expression}) { clearInterval(timer); resolve(true); } else if (Date.now() - started > 6000) { clearInterval(timer); reject(new Error('Timeout testu pilota')); } }, 50); })`); }

@@ -39,3 +39,6 @@ Konfiguracja okna Windows:
 - Minimalna rozdzielczość: 1024x720 px
 - Obsługa akceleracji sprzętowej GPU dla kafelków mapy Leaflet i animacji Ken Burns.
 - Uprawnienia dostępu do lokalnego folderu obrazów przez IPC API.
+# Pakowanie obok uruchomionej aplikacji
+
+Jeżeli `release/win-unpacked/Prezent Mapy.exe` jest uruchomiony i blokuje nadpisanie, użyj `npm run package:windows:isolated`. Buduje NSIS/portable w ignorowanym katalogu `release-current`, bez zamykania istniejącego programu. Standardowe `npm run package:windows` nadal używa `release`.

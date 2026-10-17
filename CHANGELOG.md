@@ -1,6 +1,7 @@
 # CHANGELOG.md - Historia Zmian Projektu „Prezent Mapy”
 
 ## Unreleased — środowisko Codex
+- Zaznaczanie i usuwanie zbiorcze zdjęć, usuwanie albumu z zachowaniem albo usunięciem zdjęć z biblioteki; pliki na dysku pozostają zachowane. Skan SSDP na wielu interfejsach, wybór TV i ręczne odświeżanie. Warstwy OSM dzień/noc i Esri Topographic zastępują dotychczasowe warstwy CARTO.
 - Widok mapy w trybie offline nie renderuje już uszkodzonych obrazów zewnętrznych; dla niedostępnych URL-i pokazuje bezpieczny placeholder, a lokalne obrazy data URL pozostają obsługiwane.
 - Operacje resetu demo, usuwania demo i czyszczenia stanu map wykonują zapisy kolekcji atomowo; czyszczenie map przenosi rzeczywisty plik MBTiles do odzyskiwalnego archiwum i raportuje jego rozmiar. Dodano blokadę drugiej instancji aplikacji Electron.
 - Dodano automatyczne lokalne kopie .prezent, harmonogram podczas działania aplikacji, sygnalizowanie błędów i dostęp do katalogu kopii z ustawień. Ręczny eksport respektuje ustawienie miniatur.

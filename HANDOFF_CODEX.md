@@ -262,3 +262,6 @@ npm run electron:build   # Generowanie instalatora Windows NSIS (.exe) w folderz
 5. **Krok 5 (Packaging)**: Skonfigurować `electron-builder` i wygenerować instalator Windows 10/11 (`Prezent-Mapy-Setup-1.3.1.exe`).
 
 **ZASADA NACZELNA**: Wszystkie powyższe kroki należy realizować bez niszczenia i bez przebudowywania istniejącego, ustabilizowanego interfejsu React!
+# Iteracja 2026-10-17 — aktualizacja
+
+Nowe opcje biblioteki, map i TV: REQUIREMENTS.md / TASKS.md / PROGRESS.md. Uruchomienie smoke z `--library-actions-smoke-test` potwierdziło usuwanie zbiorcze i zachowanie zdjęć przy usunięciu albumu; `--map-layers-smoke-test` potwierdził trzy warstwy online. Fizyczny TV/casting pozostają otwarte. Starsze artefakty release wymagają przebudowy po tej iteracji.

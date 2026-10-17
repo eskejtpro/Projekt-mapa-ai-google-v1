@@ -53,11 +53,11 @@ interface TileServerConfig {
   subdomains?: string;
 }
 
-// 100% stabilne, szybkie i niezawodne serwery kafelków w wysokiej rozdzielczości
+// Warstwy online; pobieranie kafelków wymaga połączenia z dostawcą.
 const TILE_SERVERS: Record<MapTileProvider, TileServerConfig> = {
   dark: {
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 19,
     subdomains: 'abcd',
   },
@@ -67,20 +67,20 @@ const TILE_SERVERS: Record<MapTileProvider, TileServerConfig> = {
     maxZoom: 18,
   },
   voyager: {
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles &copy; Esri — Sources: Esri, HERE, Garmin, USGS, NGA, OpenStreetMap contributors',
     maxZoom: 19,
     subdomains: 'abcd',
   },
   osm: {
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 19,
     subdomains: 'abcd',
   },
   light: {
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 19,
     subdomains: 'abcd',
   },
@@ -92,11 +92,11 @@ const TILE_SERVERS: Record<MapTileProvider, TileServerConfig> = {
 };
 
 const MAP_STYLES: { id: MapTileProvider; label: string; sub: string; icon: any }[] = [
-  { id: 'dark', label: 'Nocny', sub: 'Dark Matter', icon: Moon },
+  { id: 'dark', label: 'Nocny', sub: 'OpenStreetMap — filtr nocny', icon: Moon },
   { id: 'satellite', label: 'Satelita', sub: 'Esri World Imagery', icon: Globe },
-  { id: 'voyager', label: 'Kolor / Teren', sub: 'OpenStreetMap', icon: Compass },
+  { id: 'voyager', label: 'Kolor / Teren', sub: 'Esri Topographic', icon: Compass },
   { id: 'streets', label: 'Ulice', sub: 'Esri Streets', icon: MapIcon },
-  { id: 'light', label: 'Dzień', sub: 'Positron Light', icon: Sun },
+  { id: 'light', label: 'Dzień', sub: 'OpenStreetMap', icon: Sun },
 ];
 
 export const MapView: React.FC<MapViewProps> = ({
@@ -254,6 +254,8 @@ export const MapView: React.FC<MapViewProps> = ({
   useEffect(() => {
     if (!mapInstanceRef.current) return;
     const activeProvider = tileProvider in TILE_SERVERS ? tileProvider : 'dark';
+    const tilePane = mapInstanceRef.current.getPane('tilePane');
+    if (tilePane) tilePane.style.filter = !offlineMode && activeProvider === 'dark' ? 'invert(1) hue-rotate(180deg) brightness(0.8) saturate(0.7)' : '';
     const config = offlineMode ? { url: 'prezent-tiles://local/{z}/{x}/{y}', attribution: 'Lokalny pakiet MBTiles — licencja dostawcy pakietu', maxZoom: 22, subdomains: '' } : TILE_SERVERS[activeProvider];
 
     if (tileLayerRef.current) {
@@ -267,6 +269,10 @@ export const MapView: React.FC<MapViewProps> = ({
     }).addTo(mapInstanceRef.current);
 
     newLayer.bringToBack();
+    let errors = 0;
+    newLayer.on('tileerror', () => {
+      if (++errors === 3) onShowToast?.(offlineMode ? 'Brak kafelków dla tego obszaru lub poziomu powiększenia. Zaimportuj odpowiedni MBTiles.' : 'Nie udało się załadować mapy. Sprawdź połączenie lub wybierz inną warstwę.', 'warning');
+    });
     tileLayerRef.current = newLayer;
 
     setTimeout(() => {
@@ -456,7 +462,7 @@ export const MapView: React.FC<MapViewProps> = ({
     if (bounds.isValid() && visiblePhotos.length > 0 && autoCenterOnPhotos && selectedTripId) {
       mapInstanceRef.current.fitBounds(bounds, { padding: [60, 60], maxZoom: 9 });
     }
-  }, [visiblePhotos, selectedTripId, showAnimatedRoutes, trips, autoCenterOnPhotos]);
+  }, [visiblePhotos, selectedTripId, showAnimatedRoutes, trips, autoCenterOnPhotos, offlineMode]);
 
   // Wyszukiwanie z animowanym flyTo
   const handleMapSearch = (e: React.FormEvent) => {

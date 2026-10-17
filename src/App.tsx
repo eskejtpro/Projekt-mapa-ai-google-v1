@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { removeAlbum } from './services/library-actions';
 import { 
   Globe2, 
   Image as ImageIcon, 
@@ -197,6 +198,28 @@ export default function App() {
   };
 
   // Aktualizacja zdjęcia po edycji
+  const handleDeletePhotos = (ids: string[]) => {
+    const requested = new Set(ids);
+    const count = photos.filter(photo => requested.has(photo.id)).length;
+    if (!count) return;
+    setConfirmDialog({ title: 'Usuwanie zdjęć z biblioteki', message: `Usunąć ${count} zdjęć z biblioteki? Pliki źródłowe na dysku nie zostaną usunięte.`, confirmLabel: 'Usuń zdjęcia', isDanger: true, onConfirm: () => {
+      const updated = photos.filter(photo => !requested.has(photo.id));
+      if (!StorageService.savePhotos(updated)) { showToast('Nie zapisano usunięcia zdjęć.', 'warning'); return; }
+      setPhotos(updated);
+      setSelectedPhotoForDetail(null);
+      showToast(`Usunięto ${count} zdjęć z biblioteki.`, 'success');
+    }});
+  };
+  const handleDeleteAlbum = (id: string, deletePhotos: boolean) => {
+    const album = albums.find(item => item.id === id);
+    if (!album) return;
+    setConfirmDialog({ title: 'Usuwanie albumu', message: `Usunąć album „${album.name}”${deletePhotos ? ' wraz ze zdjęciami z biblioteki' : ', zachowując zdjęcia bez przypisania'}? Pliki źródłowe pozostaną na dysku.`, confirmLabel: 'Usuń album', isDanger: true, onConfirm: () => {
+      const { photos: updatedPhotos, albums: updatedAlbums } = removeAlbum(photos, albums, id, deletePhotos);
+      if (!StorageService.saveLibrary(updatedPhotos, updatedAlbums)) { showToast('Nie zapisano usunięcia albumu.', 'warning'); return; }
+      setPhotos(updatedPhotos); setAlbums(updatedAlbums); setSelectedAlbumId(null); setSelectedPhotoForDetail(null);
+      showToast('Usunięto album.', 'success');
+    }});
+  };
   const handleUpdatePhoto = (updatedPhoto: TravelPhoto) => {
     const updated = photos.map(p => p.id === updatedPhoto.id ? updatedPhoto : p);
     if (!StorageService.savePhotos(updated)) { showToast('Nie zapisano edycji zdjęcia.', 'warning'); return false; }
@@ -448,6 +471,8 @@ export default function App() {
                   onSelectPhoto={(photo) => setSelectedPhotoForDetail(photo)}
                   onToggleFavorite={handleToggleFavorite}
                   onDeletePhoto={handleDeletePhoto}
+                  onDeletePhotos={handleDeletePhotos}
+                  onDeleteAlbum={handleDeleteAlbum}
                   onStartSlideshow={(list) => handleStartSlideshow(list)}
                   onSelectAlbum={(id) => setSelectedAlbumId(id)}
                   selectedAlbumId={selectedAlbumId}
@@ -520,6 +545,10 @@ export default function App() {
                             <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-amber-400 font-semibold">
                               <span>Otwórz album</span>
                               <ExternalLink className="w-3.5 h-3.5" />
+                            </div>
+                            <div className="flex flex-wrap gap-2 text-xs" onClick={event => event.stopPropagation()}>
+                              <button className="text-red-300 p-1" onClick={() => handleDeleteAlbum(album.id, false)}>Usuń album, zachowaj zdjęcia</button>
+                              <button className="text-red-400 p-1" onClick={() => handleDeleteAlbum(album.id, true)}>Usuń ze zdjęciami</button>
                             </div>
                           </div>
                         </div>

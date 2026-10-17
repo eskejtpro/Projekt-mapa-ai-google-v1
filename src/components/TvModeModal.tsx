@@ -36,6 +36,9 @@ export const TvModeModal: React.FC<TvModeModalProps> = ({
   const [selectedTripId, setSelectedTripId] = useState<string>(trips[0]?.id || 'ALL');
   const [devices, setDevices] = useState<{ id: string; address: string; description: string; protocol: string }[]>([]);
   const [discoveryStatus, setDiscoveryStatus] = useState('');
+  const [selectedDevice, setSelectedDevice] = useState('');
+  const [scanRevision, setScanRevision] = useState(0);
+  const [scanning, setScanning] = useState(false);
   const [remoteUrls, setRemoteUrls] = useState<string[]>([]);
   const [remoteUrl, setRemoteUrl] = useState('');
   const [remoteQr, setRemoteQr] = useState('');
@@ -61,16 +64,18 @@ export const TvModeModal: React.FC<TvModeModalProps> = ({
     if (!isOpen || !window.electronAPI) return;
     let cancelled = false;
     const scan = async () => {
+      setScanning(true);
       try {
         const found = await window.electronAPI!.discoverTVs();
-        if (!cancelled) { setDevices(found); setDiscoveryStatus(found.length ? 'Wykryto lokalne odtwarzacze DLNA.' : 'Brak odpowiedzi DLNA. Sprawdź wspólną sieć i ustawienia TV.'); }
+        if (!cancelled) { setDevices(found); setSelectedDevice(current => found.some(device => device.id === current) ? current : ''); setDiscoveryStatus(found.length ? 'Wykryto lokalne odtwarzacze DLNA.' : 'Brak odpowiedzi DLNA. Włącz TV i odbiornik DLNA, sprawdź tę samą sieć LAN oraz izolację klientów Wi-Fi.'); }
       } catch { if (!cancelled) setDiscoveryStatus('Nie udało się przeskanować sieci lokalnej.'); }
+      finally { if (!cancelled) setScanning(false); }
     };
     setDiscoveryStatus('Wyszukiwanie odtwarzaczy w sieci lokalnej…');
     void scan();
     const timer = setInterval(() => void scan(), 15000);
     return () => { cancelled = true; clearInterval(timer); };
-  }, [isOpen]);
+  }, [isOpen, scanRevision]);
 
   if (!isOpen) return null;
 
@@ -80,7 +85,7 @@ export const TvModeModal: React.FC<TvModeModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col">
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
         {/* Górny pasek TV */}
         <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950/40">
           <div className="flex items-center gap-3">
@@ -112,7 +117,9 @@ export const TvModeModal: React.FC<TvModeModalProps> = ({
           <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-2" aria-live="polite">
             <div className="font-bold text-white">Urządzenia w sieci lokalnej — DLNA/SSDP</div>
             <p>{window.electronAPI ? discoveryStatus : 'Wyszukiwanie urządzeń jest dostępne w aplikacji Windows.'}</p>
-            {devices.map(device => <div key={device.id} className="text-indigo-300">{device.description} · {device.address} · {device.protocol}</div>)}
+            <button disabled={scanning || !window.electronAPI} onClick={() => setScanRevision(value => value + 1)} className="px-3 py-2 bg-indigo-600 rounded-xl disabled:opacity-40">{scanning ? 'Wyszukiwanie…' : 'Wyszukaj ponownie'}</button>
+            {devices.map(device => <label key={device.id} className="flex items-center gap-2 text-indigo-300 p-2 border border-slate-700 rounded-xl"><input type="radio" name="tv-device" checked={selectedDevice === device.id} onChange={() => setSelectedDevice(device.id)} />{device.description} · {device.address} · {device.protocol}</label>)}
+            {selectedDevice && <p className="text-amber-300">Wybrany odbiornik: {devices.find(device => device.id === selectedDevice)?.address}. Wybór służy wskazaniu odbiornika; przesyłanie DLNA nie jest jeszcze obsługiwane. Pokaz uruchamia się na ekranie komputera lub podłączonym monitorze.</p>}
             <p className="text-slate-400">Lista odświeża się co 15 sekund podczas otwarcia panelu. Wykrycie urządzenia nie oznacza jeszcze połączenia ani przesyłania pokazu.</p>
           </div>
           {/* Metody połączenia z TV w Windows 10/11 */}

@@ -8,6 +8,7 @@ coverage/
 !.env.example
 reports/
 release/
+release-current/
 *.prezent
 *.sqlite*
 *.exe

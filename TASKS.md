@@ -1,5 +1,10 @@
 # TASKS.md - Rejestr Zadań i Implementacji Projektu „Prezent Mapy”
 
+## Rozszerzenie biblioteki / TV / map — 2026-10-17
+- REQ-DEL-01/02: IN_REVIEW — zaznaczanie i usuwanie zbiorcze, dwa warianty usuwania albumu, potwierdzenie i atomowy zapis. Test jednostkowy i runtime SQLite PASS.
+- REQ-TV-SELECT: IN_PROGRESS — skan na wielu interfejsach, ponowienie, ręczne odświeżanie i radio wyboru. Rzeczywisty skan LAN 0 odpowiedzi; fizyczny TV i casting UNVERIFIED.
+- REQ-MAP-LAYERS: IN_REVIEW — OSM dzień/noc (filtr wyłącznie kafelków), Esri Topographic; runtime 24/24/21 kafelków PASS.
+
 ## Iteracja środowiska E0 (2026-10-17)
 REQ-10 backup: wdrożony BackupManager i katalog kopii w ustawieniach; harmonogram/0=wyłączone/miniatury test PASS. Wielodniowy test na rzeczywistej bibliotece oraz odzyskiwanie po awarii dysku NOT RUN.
 REQ-09: rozszerzona walidacja pól/enumów/relacji, regresje i legacy PASS. F10: restart dwóch procesów z odczytem zdjęcia PASS. Bezpieczeństwo: produkcyjne CSP, blokada popup i fałszywej ramki PASS w smoke. Odzyskiwanie uszkodzonego rekordu PASS; fizycznie uszkodzona baza i pełne odtwarzanie otwarte. Pozostałe narzędzia reset/czyszczenie i migracje wymagają kontroli atomowości.
