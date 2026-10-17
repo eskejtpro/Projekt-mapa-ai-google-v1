@@ -6,6 +6,7 @@ const { mkdtempSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 const { LibraryDatabase } = require('./database.cjs');
 const { OfflineMap } = require('./offline-map.cjs');
+const { discoverRenderers } = require('./tv-discovery.cjs');
 const { existsSync, copyFileSync, renameSync, statSync } = require('node:fs');
 protocol.registerSchemesAsPrivileged([{ scheme: 'prezent-tiles', privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
 if (process.argv.includes('--smoke-test')) app.setPath('userData', mkdtempSync(path.join(tmpdir(), 'prezent-desktop-smoke-')));
@@ -13,6 +14,16 @@ const page = pathToFileURL(path.join(__dirname, '../dist/index.html')).href;
 let window;
 app.whenReady().then(async () => {
   const offlineFile = path.join(app.getPath('userData'), 'offline.mbtiles');
+  const offlineSmoke = process.argv.includes('--smoke-test') && process.argv.includes('--offline-smoke-test');
+  if (offlineSmoke) {
+    const { DatabaseSync } = require('node:sqlite');
+    const fixture = new DatabaseSync(offlineFile);
+    fixture.exec("CREATE TABLE metadata(name TEXT,value TEXT); INSERT INTO metadata VALUES('format','png'); CREATE TABLE tiles(zoom_level INTEGER,tile_column INTEGER,tile_row INTEGER,tile_data BLOB);");
+    const image = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64');
+    const insert = fixture.prepare('INSERT INTO tiles VALUES(?,?,?,?)');
+    for (let x = 0; x < 8; x++) for (let y = 0; y < 8; y++) insert.run(3, x, y, image);
+    fixture.close();
+  }
   let offlineMap = null;
   try { if (existsSync(offlineFile)) offlineMap = new OfflineMap(offlineFile); } catch { console.error('Lokalny pakiet map jest uszkodzony; zaimportuj go ponownie.'); }
   protocol.handle('prezent-tiles', request => {
@@ -27,6 +38,7 @@ app.whenReady().then(async () => {
     } catch { return new Response(null, { status: 400 }); }
   });
   const database = new LibraryDatabase(path.join(app.getPath('userData'), 'library.sqlite'));
+  if (offlineSmoke) database.set('prezent_app_settings_v2', JSON.stringify({ offlineSimulationMode: true }));
   let offlineNetworkBlocked = JSON.parse(database.get('prezent_app_settings_v2') || '{}').offlineSimulationMode === true;
   session.defaultSession.webRequest.onBeforeRequest({ urls: ['http://*/*', 'https://*/*'] }, (_details, callback) => callback({ cancel: offlineNetworkBlocked }));
   app.once('will-quit', () => database.close());
@@ -37,6 +49,12 @@ app.whenReady().then(async () => {
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, sandbox: true, nodeIntegration: false, webSecurity: true },
   });
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  let pendingDiscovery = null;
+  ipcMain.handle('tv:discover', event => {
+    if (event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== page) throw new Error('Niedozwolony nadawca IPC');
+    if (!pendingDiscovery) pendingDiscovery = discoverRenderers().finally(() => { pendingDiscovery = null; });
+    return pendingDiscovery;
+  });
   ipcMain.handle('maps:import', async event => {
     if (event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== page) throw new Error('Niedozwolony nadawca IPC');
     const selected = await dialog.showOpenDialog(window, { properties: ['openFile'], filters: [{ name: 'Raster MBTiles', extensions: ['mbtiles'] }] });
@@ -102,6 +120,10 @@ app.whenReady().then(async () => {
       const state = await window.webContents.executeJavaScript(`({ title: document.title, text: document.body.innerText.length, bridge: typeof window.electronAPI?.minimize, node: typeof window.require })`);
       state.invalidKeyRejected = await window.webContents.executeJavaScript(`(() => { try { window.electronAPI.storage.get('../invalid'); return false; } catch { return true; } })()`);
       state.sqliteReadable = await window.webContents.executeJavaScript(`Array.isArray(JSON.parse(window.electronAPI.storage.get('prezent_travel_photos_v2')))`);
+      if (offlineSmoke) {
+        state.offlineTilesLoaded = await window.webContents.executeJavaScript(`Array.from(document.querySelectorAll('.leaflet-tile-loaded')).filter(image => image.src.startsWith('prezent-tiles:') && image.naturalWidth > 0).length`);
+        if (!state.offlineTilesLoaded) throw new Error('Lokalne kafelki nie zostały wyrenderowane');
+      }
       if (!state.invalidKeyRejected || !state.sqliteReadable) throw new Error('Nieprawidłowa integracja SQLite');
       if (state.text < 100 || state.bridge !== 'function' || state.node !== 'undefined') throw new Error('Nieprawidłowy renderer lub izolacja');
       const reportsDirectory = path.join(process.cwd(), 'reports');

@@ -83,6 +83,7 @@ Status: **6/6 ZDANYCH (100% SUKCES)**
 - [x] Menedżer Map Offline oznaczony jako demonstracyjny z informacją o planowanym buforze MBTiles w Electronie.
 - [x] Pilot zdalnego sterowania QR Smart Remote oznaczony jako prototyp UI wymagający lokalnego serwera WebSocket w Electronie.
 # Iteracja powłoki Windows — 2026-10-17
+- Offline runtime: Electron smoke z `--smoke-test --offline-smoke-test` PASS, 24 lokalne kafelki syntetycznego MBTiles przy blokadzie HTTP(S). TV parser SSDP PASS; rzeczywisty skan LAN zakończony bez błędu, 0 odpowiedzi. Fizyczny TV i pilot NOT RUN.
 - Pakowanie: NSIS i portable PASS z electronDist; smoke win-unpacked PASS, packaged=true. Test instalacji/deinstalacji NOT RUN. Test MBTiles TMS/XYZ na syntetycznej bazie PASS; render mapy bez sieci NOT RUN. Pakiety poprzedzają ostatnie zmiany offline, wymagają przebudowy.
 - Aktualizacja media/backup: 14 Vitest, 10 tooling i 5 baza/pliki PASS; build PASS. Przypadki: deduplikacja plików po SHA-256, odtworzenie obrazu po ponownym otwarciu SQLite, uszkodzenie pliku, niebezpieczna ścieżka, błędne współrzędne/ID, brak miejsca bez utraty poprzednich danych.
 

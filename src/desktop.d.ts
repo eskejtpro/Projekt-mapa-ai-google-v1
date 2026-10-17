@@ -2,6 +2,7 @@ export {};
 declare global {
   interface Window {
     electronAPI?: {
+      discoverTVs(): Promise<{ id: string; address: string; description: string; protocol: string }[]>;
       importOfflineMap(): Promise<{ name: string; sizeMb: number } | null>;
       removeOfflineMap(): Promise<boolean>;
       systemInfo(): Promise<{ photosPath: string; autoStart: boolean; packaged: boolean; offlineMapAvailable: boolean }>;

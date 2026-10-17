@@ -1,6 +1,7 @@
 # CHANGELOG.md - Historia Zmian Projektu „Prezent Mapy”
 
 ## Unreleased — środowisko Codex
+- Dodano odświeżane na żądanie panelu wyszukiwanie DLNA/SSDP w LAN i relacyjny filtr zdjęć pokazu TV. Test renderowania MBTiles przy zablokowanej sieci PASS na syntetycznych kafelkach.
 - Dodano konfigurację NSIS/portable, natywny folder i autostart; autostart domyślnie wyłączony. Dodano import rastrowego MBTiles i lokalną warstwę; wyłączono automatyczne wysyłanie współrzędnych i zabezpieczono atrybuty pinezek.
 - Zdjęcia osadzane w kopii mogą być przechowywane w osobnych plikach z SHA-256; import .prezent waliduje rekordy i zapisuje atomowo. Eksport bez GPS usuwa również punkty tras.
 - Dodano SQLite w procesie głównym, ograniczony mostek danych, transakcyjny zapis wsadu i migrację z kopią źródła; podgląd Vite nadal używa localStorage.

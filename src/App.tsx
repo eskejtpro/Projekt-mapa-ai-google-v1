@@ -857,6 +857,7 @@ export default function App() {
         onClose={() => setIsTvModeOpen(false)}
         photos={photos}
         trips={trips}
+        albums={albums}
         onStartSlideshow={(list) => handleStartSlideshow(list)}
       />
 

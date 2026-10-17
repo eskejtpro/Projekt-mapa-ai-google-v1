@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('electronAPI', Object.freeze({
   setAutoStart: enabled => ipcRenderer.invoke('system:action', 'autostart', enabled),
   importOfflineMap: () => ipcRenderer.invoke('maps:import'),
   removeOfflineMap: () => ipcRenderer.invoke('system:action', 'remove-offline-map'),
+  discoverTVs: () => ipcRenderer.invoke('tv:discover'),
   storage: Object.freeze({
     get: key => storageCall('get', key),
     set: (key, value) => storageCall('set', key, value),

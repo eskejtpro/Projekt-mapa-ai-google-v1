@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { TravelPhoto, TravelTrip } from '../types/travel';
+import React, { useState, useEffect } from 'react';
+import { TravelPhoto, TravelTrip, TravelAlbum } from '../types/travel';
 import { 
   Tv, 
   Cast, 
@@ -20,6 +20,7 @@ interface TvModeModalProps {
   onClose: () => void;
   photos: TravelPhoto[];
   trips: TravelTrip[];
+  albums: TravelAlbum[];
   onStartSlideshow: (photos: TravelPhoto[]) => void;
 }
 
@@ -28,22 +29,32 @@ export const TvModeModal: React.FC<TvModeModalProps> = ({
   onClose,
   photos,
   trips,
+  albums,
   onStartSlideshow,
 }) => {
   const [selectedTripId, setSelectedTripId] = useState<string>(trips[0]?.id || 'ALL');
+  const [devices, setDevices] = useState<{ id: string; address: string; description: string; protocol: string }[]>([]);
+  const [discoveryStatus, setDiscoveryStatus] = useState('');
+  useEffect(() => {
+    if (!isOpen || !window.electronAPI) return;
+    let cancelled = false;
+    const scan = async () => {
+      try {
+        const found = await window.electronAPI!.discoverTVs();
+        if (!cancelled) { setDevices(found); setDiscoveryStatus(found.length ? 'Wykryto lokalne odtwarzacze DLNA.' : 'Brak odpowiedzi DLNA. Sprawdź wspólną sieć i ustawienia TV.'); }
+      } catch { if (!cancelled) setDiscoveryStatus('Nie udało się przeskanować sieci lokalnej.'); }
+    };
+    setDiscoveryStatus('Wyszukiwanie odtwarzaczy w sieci lokalnej…');
+    void scan();
+    const timer = setInterval(() => void scan(), 15000);
+    return () => { cancelled = true; clearInterval(timer); };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   const targetPhotos = selectedTripId === 'ALL'
     ? photos
-    : photos.filter(p => {
-        if (selectedTripId === 'trip-italy-2024') return p.location.countryCode === 'IT';
-        if (selectedTripId === 'trip-greece-2023') return p.location.countryCode === 'GR';
-        if (selectedTripId === 'trip-poland-tatry') return p.location.countryCode === 'PL';
-        if (selectedTripId === 'trip-japan-spring') return p.location.countryCode === 'JP';
-        if (selectedTripId === 'trip-norway-fjords') return p.location.countryCode === 'NO';
-        return true;
-      });
+    : photos.filter(p => albums.some(album => album.id === p.albumId && album.tripId === selectedTripId));
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
@@ -76,6 +87,12 @@ export const TvModeModal: React.FC<TvModeModalProps> = ({
 
         {/* Ciało */}
         <div className="p-6 space-y-6 text-xs text-slate-300">
+          <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-2" aria-live="polite">
+            <div className="font-bold text-white">Urządzenia w sieci lokalnej — DLNA/SSDP</div>
+            <p>{window.electronAPI ? discoveryStatus : 'Wyszukiwanie urządzeń jest dostępne w aplikacji Windows.'}</p>
+            {devices.map(device => <div key={device.id} className="text-indigo-300">{device.description} · {device.address} · {device.protocol}</div>)}
+            <p className="text-slate-400">Lista odświeża się co 15 sekund podczas otwarcia panelu. Wykrycie urządzenia nie oznacza jeszcze połączenia ani przesyłania pokazu.</p>
+          </div>
           {/* Metody połączenia z TV w Windows 10/11 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="bg-slate-950/70 border border-slate-800 p-4 rounded-2xl space-y-2">
@@ -138,7 +155,7 @@ export const TvModeModal: React.FC<TvModeModalProps> = ({
                   }`}
                 >
                   <div className="font-semibold text-xs">{t.title} ({t.year})</div>
-                  <div className="text-[10px] text-slate-400">Trasa etapowa • {t.totalDistanceKm || 500} km</div>
+                  <div className="text-[10px] text-slate-400">Trasa etapowa • {t.totalDistanceKm ?? 'Brak danych'} km</div>
                 </button>
               ))}
             </div>
