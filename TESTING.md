@@ -82,3 +82,8 @@ Status: **6/6 ZDANYCH (100% SUKCES)**
 ### E. Oznaczenie Funkcji Demonstracyjnych
 - [x] Menedżer Map Offline oznaczony jako demonstracyjny z informacją o planowanym buforze MBTiles w Electronie.
 - [x] Pilot zdalnego sterowania QR Smart Remote oznaczony jako prototyp UI wymagający lokalnego serwera WebSocket w Electronie.
+# Iteracja powłoki Windows — 2026-10-17
+
+- `npm run verify`: PASS (9 testów aplikacji, 10 tooling, typecheck/build).
+- Electron 44.9.0 `--smoke-test`: PASS, raport `reports/desktop-smoke.json`; dostępny izolowany mostek, brak `window.require`.
+- Screenshot: `reports/desktop-smoke.png`. Kontrola wyglądu, interakcji okna, złego nadawcy IPC i instalatora pozostaje UNVERIFIED.

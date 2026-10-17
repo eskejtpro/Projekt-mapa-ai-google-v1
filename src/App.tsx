@@ -327,9 +327,9 @@ export default function App() {
           {/* 1. Belka Tytułowa Okna Windows 10/11 (Titlebar + Menu) */}
           <WindowsTitleBar
             isMaximized={isWindowMaximized}
-            onToggleMaximize={() => setIsWindowMaximized(!isWindowMaximized)}
-            onMinimize={() => setIsWindowMinimized(true)}
-            onCloseApp={handleCloseApp}
+            onToggleMaximize={() => { if (window.electronAPI) void window.electronAPI.maximize(); else setIsWindowMaximized(!isWindowMaximized); }}
+            onMinimize={() => { if (window.electronAPI) void window.electronAPI.minimize(); else setIsWindowMinimized(true); }}
+            onCloseApp={() => { if (window.electronAPI) void window.electronAPI.close(); else handleCloseApp(); }}
             onOpenImport={() => setIsImportOpen(true)}
             onStartSlideshow={() => handleStartSlideshow()}
             onOpenTvMode={() => setIsTvModeOpen(true)}

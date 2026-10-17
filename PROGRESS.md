@@ -5,9 +5,9 @@
 - Wersja: 1.3.1 Desktop Preview; źródło wersji package.json.
 - Etap: 0, środowisko i audyt; PARTIAL.
 - Branch: work/windows-desktop-foundation; baseline commit 1be0136.
-- Aktualne zadanie: weryfikacja środowiska i zapis dowodów.
+- Aktualne zadanie: ukończenie Windows na zlecenie użytkownika; rozpoczęto PREZ-019: powłoka Electron, preload i natywne kontrolki okna. Instalacja runtime i weryfikacja trwają; SQLite, pliki, mapy offline i TV pozostają otwarte.
 - Ostatni zakończony krok: commit środowiska 57b1587 wysłany na origin/work/windows-desktop-foundation; zdalny Quality run 39005537274 PASS. Następnie commit dokumentacji a4ff5ac wysłany z `[skip ci]`.
-- Zweryfikowane rezultaty końcowe: TESTING.md; maszynowy raport reports/verification.json.
+- Zweryfikowane rezultaty: npm run verify PASS po dodaniu Electron (9 testów aplikacji, 10 tooling, typecheck i build). Smoke Electron 44.9.0 PASS: renderer działa, izolowany mostek dostępny, window.require niedostępne; reports/desktop-smoke.json. Screenshot zapisany w reports/desktop-smoke.png; pełny audyt interakcji i nieprawidłowego IPC nadal otwarty.
 - Zmiany bieżącej iteracji: skrypty jakości, CI, hooki Git/Codex, skille, rejestr funkcji, testy integracyjne/tooling.
 - Plik użytkownika moje instrukcje do projektu.txt pozostaje osobny, nieśledzony.
 - Wyniki: 9/9 testów Vitest, 10/10 tooling, build/typecheck, czyste npm ci i npm audit PASS; pokrycie niezmierzone. E0 zamknięte w 80% wag, pozostał dowód hooków klienta.

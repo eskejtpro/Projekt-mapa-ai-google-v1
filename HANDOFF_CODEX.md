@@ -3,6 +3,7 @@
 > Aktualny handoff sesji: PROGRESS.md / SESSION HANDOFF. Aktualne funkcje: docs/FEATURE_MATRIX.md; testy: TESTING.md. Poniższy dokument to historyczne przekazanie i projekt architektury AI Studio; jego deklaracje 100%, 4K, offline i bezpłatnych kafelków nie są świeżymi dowodami. Nie pobieraj masowo kafelków bez sprawdzenia licencji dostawcy.
 
 **Projekt**: Prezent Mapy  
+Aktualna iteracja: rozpoczęta implementacja `electron/main.cjs` i `electron/preload.cjs`, polecenie `npm run desktop`; stan testów w PROGRESS.md.
 **Repozytorium GitHub**: `https://github.com/eskejtpro/Projekt-mapa-ai-google-v1`  
 **Wersja przekazania**: 1.3.1 (Desktop Preview & Architecture Frozen)  
 **Platforma docelowa**: Windows 10 / Windows 11 Desktop (x64)  

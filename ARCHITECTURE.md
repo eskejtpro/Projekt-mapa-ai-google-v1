@@ -88,3 +88,6 @@ Aplikacja **„Prezent Mapy”** jest zaprojektowana według wzorca **Separacji 
 1. **Brak wstrzykiwania kodu HTML**: Wszelkie elementy dynamiczne (np. popupy na mapie w `MapView.tsx`) są tworzone za pomocą `document.createElement`, a dane tekstowe przypisywane przez `textContent`. Eliminuje to podatności XSS przy nazwach plików i opisach wspomnień.
 2. **Obsługa limitu pamięci przeglądarki**: `StorageService.savePhotos()` i metody pokrewne zwracają status `boolean`. Przy wystąpieniu `QuotaExceededError` aplikacja nie ulega awarii, a użytkownik otrzymuje czytelne powiadomienie z propozycją pobrania kopii `.prezent`.
 3. **Izolacja IPC w Electronie**: W kolejnym etapie OpenAI Codex zaimplementuje `preload.ts` z `contextIsolation: true` i `nodeIntegration: false`, udostępniając bezpieczne API `window.electronAPI`.
+# Aktualizacja powłoki Windows — 2026-10-17
+
+`electron/main.cjs` otwiera lokalny build Vite z izolacją kontekstu i sandboxem; `electron/preload.cjs` wystawia wyłącznie trzy akcje okna. Main sprawdza nadawcę, ramkę oraz argument akcji. Renderer nie otrzymuje Node.js. SQLite i obsługa plików pozostają do implementacji. `npm run desktop` buduje i uruchamia aplikację.

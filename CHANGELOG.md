@@ -1,6 +1,7 @@
 # CHANGELOG.md - Historia Zmian Projektu „Prezent Mapy”
 
 ## Unreleased — środowisko Codex
+- Rozpoczęto powłokę Electron: izolowany preload, walidacja nadawcy IPC, natywne kontrolki okna, blokada nowych okien i nawigacji. Dodano tryb testu uruchomienia ze zrzutem renderera.
 - Dopasowano esbuild do Vite 8 po błędzie instalacji, dodano npm lockfile i kanoniczną wersję 1.3.1 w package.json.
 - Dodano quality gates, kontrole Git, konfigurację hooków Codex, workflow Windows CI i blokadę niegotowego wydania.
 - Dodano testy integracji kopii i środowiska, skille oraz rzeczywisty rejestr braków i ciągłości.
