@@ -268,26 +268,29 @@ export const StorageService = {
   },
 
   // Reset do fabrycznego demo
-  resetToDemo(): void {
-    this.savePhotos(DEMO_PHOTOS);
-    this.saveAlbums(DEMO_ALBUMS);
-    this.saveTrips(DEMO_TRIPS);
-    this.saveOfflinePackages(DEMO_OFFLINE_PACKAGES);
+  resetToDemo(): boolean {
+    try {
+      persistence.batch([
+        [STORAGE_KEYS.PHOTOS, JSON.stringify(DEMO_PHOTOS)],
+        [STORAGE_KEYS.ALBUMS, JSON.stringify(DEMO_ALBUMS)],
+        [STORAGE_KEYS.TRIPS, JSON.stringify(DEMO_TRIPS)],
+        [STORAGE_KEYS.OFFLINE_PACKAGES, JSON.stringify(DEMO_OFFLINE_PACKAGES)],
+      ]);
+      return true;
+    } catch { return false; }
   },
 
   // Usunięcie zdjęć demonstracyjnych
-  clearDemoData(): void {
+  clearDemoData(): boolean {
     const photos = this.getPhotos().filter(p => !p.isDemo);
     const albums = this.getAlbums().filter(a => !a.isDemo);
-    this.savePhotos(photos);
-    this.saveAlbums(albums);
+    return this.saveLibrary(photos, albums);
   },
 
   // Czyszczenie pamięci podręcznej kafelków mapy
-  clearMapCache(): number {
+  clearMapCache(): boolean {
     const pkgs = this.getOfflinePackages().map(p => ({ ...p, isDownloaded: false, downloadDate: undefined }));
-    this.saveOfflinePackages(pkgs);
-    return 145; // zwolniono MB
+    return this.saveOfflinePackages(pkgs);
   },
 
   // Eksport bazy do .prezent

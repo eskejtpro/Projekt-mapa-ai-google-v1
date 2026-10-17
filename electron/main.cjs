@@ -11,6 +11,8 @@ const { RemoteControl } = require('./remote-control.cjs');
 const { BackupManager } = require('./backup-manager.cjs');
 const { existsSync, copyFileSync, renameSync, statSync } = require('node:fs');
 protocol.registerSchemesAsPrivileged([{ scheme: 'prezent-tiles', privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+if (!hasSingleInstanceLock) app.quit();
 if (process.argv.includes('--smoke-test')) {
   const profileArgument = process.argv.find(argument => argument.startsWith('--smoke-profile='));
   const profile = profileArgument ? path.resolve(profileArgument.slice('--smoke-profile='.length)) : mkdtempSync(path.join(tmpdir(), 'prezent-desktop-smoke-'));
@@ -20,7 +22,14 @@ if (process.argv.includes('--smoke-test')) {
 }
 const page = pathToFileURL(path.join(__dirname, '../dist/index.html')).href;
 let window;
+if (hasSingleInstanceLock) app.on('second-instance', () => {
+  if (!window || window.isDestroyed()) return;
+  if (window.isMinimized()) window.restore();
+  window.show();
+  window.focus();
+});
 app.whenReady().then(async () => {
+  if (!hasSingleInstanceLock) return;
   const offlineFile = path.join(app.getPath('userData'), 'offline.mbtiles');
   const offlineSmoke = process.argv.includes('--smoke-test') && process.argv.includes('--offline-smoke-test');
   if (offlineSmoke) {
@@ -104,8 +113,9 @@ app.whenReady().then(async () => {
     if (action === 'info') return { photosPath, autoStart: app.getLoginItemSettings().openAtLogin, packaged: app.isPackaged, offlineMapAvailable: offlineMap !== null };
     if (action === 'remove-offline-map') {
       if (offlineMap) { offlineMap.close(); offlineMap = null; }
-      if (existsSync(offlineFile)) renameSync(offlineFile, `${offlineFile}.${Date.now()}.removed`);
-      return true;
+      let removedBytes = 0;
+      if (existsSync(offlineFile)) { removedBytes = statSync(offlineFile).size; renameSync(offlineFile, `${offlineFile}.${Date.now()}.removed`); }
+      return { removedBytes };
     }
     if (action === 'open-photos') {
       mkdirSync(photosPath, { recursive: true });

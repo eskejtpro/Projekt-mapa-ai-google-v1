@@ -1,6 +1,7 @@
 # CHANGELOG.md - Historia Zmian Projektu „Prezent Mapy”
 
 ## Unreleased — środowisko Codex
+- Operacje resetu demo, usuwania demo i czyszczenia stanu map wykonują zapisy kolekcji atomowo; czyszczenie map przenosi rzeczywisty plik MBTiles do odzyskiwalnego archiwum i raportuje jego rozmiar. Dodano blokadę drugiej instancji aplikacji Electron.
 - Dodano automatyczne lokalne kopie .prezent, harmonogram podczas działania aplikacji, sygnalizowanie błędów i dostęp do katalogu kopii z ustawień. Ręczny eksport respektuje ustawienie miniatur.
 - Rozszerzono walidację kopii i ustawień, stan odzyskiwania oraz kontrolę zapisu edycji/usuwania. Dodano produkcyjne CSP i test restartu procesu. Zoptymalizowano powtarzane odczyty identycznych mediów i dodano jawnie syntetyczny benchmark.
 - Podłączono ustawienia pokazu, sortowania/lazy-load galerii, EXIF i autocentrowania wypraw. Mapa korzysta z relacji albumów; nazwy tras i punktów renderowane jako tekst. Wzmocniono raportowanie błędów testu runtime.

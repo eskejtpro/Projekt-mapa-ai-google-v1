@@ -215,10 +215,16 @@ export default function App() {
   };
 
   // Czyszczenie pamięci podręcznej kafelków
-  const handleClearCache = () => {
-    const freed = StorageService.clearMapCache();
+  const handleClearCache = async () => {
+    if (!StorageService.clearMapCache()) { showToast('Nie udało się zapisać stanu map offline.', 'warning'); return; }
+    let removedBytes = 0;
+    if (window.electronAPI) {
+      try { removedBytes = (await window.electronAPI.removeOfflineMap()).removedBytes; }
+      catch { showToast('Nie udało się usunąć lokalnego pakietu map.', 'warning'); return; }
+    }
     loadAllData();
-    showToast(`Wyczyszczono pamięć podręczną map offline. Zwolniono ~${freed} MB.`, 'success');
+    const size = removedBytes > 0 ? ` Zwolniono ${(removedBytes / 1048576).toFixed(1)} MB.` : '';
+    showToast(`Wyczyszczono pamięć podręczną map offline.${size}`, 'success');
   };
 
   // Reset ustawień
@@ -249,7 +255,7 @@ export default function App() {
       message: 'Czy na pewno chcesz przywrócić fabryczny zestaw demonstracyjnych podróży rodzinnych?',
       confirmLabel: 'Przywróć demo',
       onConfirm: () => {
-        StorageService.resetToDemo();
+        if (!StorageService.resetToDemo()) { showToast('Nie udało się przywrócić zestawu demo.', 'warning'); return; }
         loadAllData();
         showToast('Przywrócono demonstracyjny zestaw wypraw.', 'success');
       },
@@ -264,7 +270,7 @@ export default function App() {
       confirmLabel: 'Usuń dane demonstracyjne',
       isDanger: true,
       onConfirm: () => {
-        StorageService.clearDemoData();
+        if (!StorageService.clearDemoData()) { showToast('Nie udało się usunąć danych demonstracyjnych.', 'warning'); return; }
         loadAllData();
         showToast('Usunięto dane demonstracyjne.', 'info');
       },

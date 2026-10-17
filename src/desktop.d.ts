@@ -8,7 +8,7 @@ declare global {
       onRemoteCommand(callback: (command: 'next' | 'previous' | 'toggle-play' | 'close') => void): () => void;
       discoverTVs(): Promise<{ id: string; address: string; description: string; protocol: string }[]>;
       importOfflineMap(): Promise<{ name: string; sizeMb: number } | null>;
-      removeOfflineMap(): Promise<boolean>;
+      removeOfflineMap(): Promise<{ removedBytes: number }>;
       systemInfo(): Promise<{ photosPath: string; autoStart: boolean; packaged: boolean; offlineMapAvailable: boolean }>;
       openPhotos(): Promise<boolean>;
       openBackups(): Promise<boolean>;

@@ -1,6 +1,6 @@
 # Znane problemy
 
-- P0: narzędzia resetowania/czyszczenia danych i pozostałe operacje wielokolekcyjne wymagają kontroli atomowości. Import zdjęć+albumu, .prezent i pojedyncze edycje/usuwanie uwzględniają już błąd zapisu.
+- P1: pozostałe operacje wielokolekcyjne wymagają przeglądu atomowości. Reset demo, usuwanie demo, czyszczenie map, import zdjęć+albumu i .prezent zapisują już stan kontrolowanie; pojedyncze edycje/usuwanie uwzględniają błąd zapisu.
 - P1: stan odzyskiwania po błędzie odczytu jest wdrożony i testowany na uszkodzonym rekordzie. Pozostaje pełna procedura odtwarzania po uszkodzeniu fizycznego SQLite lub braku wielu plików zdjęć.
 - P1: Windows zapisuje SQLite i pliki zdjęć, lecz obrazy są nadal odtwarzane jako base64 w pamięci UI. Podgląd Vite nadal ma limit localStorage.
 - P1: brak pełnych testów importu JPEG z GPS/bez GPS/uszkodzonych obrazów, schowka i przeciągania folderów. FileReader ma już obsługę błędu i anulowania.
