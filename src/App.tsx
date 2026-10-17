@@ -1,1084 +1,666 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  ShieldCheck, 
-  AlertTriangle, 
-  CheckCircle2, 
-  XCircle, 
-  Terminal, 
-  Layers, 
-  Database, 
-  Cpu, 
+  Globe2, 
+  Image as ImageIcon, 
+  Upload, 
+  Play, 
+  Tv, 
+  WifiOff, 
   Smartphone, 
-  FileText, 
-  Sparkles, 
-  ArrowRight, 
-  Copy, 
-  Check, 
-  ListTodo, 
-  BookOpen, 
+  FolderHeart, 
   Compass, 
-  GitBranch, 
-  Code2, 
-  RefreshCw,
-  Search,
-  Filter
+  MapPin, 
+  Layers, 
+  RotateCcw, 
+  SlidersHorizontal, 
+  HardDrive, 
+  Info,
+  Calendar,
+  Sparkles,
+  ExternalLink,
+  CheckCircle2,
+  FolderOpen
 } from 'lucide-react';
 
-// Przykładowe presety kodu do analizy
-const CODE_PRESETS = [
-  {
-    id: 'vm-antipattern',
-    title: 'Błąd: ViewModel z blokowaniem Main & collectAsState',
-    category: 'ViewModel & Coroutines',
-    type: 'warning',
-    code: `// Przykład kodu z poważnymi problemami architektonicznymi
-class BadUserViewModel : ViewModel() {
-    // Problem 1: Użycie MutableStateFlow bez enkapsulacji (brak podziału na private _state i public state)
-    val userList = MutableStateFlow<List<User>>(emptyList())
-    val isLoading = MutableStateFlow(false)
+import { TravelPhoto, TravelAlbum, TravelTrip, OfflineMapPackage, MapTileProvider } from './types/travel';
+import { StorageService } from './services/storage';
 
-    fun loadUsers() {
-        // Problem 2: Użycie GlobalScope lub brak kontroli Dispatcherów
-        GlobalScope.launch {
-            isLoading.value = true
-            // Problem 3: Blokujące wywołanie sieciowe/bazodanowe bez withContext(Dispatchers.IO)
-            val data = RetrofitClient.api.fetchUsersSync().execute().body()
-            userList.value = data ?: emptyList()
-            isLoading.value = false
-        }
-    }
-}
-
-@Composable
-fun UserScreen(viewModel: BadUserViewModel) {
-    // Problem 4: collectAsState() nie zwalnia subskrypcji w tle (potencjalny wyciek / praca w tle)
-    val users by viewModel.userList.collectAsState()
-    
-    // Problem 5: Brak klucza w LazyColumn
-    LazyColumn {
-        items(users) { user ->
-            Text(user.name)
-        }
-    }
-}`,
-    explanation: 'Ten kod zawiera 5 krytycznych błędów: wyciek korutyny przez GlobalScope, blokowanie wątku, brak enkapsulacji stanu, niebezpieczny collectAsState w Compose oraz brak stabilnego klucza w LazyColumn.'
-  },
-  {
-    id: 'room-offline-first',
-    title: 'Wzorzec: Room Offline-First SSOT z Flow',
-    category: 'Data & Room',
-    type: 'success',
-    code: `@Dao
-interface ProductDao {
-    @Query("SELECT * FROM products ORDER BY name ASC")
-    fun getProductsFlow(): Flow<List<ProductEntity>>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertProducts(products: List<ProductEntity>)
-}
-
-class ProductRepositoryImpl @Inject constructor(
-    private val productDao: ProductDao,
-    private val apiService: ProductApiService,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
-) : ProductRepository {
-
-    // Single Source of Truth (SSOT): UI zawsze czyta z bazy danych
-    override fun observeProducts(): Flow<List<Product>> =
-        productDao.getProductsFlow()
-            .map { entities -> entities.map { it.toDomain() } }
-            .flowOn(ioDispatcher)
-
-    // Synchronizacja w tle z obsługą błędów w Result
-    override suspend fun refreshProducts(): Result<Unit> = withContext(ioDispatcher) {
-        runCatching {
-            val remoteData = apiService.fetchProducts()
-            productDao.upsertProducts(remoteData.map { it.toEntity() })
-        }
-    }
-}`,
-    explanation: 'Wzorcowa implementacja Offline-First: baza danych Room stanowi jedyne źródło prawdy (SSOT), dane emitowane są jako reaktywny Flow, a operacje I/O bezpiecznie izolowane na Dispatchers.IO.'
-  },
-  {
-    id: 'compose-m3-clean',
-    title: 'Wzorzec: Compose Material 3 & State Hoisting',
-    category: 'UI & Compose',
-    type: 'success',
-    code: `@Composable
-fun ProductListScreen(
-    viewModel: ProductViewModel = hiltViewModel(),
-    onProductClick: (String) -> Unit
-) {
-    // Prawidłowy odbiór stanu uwzględniający cykl życia Androida
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    ProductListContent(
-        uiState = uiState,
-        onProductClick = onProductClick,
-        onRetry = viewModel::refresh
-    )
-}
-
-@Composable
-fun ProductListContent(
-    uiState: ProductUiState,
-    onProductClick: (String) -> Unit,
-    onRetry: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.products_title)) }
-            )
-        }
-    ) { paddingValues ->
-        when (uiState) {
-            is ProductUiState.Loading -> LoadingIndicator(modifier = Modifier.padding(paddingValues))
-            is ProductUiState.Error -> ErrorView(
-                message = uiState.message,
-                onRetry = onRetry,
-                modifier = Modifier.padding(paddingValues)
-            )
-            is ProductUiState.Success -> {
-                LazyColumn(
-                    modifier = Modifier.padding(paddingValues),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(
-                        items = uiState.items,
-                        key = { it.id } // Stabilny klucz dla optymalizacji rekompozycji
-                    ) { item ->
-                        ProductCard(item = item, onClick = { onProductClick(item.id) })
-                    }
-                }
-            }
-        }
-    }
-}`,
-    explanation: 'Zgodność z wytycznymi Google: podział na Screen (zależny od VM) i Content (stateless, testowalny), collectAsStateWithLifecycle(), stabilny klucz listy oraz modelowanie stanów Loading/Error/Success.'
-  },
-  {
-    id: 'datastore-pattern',
-    title: 'Wzorzec: Jetpack DataStore Preferences',
-    category: 'Preferences & Cache',
-    type: 'success',
-    code: `class UserPreferencesRepository @Inject constructor(
-    private val dataStore: DataStore<Preferences>,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
-) {
-    private object PreferencesKeys {
-        val DARK_MODE_ENABLED = booleanPreferencesKey("dark_mode_enabled")
-        val USER_AUTH_TOKEN = stringPreferencesKey("auth_token")
-    }
-
-    val isDarkMode: Flow<Boolean> = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
-            }
-        }
-        .map { preferences ->
-            preferences[PreferencesKeys.DARK_MODE_ENABLED] ?: false
-        }
-        .flowOn(ioDispatcher)
-
-    suspend fun setDarkMode(enabled: Boolean) = withContext(ioDispatcher) {
-        dataStore.edit { preferences ->
-            preferences[PreferencesKeys.DARK_MODE_ENABLED] = enabled
-        }
-    }
-}`,
-    explanation: 'Nowoczesny zamiennik SharedPreferences. Asynchroniczne I/O, obsługa błędów IOException przez catch, bezpieczne typowanie kluczy i reaktywny Flow.'
-  }
-];
+import { WindowsTitleBar } from './components/WindowsTitleBar';
+import { AboutModal } from './components/AboutModal';
+import { MapView } from './components/MapView';
+import { GalleryView } from './components/GalleryView';
+import { ImportModal } from './components/ImportModal';
+import { SlideshowModal } from './components/SlideshowModal';
+import { TvModeModal } from './components/TvModeModal';
+import { OfflineMapsModal } from './components/OfflineMapsModal';
+import { AndroidSyncModal } from './components/AndroidSyncModal';
+import { PhotoDetailModal } from './components/PhotoDetailModal';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'audit' | 'inspector' | 'tasks' | 'dod' | 'docs'>('audit');
-  const [selectedPreset, setSelectedPreset] = useState<string>('vm-antipattern');
-  const [customCode, setCustomCode] = useState<string>(CODE_PRESETS[0].code);
-  const [copied, setCopied] = useState<boolean>(false);
-  const [taskFilter, setTaskFilter] = useState<'ALL' | 'P0' | 'P1' | 'P2'>('ALL');
-  const [taskStatusFilter, setTaskStatusFilter] = useState<'ALL' | 'DONE' | 'IN_PROGRESS' | 'TODO'>('ALL');
+  // Główne stany bazy danych wspomnień
+  const [photos, setPhotos] = useState<TravelPhoto[]>([]);
+  const [albums, setAlbums] = useState<TravelAlbum[]>([]);
+  const [trips, setTrips] = useState<TravelTrip[]>([]);
+  const [offlinePackages, setOfflinePackages] = useState<OfflineMapPackage[]>([]);
 
-  // Zadania projektu
-  const [tasks, setTasks] = useState([
-    { id: 'TASK-001', priority: 'P0', category: 'Architektura', title: 'Audyt stanu zerowego repozytorium i inwentaryzacja zasobów', status: 'DONE', verified: true },
-    { id: 'TASK-002', priority: 'P0', category: 'Standardy', title: 'Ustalenie reguł AGENTS.md, .codex/config.toml, DoD', status: 'DONE', verified: true },
-    { id: 'TASK-003', priority: 'P0', category: 'Narzędzia', title: 'Implementacja Studio Architekta Android (Audytor, Symulator, Doradca)', status: 'DONE', verified: true },
-    { id: 'TASK-004', priority: 'P0', category: 'Baza Danych', title: 'Wzorcowa architektura Room + Offline-First z Flow (SSOT)', status: 'IN_PROGRESS', verified: false },
-    { id: 'TASK-005', priority: 'P0', category: 'Stan / UI', title: 'Modelowanie ViewModel z StateFlow i collectAsStateWithLifecycle', status: 'IN_PROGRESS', verified: false },
-    { id: 'TASK-006', priority: 'P1', category: 'Preferencje', title: 'DataStore Preferences z szyfrowaniem i typowaniem', status: 'TODO', verified: false },
-    { id: 'TASK-007', priority: 'P1', category: 'Nawigacja', title: 'Navigation Compose Type-Safe routing bez magic strings', status: 'TODO', verified: false },
-    { id: 'TASK-008', priority: 'P2', category: 'Material 3', title: 'Komponenty M3, adaptacyjny layout (Foldables, Tablety, Telefony)', status: 'TODO', verified: false },
-    { id: 'TASK-009', priority: 'P0', category: 'CI/CD & Jakość', title: 'Konfiguracja reguł Detekt, ktlint i Android Lint', status: 'TODO', verified: false },
-    { id: 'TASK-010', priority: 'P0', category: 'Wydanie Końcowe', title: 'Stabilizacja, weryfikacja DoD i przygotowanie do wdrożenia', status: 'TODO', verified: false },
-  ]);
+  // Okno Windows 10/11
+  const [isWindowMaximized, setIsWindowMaximized] = useState<boolean>(true);
+  const [isWindowMinimized, setIsWindowMinimized] = useState<boolean>(false);
+  const [isAboutOpen, setIsAboutOpen] = useState<boolean>(false);
 
-  // Reguły analizatora kodu w czasie rzeczywistym
-  const codeAnalysis = useMemo(() => {
-    const findings: { type: 'error' | 'warning' | 'success'; title: string; description: string; fix: string }[] = [];
-    const code = customCode;
+  // Stany widoków
+  const [activeTab, setActiveTab] = useState<'map' | 'gallery' | 'trips' | 'windows'>('map');
+  const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
+  const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
+  const [tileProvider, setTileProvider] = useState<MapTileProvider>('dark');
+  const [isOfflineSimulation, setIsOfflineSimulation] = useState<boolean>(false);
 
-    // 1. Sprawdzenie GlobalScope
-    if (code.includes('GlobalScope')) {
-      findings.push({
-        type: 'error',
-        title: 'Niedozwolone użycie GlobalScope (Wyciek pamięci)',
-        description: 'GlobalScope nie jest powiązany z cyklem życia komponentu Android. Prace trwają nawet po zniszczeniu ekranu.',
-        fix: 'Użyj viewModelScope.launch w ViewModel lub rememberCoroutineScope() w Compose.'
-      });
-    }
+  // Modale
+  const [isImportOpen, setIsImportOpen] = useState<boolean>(false);
+  const [isSlideshowOpen, setIsSlideshowOpen] = useState<boolean>(false);
+  const [slideshowPhotos, setSlideshowPhotos] = useState<TravelPhoto[]>([]);
+  const [slideshowStartIndex, setSlideshowStartIndex] = useState<number>(0);
+  const [isTvModeOpen, setIsTvModeOpen] = useState<boolean>(false);
+  const [isOfflineModalOpen, setIsOfflineModalOpen] = useState<boolean>(false);
+  const [isAndroidSyncOpen, setIsAndroidSyncOpen] = useState<boolean>(false);
+  const [selectedPhotoForDetail, setSelectedPhotoForDetail] = useState<TravelPhoto | null>(null);
 
-    // 2. Sprawdzenie collectAsState vs collectAsStateWithLifecycle
-    if (code.includes('.collectAsState()') && !code.includes('collectAsStateWithLifecycle')) {
-      findings.push({
-        type: 'error',
-        title: 'Niebezpieczny odbiór stanu: collectAsState()',
-        description: 'Zwykły collectAsState() kontynuuje pobieranie emisji z Flow nawet gdy aplikacja jest w tle (stan STOPPED), zużywając baterię i zasoby.',
-        fix: 'Zastąp przez: val state by viewModel.state.collectAsStateWithLifecycle() z biblioteki androidx.lifecycle:lifecycle-runtime-compose.'
-      });
-    }
+  // Ładowanie początkowe z lokalnego magazynu
+  useEffect(() => {
+    loadAllData();
+  }, []);
 
-    // 3. Sprawdzenie enkapsulacji stanu (MutableStateFlow publiczny)
-    if (code.includes('val ') && code.includes('MutableStateFlow') && !code.includes('private val _')) {
-      findings.push({
-        type: 'warning',
-        title: 'Brak enkapsulacji stanu w ViewModel',
-        description: 'Wystawianie MutableStateFlow jako publicznej właściwości łamie zasadę UDF (Unidirectional Data Flow) – widok może bezpośrednio mutować stan.',
-        fix: 'Zastosuj wzorzec: private val _uiState = MutableStateFlow(...); val uiState: StateFlow<T> = _uiState.asStateFlow()'
-      });
-    }
+  const loadAllData = () => {
+    const p = StorageService.getPhotos();
+    const a = StorageService.getAlbums();
+    const t = StorageService.getTrips();
+    const pkg = StorageService.getOfflinePackages();
+    const s = StorageService.getSettings();
 
-    // 4. Sprawdzenie LazyColumn bez klucza
-    if (code.includes('LazyColumn') && code.includes('items(') && !code.includes('key =')) {
-      findings.push({
-        type: 'warning',
-        title: 'Brak stabilnego parametru key w LazyColumn/LazyRow',
-        description: 'Brak klucza w items(...) zmusza silnik Jetpack Compose do rekomponowania wszystkich elementów listy przy każdej zmianie kolejności.',
-        fix: 'Dodaj jawny klucz: items(items = list, key = { it.id }) { item -> ... }'
-      });
-    }
-
-    // 5. Sprawdzenie wątku I/O
-    if ((code.includes('fetch') || code.includes('query') || code.includes('execute()') || code.includes('insert')) && 
-        !code.includes('Dispatchers.IO') && !code.includes('withContext') && !code.includes('flowOn')) {
-      findings.push({
-        type: 'error',
-        title: 'Ryzyko blokowania głównego wątku (ANR na Dispatchers.Main)',
-        description: 'Operacje sieciowe i dostęp do dysku/bazy danych nie mogą być wykonywane na wątku UI.',
-        fix: 'Opakuj operacje w withContext(Dispatchers.IO) lub użyj suspend DAO z Room, które automatycznie przełącza dispatcher.'
-      });
-    }
-
-    // 6. Sprawdzenie wzorców pozytywnych
-    if (code.includes('collectAsStateWithLifecycle')) {
-      findings.push({
-        type: 'success',
-        title: 'Wzorowe zarządzanie cyklem życia: collectAsStateWithLifecycle',
-        description: 'Prawidłowo zatrzymuje subskrypcję strumienia, gdy widok przechodzi w tło (min Lifecycle.State.STARTED).',
-        fix: 'Brak uwag. Wzorcowa praktyka Google.'
-      });
-    }
-
-    if (code.includes('Single Source of Truth') || (code.includes('@Dao') && code.includes('Flow<'))) {
-      findings.push({
-        type: 'success',
-        title: 'Architektura Offline-First (SSOT)',
-        description: 'Baza Room emituje strumienie reaktywne Flow, gwarantując stałą dostępność danych bez połączenia sieciowego.',
-        fix: 'Brak uwag. Wzorcowa implementacja.'
-      });
-    }
-
-    if (code.includes('DataStore')) {
-      findings.push({
-        type: 'success',
-        title: 'Nowoczesny magazyn preferencji (Jetpack DataStore)',
-        description: 'Bezpieczna, asynchroniczna alternatywa dla przestarzałego SharedPreferences z pełnym wsparciem Coroutines.',
-        fix: 'Brak uwag.'
-      });
-    }
-
-    const score = Math.max(20, 100 - findings.filter(f => f.type === 'error').length * 30 - findings.filter(f => f.type === 'warning').length * 15);
-    
-    let grade = 'A+ (Świetna architektura)';
-    if (score < 50) grade = 'F (Naruszenia krytyczne)';
-    else if (score < 75) grade = 'C (Wymagany refaktoring)';
-    else if (score < 90) grade = 'B (Drobne poprawki)';
-
-    return { findings, score, grade };
-  }, [customCode]);
-
-  const toggleTaskStatus = (id: string) => {
-    setTasks(prev => prev.map(t => {
-      if (t.id === id) {
-        const nextStatus = t.status === 'DONE' ? 'TODO' : t.status === 'TODO' ? 'IN_PROGRESS' : 'DONE';
-        return { ...t, status: nextStatus, verified: nextStatus === 'DONE' };
-      }
-      return t;
-    }));
+    setPhotos(p);
+    setAlbums(a);
+    setTrips(t);
+    setOfflinePackages(pkg);
+    setTileProvider(s.defaultMapLayer);
+    setIsOfflineSimulation(s.offlineSimulationMode);
   };
 
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  // Obsługa dodania zdjęć z importu
+  const handleImportComplete = (newPhotos: TravelPhoto[], newAlbum?: TravelAlbum) => {
+    const updatedPhotos = [...newPhotos, ...photos];
+    setPhotos(updatedPhotos);
+    StorageService.savePhotos(updatedPhotos);
+
+    if (newAlbum) {
+      const updatedAlbums = [newAlbum, ...albums];
+      setAlbums(updatedAlbums);
+      StorageService.saveAlbums(updatedAlbums);
+    }
   };
 
-  const filteredTasks = tasks.filter(t => {
-    if (taskFilter !== 'ALL' && t.priority !== taskFilter) return false;
-    if (taskStatusFilter !== 'ALL' && t.status !== taskStatusFilter) return false;
-    return true;
-  });
+  // Ulubione
+  const handleToggleFavorite = (id: string) => {
+    const updated = photos.map(p => p.id === id ? { ...p, isFavorite: !p.isFavorite } : p);
+    setPhotos(updated);
+    StorageService.savePhotos(updated);
+  };
+
+  // Usunięcie zdjęcia
+  const handleDeletePhoto = (id: string) => {
+    const updated = photos.filter(p => p.id !== id);
+    setPhotos(updated);
+    StorageService.savePhotos(updated);
+  };
+
+  // Aktualizacja zdjęcia po edycji
+  const handleUpdatePhoto = (updatedPhoto: TravelPhoto) => {
+    const updated = photos.map(p => p.id === updatedPhoto.id ? updatedPhoto : p);
+    setPhotos(updated);
+    StorageService.savePhotos(updated);
+    setSelectedPhotoForDetail(updatedPhoto);
+  };
+
+  // Start pokazu slajdów
+  const handleStartSlideshow = (customList?: TravelPhoto[], startIndex: number = 0) => {
+    const list = customList && customList.length > 0 ? customList : photos;
+    setSlideshowPhotos(list);
+    setSlideshowStartIndex(startIndex);
+    setIsSlideshowOpen(true);
+  };
+
+  // Reset do demo
+  const handleResetDemo = () => {
+    if (confirm('Czy na pewno chcesz przywrócić fabryczny zestaw demonstracyjnych podróży rodzinnych?')) {
+      StorageService.resetToDemo();
+      loadAllData();
+    }
+  };
+
+  // Wyczyszczenie demo
+  const handleClearDemo = () => {
+    if (confirm('Czy chcesz usunąć wszystkie przykładowe wspomnienia demonstracyjne i zostawić tylko swoje własne zdjęcia?')) {
+      StorageService.clearDemoData();
+      loadAllData();
+    }
+  };
+
+  const handleOpenWindowsFolder = () => {
+    alert('Otwieranie folderu w systemie Windows:\nexplorer.exe "C:\\Users\\Rodzina\\Obrazy\\Prezent-Wspomnienia"');
+  };
+
+  const handleCloseApp = () => {
+    if (confirm('Czy chcesz zamknąć aplikację Prezent?')) {
+      setIsWindowMinimized(true);
+    }
+  };
+
+  const demoPhotosCount = photos.filter(p => p.isDemo).length;
+  const userPhotosCount = photos.filter(p => !p.isDemo).length;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">
-      {/* Pasek górny - Senior Architect Header */}
-      <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50 px-4 py-3">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              <Smartphone className="w-6 h-6 text-slate-950" />
+    <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950 overflow-hidden">
+      {/* TŁO PULPITU WINDOWS 11 JEŚLI OKNO JEST ZMNIEJSZONE LUB ZMINIMALIZOWANE */}
+      {!isWindowMaximized && (
+        <div className="absolute inset-0 bg-gradient-to-tr from-slate-950 via-[#0d1527] to-[#172554] flex items-center justify-center p-3 sm:p-6 pointer-events-none">
+          {/* Subtelna abstrakcyjna tapeta Windows 11 */}
+          <div className="absolute w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-3xl pointer-events-none -translate-x-1/3 -translate-y-1/4" />
+          <div className="absolute w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-3xl pointer-events-none translate-x-1/3 translate-y-1/4" />
+        </div>
+      )}
+
+      {/* PASEK ZMINIMALIZOWANEGO OKNA W PASKU ZADAŃ WINDOWS */}
+      {isWindowMinimized ? (
+        <div className="flex-1 flex flex-col items-center justify-center p-8 z-30">
+          <div className="bg-slate-900/90 backdrop-blur-md border border-slate-700 p-8 rounded-3xl shadow-2xl text-center space-y-4 max-w-md animate-in zoom-in-95">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-emerald-400 flex items-center justify-center shadow-lg text-slate-950 font-black mx-auto">
+              <Globe2 className="w-10 h-10 stroke-[2.2]" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-bold text-lg text-slate-100 tracking-tight">Android Architecture Studio</h1>
-                <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  Senior Architect Mode
-                </span>
-              </div>
-              <p className="text-xs text-slate-400">
-                Audyt, doradztwo i nadzór inżynieryjny: Kotlin 2.0 • Jetpack Compose • Material 3 • MVVM • Room SSOT • DataStore
+              <h3 className="font-bold text-lg text-white">Okno programu Prezent jest zminimalizowane</h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Aplikacja działa w tle w systemie Windows 10/11. Kliknij poniżej, aby przywrócić okno na pulpit.
               </p>
+            </div>
+            <button
+              onClick={() => setIsWindowMinimized(false)}
+              className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg transition-all cursor-pointer"
+            >
+              Przywróć okno programu
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* KONTENER OKNA APLIKACJI WINDOWS */
+        <div
+          className={`flex flex-col z-20 transition-all duration-200 ${
+            isWindowMaximized
+              ? 'w-full h-screen'
+              : 'w-full max-w-7xl h-[94vh] mx-auto my-auto rounded-xl border border-slate-700/80 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85)] overflow-hidden bg-slate-950'
+          }`}
+        >
+          {/* 1. Belka Tytułowa Okna Windows 10/11 (Titlebar + Menu) */}
+          <WindowsTitleBar
+            isMaximized={isWindowMaximized}
+            onToggleMaximize={() => setIsWindowMaximized(!isWindowMaximized)}
+            onMinimize={() => setIsWindowMinimized(true)}
+            onCloseApp={handleCloseApp}
+            onOpenImport={() => setIsImportOpen(true)}
+            onStartSlideshow={() => handleStartSlideshow()}
+            onOpenTvMode={() => setIsTvModeOpen(true)}
+            onOpenOfflineMaps={() => setIsOfflineModalOpen(true)}
+            onOpenAndroidSync={() => setIsAndroidSyncOpen(true)}
+            onOpenAbout={() => setIsAboutOpen(true)}
+            onOpenWindowsFolder={handleOpenWindowsFolder}
+            onSelectTab={(tab) => setActiveTab(tab)}
+          />
+
+          {/* 2. Pasek Narzędzi i Nawigacji Programu Prezent */}
+          <div className="bg-[#0f172a] border-b border-slate-800 px-4 py-2 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shrink-0">
+            {/* Zakładki programu */}
+            <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-semibold overflow-x-auto w-full md:w-auto">
+              <button
+                onClick={() => setActiveTab('map')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  activeTab === 'map'
+                    ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                }`}
+              >
+                <Compass className="w-4 h-4" />
+                Interaktywna Mapa Świata
+              </button>
+              <button
+                onClick={() => setActiveTab('gallery')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  activeTab === 'gallery'
+                    ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                }`}
+              >
+                <ImageIcon className="w-4 h-4" />
+                Galeria & Albumy ({photos.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('trips')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  activeTab === 'trips'
+                    ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                }`}
+              >
+                <MapPin className="w-4 h-4" />
+                Trasy Podróży ({trips.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('windows')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  activeTab === 'windows'
+                    ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                }`}
+              >
+                <HardDrive className="w-4 h-4" />
+                Eksplorator Windows & Narzędzia
+              </button>
+            </div>
+
+            {/* Szybkie przyciski akcji */}
+            <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+              <button
+                onClick={() => setIsImportOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all cursor-pointer"
+                title="Wybierz zdjęcia lub cały folder z dysku"
+              >
+                <Upload className="w-3.5 h-3.5 text-amber-400" />
+                <span>Importuj zdjęcia</span>
+              </button>
+
+              <button
+                onClick={() => handleStartSlideshow()}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-emerald-500 text-slate-950 text-xs font-bold hover:brightness-110 shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
+                title="Rozpocznij kinowy pokaz slajdów (Spacja)"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>Pokaz slajdów</span>
+              </button>
+
+              <button
+                onClick={() => setIsTvModeOpen(true)}
+                className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-400 hover:text-indigo-300 border border-slate-700 transition-all cursor-pointer"
+                title="Tryb TV / Salon 4K"
+              >
+                <Tv className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={() => setIsOfflineModalOpen(true)}
+                className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-400 hover:text-teal-300 border border-slate-700 transition-all cursor-pointer"
+                title="Mapy Offline"
+              >
+                <WifiOff className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
-          {/* Nawigacja zakładkowa */}
-          <nav className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-medium w-full md:w-auto overflow-x-auto">
-            <button
-              onClick={() => setActiveTab('audit')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
-                activeTab === 'audit'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              Audyt Repozytorium
-            </button>
-            <button
-              onClick={() => setActiveTab('inspector')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
-                activeTab === 'inspector'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-              }`}
-            >
-              <Code2 className="w-3.5 h-3.5" />
-              Doradca & Analizator Kodu
-            </button>
-            <button
-              onClick={() => setActiveTab('tasks')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
-                activeTab === 'tasks'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-              }`}
-            >
-              <ListTodo className="w-3.5 h-3.5" />
-              Rejestr Zadań (TASKS)
-            </button>
-            <button
-              onClick={() => setActiveTab('dod')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
-                activeTab === 'dod'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-              }`}
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Definition of Done
-            </button>
-            <button
-              onClick={() => setActiveTab('docs')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
-                activeTab === 'docs'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-              }`}
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              Dokumentacja Architektury
-            </button>
-          </nav>
-        </div>
-      </header>
+          {/* 3. Główny Obszar Treści w Oknie */}
+          <div className="flex-1 overflow-y-auto p-4 md:p-5 flex flex-col bg-slate-950">
+            {/* ZAKŁADKA 1: MAPA ŚWIATA */}
+            {activeTab === 'map' && (
+              <div className="flex-1 flex flex-col space-y-3 min-h-[480px]">
+                <MapView
+                  photos={photos}
+                  trips={trips}
+                  selectedTripId={selectedTripId}
+                  onSelectPhoto={(photo) => setSelectedPhotoForDetail(photo)}
+                  onStartSlideshow={(customList) => handleStartSlideshow(customList)}
+                  tileProvider={tileProvider}
+                  onChangeTileProvider={(p) => {
+                    setTileProvider(p);
+                    const s = StorageService.getSettings();
+                    StorageService.saveSettings({ ...s, defaultMapLayer: p });
+                  }}
+                />
 
-      {/* Główna treść */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
-        {/* ZAKŁADKA 1: AUDYT REPOZYTORIUM */}
-        {activeTab === 'audit' && (
-          <div className="space-y-6">
-            {/* Karta statusu audytu */}
-            <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-800/80 rounded-2xl border border-slate-800 p-6 shadow-xl relative overflow-hidden">
-              <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-              
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-                <div>
-                  <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold mb-2">
-                    <ShieldCheck className="w-4 h-4" />
-                    Raport Wykonawczy Architekta • Stan Początkowy
+                {/* Szybki filtr podróży */}
+                <div className="bg-[#0f172a] border border-slate-800 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-400 font-semibold flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-amber-400" /> Trasa podróży:
+                    </span>
+                    <button
+                      onClick={() => setSelectedTripId(null)}
+                      className={`px-2.5 py-1 rounded-lg text-xs transition-all cursor-pointer ${
+                        selectedTripId === null
+                          ? 'bg-amber-500 text-slate-950 font-bold'
+                          : 'bg-slate-950 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Wszystkie na mapie
+                    </button>
+                    {trips.map(trip => (
+                      <button
+                        key={trip.id}
+                        onClick={() => setSelectedTripId(trip.id)}
+                        className={`px-2.5 py-1 rounded-lg text-xs transition-all cursor-pointer ${
+                          selectedTripId === trip.id
+                            ? 'bg-emerald-500 text-slate-950 font-bold'
+                            : 'bg-slate-950 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {trip.title} ({trip.year})
+                      </button>
+                    ))}
                   </div>
-                  <h2 className="text-2xl font-bold tracking-tight text-white">
-                    Faktyczny Stan Repozytorium vs Oczekiwania Projektu
-                  </h2>
-                  <p className="text-sm text-slate-400 mt-1">
-                    Kompleksowa weryfikacja struktury kodu, zależności, procesów ciągłości i środowiska uruchomieniowego.
-                  </p>
-                </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <div className="text-xs text-slate-400">Stopień gotowości bazy</div>
-                    <div className="text-xl font-mono font-bold text-emerald-400">30% (Faza Inicjalizacji)</div>
-                  </div>
-                  <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-emerald-400">
-                    <Compass className="w-6 h-6 animate-pulse" />
-                  </div>
+                  <span className="text-[11px] text-slate-400 font-mono">
+                    Wspomnienia na mapie: {photos.length} zdjęć
+                  </span>
                 </div>
               </div>
+            )}
 
-              {/* 3 Kluczowe Wnioski Audytu */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-slate-950/60 rounded-xl p-4 border border-slate-800">
-                  <div className="flex items-center gap-2 text-amber-400 font-semibold text-sm mb-2">
-                    <AlertTriangle className="w-4 h-4" />
-                    Brak Zdalnego Repozytorium Git
-                  </div>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    W środowisku zastano czysty szablon AI Studio bez powiązanego remote GitHub. Brak plików AGENTS.md, ROADMAP.md, TASKS.md w kodzie źródłowym.
-                  </p>
-                  <div className="mt-3 text-[11px] text-emerald-400 font-medium">
-                    ✓ Podjęte działanie: Wygenerowano pełną specyfikację projektową.
-                  </div>
-                </div>
+            {/* ZAKŁADKA 2: GALERIA I ALBUMY */}
+            {activeTab === 'gallery' && (
+              <GalleryView
+                photos={photos}
+                albums={albums}
+                trips={trips}
+                onSelectPhoto={(photo) => setSelectedPhotoForDetail(photo)}
+                onToggleFavorite={handleToggleFavorite}
+                onDeletePhoto={handleDeletePhoto}
+                onStartSlideshow={(list) => handleStartSlideshow(list)}
+                onSelectAlbum={(id) => setSelectedAlbumId(id)}
+                selectedAlbumId={selectedAlbumId}
+              />
+            )}
 
-                <div className="bg-slate-950/60 rounded-xl p-4 border border-slate-800">
-                  <div className="flex items-center gap-2 text-emerald-400 font-semibold text-sm mb-2">
-                    <CheckCircle2 className="w-4 h-4" />
-                    Zgodność z Nowoczesnym Stosem
-                  </div>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    Ustalono bezkompromisowe wytyczne: Kotlin 2.0, Jetpack Compose, Material 3, ViewModel z StateFlow, Room jako SSOT oraz DataStore Preferences.
-                  </p>
-                  <div className="mt-3 text-[11px] text-emerald-400 font-medium">
-                    ✓ Podjęte działanie: Wdrożono bramki jakościowe w .codex/config.toml.
-                  </div>
-                </div>
-
-                <div className="bg-slate-950/60 rounded-xl p-4 border border-slate-800">
-                  <div className="flex items-center gap-2 text-indigo-400 font-semibold text-sm mb-2">
-                    <Layers className="w-4 h-4" />
-                    Czysta Architektura & Offline-First
-                  </div>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    Aplikacja projektowana jest w oparciu o separację odpowiedzialności (Data, Domain, UI), zakaz blokowania wątku UI oraz reaktywny przepływ danych.
-                  </p>
-                  <div className="mt-3 text-[11px] text-indigo-400 font-medium">
-                    ✓ Podjęte działanie: Skonstruowano kryteria Definition of Done.
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Macierz Architektury i Standardów */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Lewa kolumna: Moduły i Warstwy */}
-              <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 space-y-4">
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-emerald-400" />
-                  Architektura Warstwowa Aplikacji Android
-                </h3>
-                
-                <div className="space-y-3">
-                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Warstwa UI & Prezentacji</span>
-                      <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Jetpack Compose + Material 3</span>
-                    </div>
+            {/* ZAKŁADKA 3: TRASY I PREZENTACJA WYPRAW */}
+            {activeTab === 'trips' && (
+              <div className="space-y-5">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                      <MapPin className="w-5 h-5 text-amber-400" />
+                      Prezentacja Wypraw i Tras Podróżniczych
+                    </h2>
                     <p className="text-xs text-slate-400">
-                      Bezstanowe komponenty Composable, State Hoisting, unikanie niepotrzebnych rekompozycji. Konsumpcja stanu wyłącznie przez <code className="text-emerald-300 bg-slate-900 px-1 py-0.5 rounded">collectAsStateWithLifecycle()</code>.
+                      Wybierz podróż, aby wyświetlić jej trasę etapową, dystans i rozpocząć pokaz.
                     </p>
                   </div>
 
-                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">Warstwa ViewModel & Stanu</span>
-                      <span className="text-[11px] px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/30">MVVM / StateFlow</span>
-                    </div>
-                    <p className="text-xs text-slate-400">
-                      Prywatny <code className="text-indigo-300 bg-slate-900 px-1 py-0.5 rounded">_uiState: MutableStateFlow</code>, publiczny <code className="text-indigo-300 bg-slate-900 px-1 py-0.5 rounded">uiState: StateFlow</code>. Jednokierunkowy przepływ danych (UDF), zdarzenia jednorazowe przez Channel / SharedFlow.
-                    </p>
-                  </div>
-
-                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Warstwa Domenowa (Domain)</span>
-                      <span className="text-[11px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">UseCases / Interactors</span>
-                    </div>
-                    <p className="text-xs text-slate-400">
-                      Czysty Kotlin, brak zależności od Android SDK. Każdy przypadek użycia reprezentuje pojedynczą operację biznesową i zwraca <code className="text-amber-300 bg-slate-900 px-1 py-0.5 rounded">Result&lt;T&gt;</code> lub <code className="text-amber-300 bg-slate-900 px-1 py-0.5 rounded">Flow&lt;T&gt;</code>.
-                    </p>
-                  </div>
-
-                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-teal-400 uppercase tracking-wider">Warstwa Danych & Offline-First</span>
-                      <span className="text-[11px] px-2 py-0.5 rounded bg-teal-500/10 text-teal-400 border border-teal-500/30">Room + DataStore (SSOT)</span>
-                    </div>
-                    <p className="text-xs text-slate-400">
-                      Baza Room jako Single Source of Truth. Operacje sieciowe zapisują do lokalnego cache. Wszelkie I/O zabezpieczone na poziomie Repository za pomocą <code className="text-teal-300 bg-slate-900 px-1 py-0.5 rounded">Dispatchers.IO</code>.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Prawa kolumna: Podsumowanie audytu środowiska */}
-              <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 space-y-4 flex flex-col justify-between">
-                <div>
-                  <h3 className="text-base font-bold text-white flex items-center gap-2 mb-3">
-                    <Terminal className="w-5 h-5 text-indigo-400" />
-                    Weryfikacja Środowiska Wykonawczego
-                  </h3>
-
-                  <div className="space-y-2 text-xs">
-                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950 border border-slate-800/80">
-                      <span className="text-slate-400">Środowisko bazowe:</span>
-                      <span className="font-mono text-slate-200">Google AI Studio Node 22 / Cloud Run</span>
-                    </div>
-                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950 border border-slate-800/80">
-                      <span className="text-slate-400">Status kompilacji web app:</span>
-                      <span className="font-mono text-emerald-400 flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Aktywna (Port 3000)
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950 border border-slate-800/80">
-                      <span className="text-slate-400">Pliki dokumentacji utworzone:</span>
-                      <span className="font-mono text-emerald-400">AGENTS.md, DoD, ROADMAP, TASKS, .codex</span>
-                    </div>
-                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950 border border-slate-800/80">
-                      <span className="text-slate-400">Rekomendowane wersje Android:</span>
-                      <span className="font-mono text-slate-200">Kotlin 2.0.21, Compose 1.7+, Room 2.6.1</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 p-3.5 rounded-xl bg-slate-950 border border-slate-800">
-                    <h4 className="text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                      Plan Działania Architekta:
-                    </h4>
-                    <ol className="text-xs text-slate-400 space-y-1.5 list-decimal list-inside">
-                      <li>Utrzymanie pełnej dokumentacji i weryfikacji DoD dla każdego etapu.</li>
-                      <li>Dostarczenie referencyjnych implementacji dla kluczowych modułów (Room, ViewModel, DataStore).</li>
-                      <li>Zapewnienie interaktywnego narzędzia do audytu kodu i eliminacji antywzorców.</li>
-                      <li>Przejście do realizacji zadań o najwyższym priorytecie (P0) z TASKS.md.</li>
-                    </ol>
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
-                  <span className="text-xs text-slate-500">Ostatnia weryfikacja: dzisiaj</span>
                   <button
-                    onClick={() => setActiveTab('inspector')}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
+                    onClick={() => handleStartSlideshow()}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-emerald-500 text-slate-950 font-bold text-xs hover:brightness-110 shadow-md cursor-pointer"
                   >
-                    Przejdź do Inspektora Kodu <ArrowRight className="w-3.5 h-3.5" />
+                    <Play className="w-4 h-4 fill-current" />
+                    Pokaz slajdów wszystkich podróży
                   </button>
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* ZAKŁADKA 2: DORADCA & ANALIZATOR KODU */}
-        {activeTab === 'inspector' && (
-          <div className="space-y-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Code2 className="w-6 h-6 text-emerald-400" />
-                  Interaktywny Doradca & Analizator Kodu Android
-                </h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  Wklej swój kod Kotlin / Compose lub wybierz gotowy przypadek, aby sprawdzić wycieki pamięci, błędy wątkowości i zgodność z architekturą Google.
-                </p>
-              </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {trips.map(trip => {
+                    const tripPhotos = photos.filter(p => {
+                      if (trip.id === 'trip-italy-2024') return p.location.countryCode === 'IT';
+                      if (trip.id === 'trip-greece-2023') return p.location.countryCode === 'GR';
+                      if (trip.id === 'trip-poland-tatry') return p.location.countryCode === 'PL';
+                      if (trip.id === 'trip-japan-spring') return p.location.countryCode === 'JP';
+                      if (trip.id === 'trip-norway-fjords') return p.location.countryCode === 'NO';
+                      return false;
+                    });
 
-              {/* Wybór presetu */}
-              <div className="flex items-center gap-2 w-full md:w-auto">
-                <span className="text-xs text-slate-400 whitespace-nowrap">Przypadek testowy:</span>
-                <select
-                  value={selectedPreset}
-                  onChange={(e) => {
-                    const preset = CODE_PRESETS.find(p => p.id === e.target.value);
-                    if (preset) {
-                      setSelectedPreset(preset.id);
-                      setCustomCode(preset.code);
-                    }
-                  }}
-                  className="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-emerald-500 w-full md:w-auto"
-                >
-                  {CODE_PRESETS.map(p => (
-                    <option key={p.id} value={p.id}>{p.title}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Dwu-kolumnowy edytor i audyt w czasie rzeczywistym */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Kolumna kodu (7/12) */}
-              <div className="lg:col-span-7 space-y-3">
-                <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
-                  <div className="flex items-center justify-between px-4 py-2.5 bg-slate-950 border-b border-slate-800 text-xs">
-                    <div className="flex items-center gap-2">
-                      <div className="flex gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-                      </div>
-                      <span className="font-mono text-slate-400">AndroidCodeSnippet.kt</span>
-                    </div>
-
-                    <button
-                      onClick={() => handleCopy(customCode)}
-                      className="flex items-center gap-1 text-slate-400 hover:text-slate-200 transition-colors"
-                      title="Kopiuj kod"
-                    >
-                      {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span className="text-[11px]">{copied ? 'Skopiowano' : 'Kopiuj'}</span>
-                    </button>
-                  </div>
-
-                  <textarea
-                    value={customCode}
-                    onChange={(e) => setCustomCode(e.target.value)}
-                    rows={18}
-                    className="w-full bg-slate-950/90 text-slate-200 font-mono text-xs p-4 focus:outline-none resize-none leading-relaxed selection:bg-emerald-500/30"
-                    placeholder="Wklej kod Kotlin / Jetpack Compose tutaj..."
-                    spellCheck={false}
-                  />
-
-                  <div className="px-4 py-2 bg-slate-950/70 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-                    <span>Linijek kodu: {customCode.split('\n').length}</span>
-                    <button
-                      onClick={() => setCustomCode('')}
-                      className="text-slate-500 hover:text-red-400 transition-colors"
-                    >
-                      Wyczyść pole
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Kolumna audytu i rekomendacji (5/12) */}
-              <div className="lg:col-span-5 space-y-4">
-                {/* Karta Oceny Architektonicznej */}
-                <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 shadow-xl">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <div className="text-xs text-slate-400">Ocena Architekta</div>
-                      <div className="text-xl font-bold text-white mt-0.5">{codeAnalysis.grade}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs text-slate-400">Wskaźnik Jakości</div>
-                      <div className={`text-2xl font-mono font-bold ${
-                        codeAnalysis.score >= 80 ? 'text-emerald-400' : codeAnalysis.score >= 50 ? 'text-amber-400' : 'text-red-400'
-                      }`}>
-                        {codeAnalysis.score}/100
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Pasek postępu oceny */}
-                  <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden mb-4">
-                    <div
-                      className={`h-full transition-all duration-500 ${
-                        codeAnalysis.score >= 80 ? 'bg-emerald-500' : codeAnalysis.score >= 50 ? 'bg-amber-500' : 'bg-red-500'
-                      }`}
-                      style={{ width: `${codeAnalysis.score}%` }}
-                    />
-                  </div>
-
-                  {/* Lista wykrytych problemów i dobrych praktyk */}
-                  <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
-                    {codeAnalysis.findings.length === 0 ? (
-                      <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-center text-xs text-slate-400">
-                        Wklej kod powyżej, aby uruchomić audyt reguł architektonicznych.
-                      </div>
-                    ) : (
-                      codeAnalysis.findings.map((f, i) => (
-                        <div
-                          key={i}
-                          className={`p-3.5 rounded-xl border text-xs space-y-1.5 ${
-                            f.type === 'error'
-                              ? 'bg-red-950/20 border-red-900/50 text-red-200'
-                              : f.type === 'warning'
-                              ? 'bg-amber-950/20 border-amber-900/50 text-amber-200'
-                              : 'bg-emerald-950/20 border-emerald-900/50 text-emerald-200'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 font-semibold">
-                            {f.type === 'error' && <XCircle className="w-4 h-4 text-red-400 shrink-0" />}
-                            {f.type === 'warning' && <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />}
-                            {f.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
-                            <span>{f.title}</span>
+                    return (
+                      <div
+                        key={trip.id}
+                        className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-xl hover:border-amber-500/50 hover:shadow-2xl transition-all duration-300 flex flex-col"
+                      >
+                        <div className="relative aspect-16/9 w-full overflow-hidden bg-slate-950">
+                          <img
+                            src={trip.coverPhotoUrl}
+                            alt={trip.title}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
+                          <div className="absolute top-2.5 left-2.5 bg-slate-900/90 backdrop-blur px-2.5 py-0.5 rounded-lg text-xs font-bold text-amber-400 border border-amber-500/30">
+                            {trip.year}
                           </div>
-                          <p className="text-[11px] text-slate-300 leading-normal pl-6">
-                            {f.description}
-                          </p>
-                          <div className="text-[11px] font-mono bg-slate-950/80 p-2 rounded-lg border border-slate-800 text-slate-200 mt-2">
-                            <span className="text-emerald-400 font-bold block mb-0.5">Rekomendacja architekta:</span>
-                            {f.fix}
+                          <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-xs text-white">
+                            <span className="font-semibold text-emerald-400">
+                              {trip.totalDistanceKm ? `~${trip.totalDistanceKm} km` : 'Trasa'}
+                            </span>
+                            <span className="bg-slate-900/80 px-2 py-0.5 rounded-md font-mono text-[11px]">
+                              {tripPhotos.length} zdjęć
+                            </span>
                           </div>
                         </div>
-                      ))
-                    )}
-                  </div>
+
+                        <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                          <div>
+                            <h3 className="text-base font-bold text-white">{trip.title}</h3>
+                            <p className="text-xs text-slate-400 mt-1 leading-relaxed line-clamp-2">
+                              {trip.description}
+                            </p>
+
+                            <div className="mt-2.5 space-y-1 pt-2 border-t border-slate-800">
+                              <span className="text-[10px] text-slate-500 font-bold block uppercase">Etapy trasy:</span>
+                              <div className="flex flex-wrap gap-1">
+                                {trip.routePoints.map((pt, i) => (
+                                  <span
+                                    key={i}
+                                    className="text-[10px] bg-slate-950 border border-slate-800 px-2 py-0.5 rounded text-slate-300"
+                                  >
+                                    {pt.order}. {pt.name}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="pt-2 border-t border-slate-800 flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                setSelectedTripId(trip.id);
+                                setActiveTab('map');
+                              }}
+                              className="flex-1 py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                            >
+                              <Compass className="w-3.5 h-3.5 text-amber-400" />
+                              Mapa
+                            </button>
+
+                            <button
+                              onClick={() => handleStartSlideshow(tripPhotos)}
+                              className="py-1.5 px-3 rounded-lg bg-gradient-to-r from-amber-500 to-emerald-500 text-slate-950 text-xs font-bold hover:brightness-110 flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                            >
+                              <Play className="w-3.5 h-3.5 fill-current" />
+                              Prezentuj
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            </div>
-          </div>
-        )}
+            )}
 
-        {/* ZAKŁADKA 3: REJESTR ZADAŃ (TASKS) */}
-        {activeTab === 'tasks' && (
-          <div className="space-y-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <ListTodo className="w-6 h-6 text-emerald-400" />
-                  Rejestr Zadań i Postęp Wdrożenia (TASKS.md)
-                </h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  Hierarchia priorytetów P0 (blokujące), P1 (kluczowe), P2 (rozszerzone) zgodnie z wytycznymi projektu.
-                </p>
-              </div>
+            {/* ZAKŁADKA 4: EKSPLORATOR WINDOWS & NARZĘDZIA */}
+            {activeTab === 'windows' && (
+              <div className="space-y-5">
+                <div>
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <HardDrive className="w-5 h-5 text-indigo-400" />
+                    Centrum Programu Windows 10/11 & Pliki Robocze
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    Oryginalne pliki w Eksploratorze Windows, prywatność danych, eksport do .prezent oraz synchronizacja.
+                  </p>
+                </div>
 
-              {/* Filtry zadań */}
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-1">
-                  <span className="text-slate-500 px-2">Priorytet:</span>
-                  {(['ALL', 'P0', 'P1', 'P2'] as const).map(p => (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+                        <FolderHeart className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-white text-sm">Katalog Obrazów w Windows</h3>
+                        <p className="text-[11px] text-slate-400">Ścieżka do zdjęć na dysku komputera</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1 font-mono text-xs">
+                      <span className="text-slate-500 text-[10px] uppercase font-bold">Lokalizacja na dysku:</span>
+                      <div className="text-slate-200 select-all break-all">
+                        C:\Users\Rodzina\Obrazy\Prezent-Wspomnienia\
+                      </div>
+                    </div>
+
                     <button
-                      key={p}
-                      onClick={() => setTaskFilter(p)}
-                      className={`px-2 py-1 rounded text-[11px] font-semibold transition-colors ${
-                        taskFilter === p ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-200'
-                      }`}
+                      onClick={handleOpenWindowsFolder}
+                      className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer"
                     >
-                      {p}
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      Otwórz folder w Eksploratorze Windows
                     </button>
-                  ))}
-                </div>
+                  </div>
 
-                <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-1">
-                  <span className="text-slate-500 px-2">Status:</span>
-                  {(['ALL', 'DONE', 'IN_PROGRESS', 'TODO'] as const).map(s => (
-                    <button
-                      key={s}
-                      onClick={() => setTaskStatusFilter(s)}
-                      className={`px-2 py-1 rounded text-[11px] font-semibold transition-colors ${
-                        taskStatusFilter === s ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      {s === 'ALL' ? 'Wszystkie' : s === 'DONE' ? 'Ukończone' : s === 'IN_PROGRESS' ? 'W toku' : 'Do zrobienia'}
-                    </button>
-                  ))}
+                  <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                        <CheckCircle2 className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-white text-sm">Prywatne Przechowywanie (Offline)</h3>
+                        <p className="text-[11px] text-slate-400">100% lokalnie, brak wymogu połączenia z chmurą</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5 text-xs text-slate-300">
+                      <div className="flex justify-between p-2 rounded-lg bg-slate-950 border border-slate-800">
+                        <span className="text-slate-400">Wspomnienia demonstracyjne:</span>
+                        <span className="font-bold text-amber-400">{demoPhotosCount} zdjęć</span>
+                      </div>
+                      <div className="flex justify-between p-2 rounded-lg bg-slate-950 border border-slate-800">
+                        <span className="text-slate-400">Twoje własne zdjęcia:</span>
+                        <span className="font-bold text-emerald-400">{userPhotosCount} zdjęć</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={handleClearDemo}
+                        className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-red-950/40 text-slate-300 hover:text-red-400 text-xs font-semibold border border-slate-700"
+                      >
+                        Wyczyść demo
+                      </button>
+                      <button
+                        onClick={handleResetDemo}
+                        className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 flex items-center gap-1"
+                      >
+                        <RotateCcw className="w-3 h-3" /> Przywróć demo
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
+            )}
+          </div>
+
+          {/* 4. Klasyczny Pasek Stanu Windows (Status Bar) na dole okna */}
+          <div className="bg-[#182030] border-t border-slate-700/80 px-3 py-1.5 text-[11px] text-slate-400 flex items-center justify-between shrink-0 select-none">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                Gotowy
+              </span>
+              <span className="text-slate-600">|</span>
+              <span className="truncate max-w-xs text-slate-300 font-mono text-[10px]">
+                C:\Users\Rodzina\Obrazy\Prezent-Wspomnienia\
+              </span>
+              <span className="text-slate-600 hidden sm:inline">|</span>
+              <span className="hidden sm:inline">
+                Baza: <strong className="text-white">{photos.length}</strong> zdjęć ({trips.length} tras)
+              </span>
             </div>
 
-            {/* Tabela zadań */}
-            <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-950 text-slate-400 border-b border-slate-800 font-semibold uppercase tracking-wider text-[11px]">
-                    <tr>
-                      <th className="py-3 px-4 w-24">ID</th>
-                      <th className="py-3 px-4 w-28">Priorytet</th>
-                      <th className="py-3 px-4 w-32">Moduł</th>
-                      <th className="py-3 px-4">Tytuł Zadania & Zakres</th>
-                      <th className="py-3 px-4 w-36">Status</th>
-                      <th className="py-3 px-4 w-28 text-center">DoD Zweryfikowane</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60">
-                    {filteredTasks.map(task => (
-                      <tr key={task.id} className="hover:bg-slate-850/50 transition-colors">
-                        <td className="py-3.5 px-4 font-mono text-slate-400">{task.id}</td>
-                        <td className="py-3.5 px-4">
-                          <span className={`px-2 py-0.5 rounded font-bold text-[10px] ${
-                            task.priority === 'P0'
-                              ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                              : task.priority === 'P1'
-                              ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                              : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                          }`}>
-                            {task.priority}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 font-medium text-slate-300">{task.category}</td>
-                        <td className="py-3.5 px-4 text-slate-200">
-                          <div className="font-semibold">{task.title}</div>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <button
-                            onClick={() => toggleTaskStatus(task.id)}
-                            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                              task.status === 'DONE'
-                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                : task.status === 'IN_PROGRESS'
-                                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                                : 'bg-slate-800 text-slate-400 border border-slate-700'
-                            }`}
-                            title="Kliknij, aby zmienić status"
-                          >
-                            {task.status === 'DONE' && <CheckCircle2 className="w-3.5 h-3.5" />}
-                            {task.status === 'IN_PROGRESS' && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-                            {task.status === 'TODO' && <AlertTriangle className="w-3.5 h-3.5" />}
-                            <span>{task.status === 'DONE' ? 'Ukończone' : task.status === 'IN_PROGRESS' ? 'W toku' : 'Do zrobienia'}</span>
-                          </button>
-                        </td>
-                        <td className="py-3.5 px-4 text-center">
-                          {task.verified ? (
-                            <span className="inline-flex items-center gap-1 text-emerald-400 font-semibold text-[11px]">
-                              <CheckCircle2 className="w-4 h-4" /> Tak
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-slate-500 text-[11px]">
-                              <XCircle className="w-4 h-4" /> Oczekuje
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div className="flex items-center gap-3">
+              <span className="text-slate-500 hidden md:inline">
+                Tryb: <span className="text-slate-300">Windows 10/11 Desktop</span>
+              </span>
+              <span className="text-slate-600 hidden md:inline">|</span>
+              <button
+                onClick={() => setIsAboutOpen(true)}
+                className="text-amber-400 hover:underline cursor-pointer"
+              >
+                O programie
+              </button>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* ZAKŁADKA 4: DEFINITION OF DONE */}
-        {activeTab === 'dod' && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-                Definition of Done (DoD) - Rygor Jakościowy
-              </h2>
-              <p className="text-xs text-slate-400 mt-1">
-                Kryteria akceptacji przed uznaniem jakiejkolwiek funkcjonalności Android za ukończoną i gotową do wydania.
-              </p>
-            </div>
+      {/* MODALE APLIKACJI */}
+      <AboutModal
+        isOpen={isAboutOpen}
+        onClose={() => setIsAboutOpen(false)}
+        photosCount={photos.length}
+        albumsCount={albums.length}
+      />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 space-y-3">
-                <h3 className="text-sm font-bold text-emerald-400 flex items-center gap-2">
-                  <Cpu className="w-4 h-4" /> 1. Architektura & Zarządzanie Stanem
-                </h3>
-                <ul className="space-y-2 text-xs text-slate-300">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <span><strong>Unidirectional Data Flow (UDF):</strong> Zdarzenia płyną w górę do ViewModelu, niezmienny stan płynie w dół do Compose.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <span><strong>collectAsStateWithLifecycle:</strong> Obowiązkowe użycie przy subskrybowaniu StateFlow w ekranach Composable.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <span><strong>Enkapsulacja:</strong> Brak publicznych <code className="text-slate-100 bg-slate-950 px-1 py-0.5 rounded">MutableStateFlow</code> w ViewModelach.</span>
-                  </li>
-                </ul>
-              </div>
+      <ImportModal
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        albums={albums}
+        onImportComplete={handleImportComplete}
+      />
 
-              <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 space-y-3">
-                <h3 className="text-sm font-bold text-teal-400 flex items-center gap-2">
-                  <Database className="w-4 h-4" /> 2. Dane, Baza Room & Offline-First
-                </h3>
-                <ul className="space-y-2 text-xs text-slate-300">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
-                    <span><strong>Single Source of Truth (SSOT):</strong> UI czyta wyłącznie z bazy danych Room; sieć aktualizuje cache lokalny.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
-                    <span><strong>Bezpieczne Dispatchery:</strong> Wszelkie operacje bazodanowe i sieciowe na <code className="text-slate-100 bg-slate-950 px-1 py-0.5 rounded">Dispatchers.IO</code>.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
-                    <span><strong>DataStore Preferences:</strong> Zastąpienie przestarzałych SharedPreferences bezpiecznym, asynchronicznym DataStore.</span>
-                  </li>
-                </ul>
-              </div>
+      <SlideshowModal
+        isOpen={isSlideshowOpen}
+        onClose={() => setIsSlideshowOpen(false)}
+        photos={slideshowPhotos}
+        initialIndex={slideshowStartIndex}
+      />
 
-              <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 space-y-3">
-                <h3 className="text-sm font-bold text-indigo-400 flex items-center gap-2">
-                  <Smartphone className="w-4 h-4" /> 3. UI, Material 3 & Rekompozycja
-                </h3>
-                <ul className="space-y-2 text-xs text-slate-300">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
-                    <span><strong>Stabilne klucze list:</strong> Jawny <code className="text-slate-100 bg-slate-950 px-1 py-0.5 rounded">key</code> w LazyColumn dla optymalizacji recomposition.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
-                    <span><strong>Material 3 & Dark Theme:</strong> Pełne wsparcie dla ColorScheme Material You i dynamicznego motywu Android 12+.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
-                    <span><strong>Obsługa stanów:</strong> Każdy ekran implementuje stany: Loading, Success, Error oraz Empty z przyciskiem Retry.</span>
-                  </li>
-                </ul>
-              </div>
+      <TvModeModal
+        isOpen={isTvModeOpen}
+        onClose={() => setIsTvModeOpen(false)}
+        photos={photos}
+        trips={trips}
+        onStartSlideshow={(list) => handleStartSlideshow(list)}
+      />
 
-              <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 space-y-3">
-                <h3 className="text-sm font-bold text-amber-400 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4" /> 4. Testy & Bramki Jakości
-                </h3>
-                <ul className="space-y-2 text-xs text-slate-300">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                    <span><strong>Turbine & Coroutines Test:</strong> Testy jednostkowe ViewModeli i strumieni StateFlow z wirtualnym czasem.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                    <span><strong>Testy DAO Room:</strong> Weryfikacja zapytań SQL w pamięciowej bazie <code className="text-slate-100 bg-slate-950 px-1 py-0.5 rounded">inMemoryDatabaseBuilder</code>.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                    <span><strong>Brak błędów Lint & Detekt:</strong> Czysty raport statycznej analizy kodu przed przygotowaniem paczki release.</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        )}
+      <OfflineMapsModal
+        isOpen={isOfflineModalOpen}
+        onClose={() => setIsOfflineModalOpen(false)}
+        packages={offlinePackages}
+        onUpdatePackages={(pkgs) => {
+          setOfflinePackages(pkgs);
+          StorageService.saveOfflinePackages(pkgs);
+        }}
+        isOfflineMode={isOfflineSimulation}
+        onToggleOfflineMode={(enabled) => {
+          setIsOfflineSimulation(enabled);
+          const s = StorageService.getSettings();
+          StorageService.saveSettings({ ...s, offlineSimulationMode: enabled });
+        }}
+      />
 
-        {/* ZAKŁADKA 5: DOKUMENTACJA ARCHITEKTURY */}
-        {activeTab === 'docs' && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <BookOpen className="w-6 h-6 text-emerald-400" />
-                Katalog Dokumentacji Inżynieryjnej
-              </h2>
-              <p className="text-xs text-slate-400 mt-1">
-                Pliki specyfikacji utworzone i utrzymywane w repozytorium projektu.
-              </p>
-            </div>
+      <AndroidSyncModal
+        isOpen={isAndroidSyncOpen}
+        onClose={() => setIsAndroidSyncOpen(false)}
+        onDataRestored={loadAllData}
+      />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-2 text-emerald-400 font-mono text-sm font-semibold mb-1">
-                    <FileText className="w-4 h-4" /> AGENTS.md
-                  </div>
-                  <p className="text-xs text-slate-400">
-                    Instrukcje operacyjne dla zespołu i agentów: rola Senior Architekta, standardy Kotlin 2.0 i zakaz atrap kodu.
-                  </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-800 text-[11px] text-emerald-400 font-mono">
-                  Status: Aktywny w repo
-                </div>
-              </div>
-
-              <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-2 text-indigo-400 font-mono text-sm font-semibold mb-1">
-                    <FileText className="w-4 h-4" /> .codex/config.toml
-                  </div>
-                  <p className="text-xs text-slate-400">
-                    Konfiguracja bramek jakościowych, reguł Detekt/ktlint oraz komend budowania Gradle.
-                  </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-800 text-[11px] text-indigo-400 font-mono">
-                  Status: Skonfigurowany
-                </div>
-              </div>
-
-              <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-2 text-amber-400 font-mono text-sm font-semibold mb-1">
-                    <FileText className="w-4 h-4" /> ROADMAP.md
-                  </div>
-                  <p className="text-xs text-slate-400">
-                    Fazy wdrożenia: Audyt wstępny, Room Offline-First, Warstwa domenowa, Compose M3, Stabilizacja i Wydanie.
-                  </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-800 text-[11px] text-amber-400 font-mono">
-                  Status: 5 Faz zdefiniowanych
-                </div>
-              </div>
-
-              <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-2 text-teal-400 font-mono text-sm font-semibold mb-1">
-                    <FileText className="w-4 h-4" /> DEFINITION_OF_DONE.md
-                  </div>
-                  <p className="text-xs text-slate-400">
-                    Kryteria akceptacji: UDF, Dispatchers.IO, Room SSOT, testy jednostkowe z Turbine i brak memory leaks.
-                  </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-800 text-[11px] text-teal-400 font-mono">
-                  Status: Wiążący standard
-                </div>
-              </div>
-
-              <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-2 text-blue-400 font-mono text-sm font-semibold mb-1">
-                    <FileText className="w-4 h-4" /> PROGRESS.md
-                  </div>
-                  <p className="text-xs text-slate-400">
-                    Bieżąca inwentaryzacja postępów, ocena dojrzałości komponentów i rejestr ryzyk projektowych.
-                  </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-800 text-[11px] text-blue-400 font-mono">
-                  Status: Zsynchronizowany
-                </div>
-              </div>
-
-              <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-2 text-purple-400 font-mono text-sm font-semibold mb-1">
-                    <FileText className="w-4 h-4" /> CHANGELOG.md
-                  </div>
-                  <p className="text-xs text-slate-400">
-                    Rejestr decyzji architektonicznych (ADR) oraz wykaz zmian wprowadzonych w poszczególnych wersjach.
-                  </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-800 text-[11px] text-purple-400 font-mono">
-                  Status: Wersja 0.1.0 zarejestrowana
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* Stopka */}
-      <footer className="border-t border-slate-800/80 bg-slate-950 py-4 px-6 text-center text-xs text-slate-500">
-        <p>
-          Android Architecture & Advisory Studio • Google AI Studio • Zgodne z Google Modern Android Architecture (Kotlin 2.0, Jetpack Compose, Material 3, Room, DataStore)
-        </p>
-      </footer>
+      <PhotoDetailModal
+        photo={selectedPhotoForDetail}
+        onClose={() => setSelectedPhotoForDetail(null)}
+        onUpdatePhoto={handleUpdatePhoto}
+        onDeletePhoto={handleDeletePhoto}
+        onStartSlideshowFromThis={(p) => {
+          const idx = photos.findIndex(ph => ph.id === p.id);
+          handleStartSlideshow(photos, Math.max(0, idx));
+        }}
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 {
-  "name": "Android Architecture & Advisory Studio",
-  "description": "Profesjonalne środowisko starszego architekta Android do audytu kodu, oceny architektury Jetpack Compose, MVVM, Room, DataStore i zarządzania zadaniami projektu.",
+  "name": "Prezent – Rodzinne Wspomnienia na Mapie",
+  "description": "Nowoczesna aplikacja do prezentowania podróży po świecie, rodzinnych wspomnień i zdjęć z wakacji na interaktywnej mapie świata, z pokazem slajdów i trybem TV.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
