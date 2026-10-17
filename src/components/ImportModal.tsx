@@ -21,7 +21,8 @@ import {
   Plus,
   Trash2,
   Image as ImageIcon,
-  Compass
+  Compass,
+  FolderDown
 } from 'lucide-react';
 import { POPULAR_LOCATIONS, formatCoordinates, readImageFromClipboard, guessNearestLocation } from '../services/geoService';
 import { READY_TRAVEL_PACKS, convertPackToPhotosAndAlbum, TravelPhotoPack } from '../data/travelPacks';
@@ -44,6 +45,7 @@ interface ImportModalProps {
   initialLocation?: InitialImportLocation | null;
   initialMode?: ImportTabMode;
   initialFiles?: File[];
+  initialAlbumId?: string | null;
   onShowToast?: (message: string, type: 'info' | 'success' | 'warning') => void;
 }
 
@@ -68,6 +70,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   initialLocation,
   initialMode = 'files',
   initialFiles,
+  initialAlbumId,
   onShowToast,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -79,7 +82,11 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   const [progress, setProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
 
   // Album
-  const [selectedAlbumId, setSelectedAlbumId] = useState<string>(albums[0]?.id || 'album-new');
+  const [selectedAlbumId, setSelectedAlbumId] = useState<string>(
+    initialAlbumId && albums.some(a => a.id === initialAlbumId)
+      ? initialAlbumId
+      : albums[0]?.id || 'album-new'
+  );
   const [newAlbumName, setNewAlbumName] = useState<string>('Nowe Wspomnienia');
   const [newAlbumCountry, setNewAlbumCountry] = useState<string>('Polska');
 
@@ -104,6 +111,17 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   const [tagsText, setTagsText] = useState<string>('Wakacje, Podróż');
 
   const [folderStatusMsg, setFolderStatusMsg] = useState<string | null>(null);
+
+  // Inicjalizacja wybranego albumu jeśli przekazano initialAlbumId (np. Drag & Drop na kartę albumu)
+  useEffect(() => {
+    if (initialAlbumId && albums.some(a => a.id === initialAlbumId)) {
+      setSelectedAlbumId(initialAlbumId);
+      const target = albums.find(a => a.id === initialAlbumId);
+      if (target?.country) {
+        setFallbackCountry(target.country);
+      }
+    }
+  }, [initialAlbumId, albums, isOpen]);
 
   // Inicjalizacja współrzędnych jeśli przekazano initialLocation (np. kliknięcie PPM na mapie)
   useEffect(() => {

@@ -12,7 +12,9 @@ import {
   Compass,
   ArrowUpDown,
   Sparkles,
-  GripVertical
+  GripVertical,
+  FolderDown,
+  Upload
 } from 'lucide-react';
 
 interface GalleryViewProps {
@@ -26,6 +28,7 @@ interface GalleryViewProps {
   onSelectAlbum: (albumId: string | null) => void;
   selectedAlbumId: string | null;
   onOpenOrganizer?: (album: TravelAlbum) => void;
+  onDropPhotosOnAlbum?: (files: File[], albumId: string) => void;
   density?: 'default' | 'compact' | 'large';
   showExifBadges?: boolean;
 }
@@ -41,6 +44,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   onSelectAlbum,
   selectedAlbumId,
   onOpenOrganizer,
+  onDropPhotosOnAlbum,
   density = 'default',
   showExifBadges = true,
 }) => {
@@ -54,6 +58,10 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
     currentAlbum?.customPhotoOrder && currentAlbum.customPhotoOrder.length > 0 ? 'custom' : 'date-desc'
   );
 
+  // Stany przeciągania plików z Eksploratora Windows (Drag & Drop)
+  const [isDragOverBanner, setIsDragOverBanner] = useState<boolean>(false);
+  const [isDragOverGallery, setIsDragOverGallery] = useState<boolean>(false);
+
   // Zaktualizuj domyślne sortowanie, gdy użytkownik wejdzie do albumu z ułożoną kolejnością
   useEffect(() => {
     if (currentAlbum?.customPhotoOrder && currentAlbum.customPhotoOrder.length > 0) {
@@ -64,6 +72,69 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   }, [selectedAlbumId]);
 
   const availableCountries = Array.from(new Set(photos.map(p => p.location.countryName))).sort();
+
+  // Obsługa przeciągania plików bezpośrednio na baner albumu
+  const handleBannerDragOver = (e: React.DragEvent) => {
+    if (!selectedAlbumId) return;
+    if (e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOverBanner(true);
+    }
+  };
+
+  const handleBannerDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOverBanner(false);
+    }
+  };
+
+  const handleBannerDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOverBanner(false);
+    setIsDragOverGallery(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0 && selectedAlbumId && onDropPhotosOnAlbum) {
+      const validFiles = Array.from(e.dataTransfer.files).filter(f =>
+        f.type.startsWith('image/') || /\.(jpe?g|png|webp|avif|heic|tiff?|gif)$/i.test(f.name)
+      );
+      if (validFiles.length > 0) {
+        onDropPhotosOnAlbum(validFiles, selectedAlbumId);
+      }
+    }
+  };
+
+  // Obsługa przeciągania plików nad całą przestrzenią galerii, gdy aktywny jest album
+  const handleGalleryDragOver = (e: React.DragEvent) => {
+    if (!selectedAlbumId) return;
+    if (e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
+      e.preventDefault();
+      setIsDragOverGallery(true);
+    }
+  };
+
+  const handleGalleryDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOverGallery(false);
+    }
+  };
+
+  const handleGalleryDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOverGallery(false);
+    setIsDragOverBanner(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0 && selectedAlbumId && onDropPhotosOnAlbum) {
+      const validFiles = Array.from(e.dataTransfer.files).filter(f =>
+        f.type.startsWith('image/') || /\.(jpe?g|png|webp|avif|heic|tiff?|gif)$/i.test(f.name)
+      );
+      if (validFiles.length > 0) {
+        onDropPhotosOnAlbum(validFiles, selectedAlbumId);
+      }
+    }
+  };
 
   // Filtrowanie i sortowanie
   const filteredPhotos = photos
@@ -124,7 +195,25 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   }
 
   return (
-    <div className="flex-1 flex flex-col space-y-4">
+    <div 
+      onDragOver={handleGalleryDragOver}
+      onDragLeave={handleGalleryDragLeave}
+      onDrop={handleGalleryDrop}
+      className="flex-1 flex flex-col space-y-4 relative"
+    >
+      {/* Pełnoekranowa nakładka upuszczenia zdjęć z Eksploratora Windows gdy otwarty jest album */}
+      {selectedAlbumId && currentAlbum && isDragOverGallery && !isDragOverBanner && (
+        <div className="absolute inset-0 z-40 bg-amber-950/80 backdrop-blur-xs rounded-3xl border-2 border-dashed border-amber-400 flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-150 pointer-events-none">
+          <div className="w-16 h-16 rounded-3xl bg-amber-500/25 border border-amber-500/40 text-amber-400 flex items-center justify-center mb-3 animate-bounce">
+            <FolderDown className="w-8 h-8" />
+          </div>
+          <h3 className="text-xl font-extrabold text-white">Upuść zdjęcia tutaj!</h3>
+          <p className="text-sm text-amber-200 mt-1 max-w-md">
+            Zdjęcia z Eksploratora Windows zostaną natychmiast przypisane do katalogu <strong className="text-white underline">{currentAlbum.name}</strong>.
+          </p>
+        </div>
+      )}
+
       {/* Pasek Górny - Styl Windows Photos */}
       <div className="bg-[#0f172a] border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
         {/* Lewy nagłówek Windows Photos */}
@@ -210,15 +299,41 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
         </div>
       </div>
 
-      {/* Aktywny filtr katalogu / albumu z przyciskiem układania kolejności */}
+      {/* Aktywny filtr katalogu / albumu z przyciskiem układania kolejności i strefą upuszczania Drag & Drop */}
       {selectedAlbumId && currentAlbum && (
-        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-lg">
+        <div
+          onDragOver={handleBannerDragOver}
+          onDragLeave={handleBannerDragLeave}
+          onDrop={handleBannerDrop}
+          className={`rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-lg transition-all duration-200 relative overflow-hidden ${
+            isDragOverBanner
+              ? 'bg-amber-500/25 border-2 border-dashed border-amber-400 ring-4 ring-amber-400/30 scale-[1.01]'
+              : 'bg-amber-500/10 border border-amber-500/30 hover:border-amber-500/50'
+          }`}
+        >
+          {/* Aktywna nakładka upuszczenia bezpośrednio na baner */}
+          {isDragOverBanner && (
+            <div className="absolute inset-0 z-30 bg-amber-500/90 backdrop-blur-xs flex items-center justify-center p-3 text-slate-950 font-sans border-2 border-dashed border-white animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/30 flex items-center justify-center animate-bounce">
+                  <FolderDown className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-sm">Upuść zdjęcia tutaj!</h4>
+                  <p className="text-[11px] font-semibold opacity-95">
+                    Zostaną natychmiast przypisane do katalogu: {currentAlbum.name}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold shrink-0 border border-amber-500/30">
               <Folder className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center flex-wrap gap-2">
                 <span className="text-slate-400 font-semibold">Aktywny katalog:</span>
                 <span className="font-bold text-white text-sm">{currentAlbum.name}</span>
                 <span className="bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-mono text-[10px] border border-amber-500/30">
@@ -229,6 +344,9 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                     <Sparkles className="w-3 h-3" /> Własna kolejność
                   </span>
                 )}
+                <span className="hidden md:inline-flex items-center gap-1 text-[10px] text-amber-300/90 bg-amber-500/15 px-2.5 py-0.5 rounded-full border border-amber-500/25">
+                  <FolderDown className="w-3 h-3 text-amber-400" /> Przeciągnij zdjęcia z Windows tutaj
+                </span>
               </div>
               <p className="text-[11px] text-slate-400 mt-0.5">
                 {currentAlbum.description || 'Kolekcja rodzinna ze zdjęciami z podróży'}
@@ -262,9 +380,9 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
       {filteredPhotos.length === 0 ? (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center space-y-3">
           <Compass className="w-12 h-12 text-slate-600 mx-auto" />
-          <h3 className="text-base font-bold text-white">Brak zdjęć spełniających wybrane kryteria</h3>
+          <h3 className="text-base font-bold text-white">Brak zdjęć w tym katalogu</h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto">
-            Zmień filtry lub zaimportuj nowe rodzinne zdjęcia z komputera.
+            Przeciągnij i upuść zdjęcia z Eksploratora Windows bezpośrednio tutaj, aby dodać je do tego katalogu.
           </p>
         </div>
       ) : sortBy === 'custom' ? (

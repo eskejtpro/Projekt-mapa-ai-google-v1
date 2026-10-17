@@ -1,7 +1,7 @@
 # PROGRESS.md - Rzeczywisty Stan Postępów Projektu „Prezent Mapy”
 
 Data aktualizacji: **2026-10-17**  
-Wersja bieżąca: **1.4.0 (Rozbudowany Pokaz Slajdów 2.0 & Układanie w Katalogach)**  
+Wersja bieżąca: **1.4.1 (Drag & Drop z Eksploratora Windows na Katalogi)**  
 Stan ogólny: **Kompletny, stabilny i sprawdzony prototyp gotowy do przejęcia przez OpenAI Codex**
 
 ---
@@ -10,6 +10,7 @@ Stan ogólny: **Kompletny, stabilny i sprawdzony prototyp gotowy do przejęcia p
 
 | Moduł | Stan Realizacji | Szczegóły implementacji i weryfikacji |
 |---|---|---|
+| **Drag & Drop z Windows na Katalogi** | **UKOŃCZONE** | Bezpośrednie upuszczanie plików z Eksploratora Windows na karty albumów oraz na baner aktywnego katalogu w Galerii z wizualnym feedbackiem i natychmiastowym przypisaniem. |
 | **Interaktywna mapa świata (Leaflet)** | **UKOŃCZONE** | 6 warstw kafelkowych (Esri Topo, Esri Dark Canvas, OSM Dzień, Esri Satellite, Ulice), dynamiczne klastrowanie `leaflet.markercluster` ze spiderfy i animacją, animowane trasy podróży. |
 | **Blokada pionowa mapy (`enforceVerticalBounds`)** | **UKOŃCZONE** | Rygorystyczna matematyczna blokada krawędzi kafelków (±85.0511°). Eliminacja czarnej pustki nad i pod mapą. Nieskończone przewijanie w poziomie. |
 | **Rozbudowany Kinowy Pokaz Slajdów 2.0** | **UKOŃCZONE** | 4 przejścia (Ken Burns, crossfade, slide push, zoom & fade), wysuwany panel ustawień (Drawer), suwaki tempa (2-30s), pętla, kolejność odtwarzania, pasek miniatur (Filmstrip), 3 tryby napisów (w tym czyste kino) oraz auto-ukrywanie kontrolek po 3.5s bezruchu. |

@@ -27,3 +27,4 @@
 | PREZ-024 | P0 | Pokaz | Rozbudowany Pokaz Slajdów 2.0 (4 przejścia, drawer ustawień, 5 dźwięków Web Audio, pasek miniatur, auto-ukrywanie) | **UKOŃCZONE** | Działa w podglądzie (Vite) |
 | PREZ-025 | P0 | Katalogi | Układanie kolejności zdjęć w katalogach (Drag & Drop, przyciski, numeracja, szablony, odtwarzanie w kolejności) | **UKOŃCZONE** | Działa w podglądzie & testy Vitest |
 | PREZ-026 | P0 | Mapa | Matematyczna blokada pionowa mapy eliminująca czarną pustkę poza krawędziami | **UKOŃCZONE** | Działa w podglądzie (Vite) |
+| PREZ-027 | P0 | Katalogi | Bezpośrednie przeciąganie zdjęć z Eksploratora Windows na katalog (Drag & Drop) | **UKOŃCZONE** | Działa w podglądzie (Vite) |

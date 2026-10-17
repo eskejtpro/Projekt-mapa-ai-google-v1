@@ -4,6 +4,17 @@ Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.0.0/).
 
 ---
 
+## [1.4.1] - 2026-10-17 — Bezpośrednie Przeciąganie Zdjęć z Eksploratora Windows na Katalog (Drag & Drop)
+
+### Nowe Funkcjonalności & Usprawnienia
+- **Bezpośrednie dodawanie zdjęć do katalogu przez Drag & Drop z Eksploratora Windows**:
+  - **Przeciąganie na baner katalogu w Galerii**: upuszczenie plików z komputera na aktywny nagłówek katalogu (`GalleryView.tsx`) lub na obszar galerii natychmiast przypisuje zdjęcia do tego albumu.
+  - **Wizualna strefa upuszczania (Drop Zone Feedback)**: baner katalogu reaguje na najechanie kursorem z plikami podświetleniem w bursztynowej tonacji, animowaną ikoną `FolderDown` oraz informacją o docelowym katalogu.
+  - **Przeciąganie na karty w widoku Albumów**: każda karta w widoku *Albumy i Kolekcje* (`App.tsx`) posiada aktywny nasłuch zdarzeń przeciągania plików z dedykowaną, pulsującą nakładką upuszczenia.
+  - **Automatyczny wybór albumu w ImportModal**: przekazanie parametru `initialAlbumId` gwarantuje, że proces importu automatycznie przypisuje dodawane fotografie do właściwego katalogu z odczytem metadanych EXIF GPS.
+
+---
+
 ## [1.4.0] - 2026-10-17 — Rozbudowany Pokaz Slajdów 2.0, Układanie Zdjęć w Katalogach & Blokada Pionowa Mapy
 
 ### Nowe Funkcjonalności & Usprawnienia

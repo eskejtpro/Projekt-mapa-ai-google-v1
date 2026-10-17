@@ -23,7 +23,8 @@ import {
   Folder,
   Clock,
   Navigation,
-  ArrowUpDown
+  ArrowUpDown,
+  FolderDown
 } from 'lucide-react';
 
 import { TravelPhoto, TravelAlbum, TravelTrip, OfflineMapPackage, MapTileProvider, AppSettings, TravelStats } from './types/travel';
@@ -114,6 +115,8 @@ export default function App() {
   const [importInitialLocation, setImportInitialLocation] = useState<InitialImportLocation | null>(null);
   const [importInitialMode, setImportInitialMode] = useState<ImportTabMode>('files');
   const [importInitialFiles, setImportInitialFiles] = useState<File[]>([]);
+  const [importInitialAlbumId, setImportInitialAlbumId] = useState<string | null>(null);
+  const [dragOverAlbumId, setDragOverAlbumId] = useState<string | null>(null);
   const [isSlideshowOpen, setIsSlideshowOpen] = useState<boolean>(false);
   const [slideshowPhotos, setSlideshowPhotos] = useState<TravelPhoto[]>([]);
   const [slideshowStartIndex, setSlideshowStartIndex] = useState<number>(0);
@@ -223,6 +226,20 @@ export default function App() {
     setImportInitialMode('files');
     setIsImportOpen(true);
     showToast(`Przeciągnięto ${files.length} zdjęć na mapę: ${guess.cityName} (${lat.toFixed(4)}, ${lng.toFixed(4)})`, 'info');
+  };
+
+  // Upuszczenie plików bezpośrednio na określony katalog / album z Eksploratora Windows (Drag & Drop)
+  const handleDropPhotosOnAlbum = (files: File[], targetAlbumId: string) => {
+    const targetAlbum = albums.find(a => a.id === targetAlbumId);
+    setImportInitialFiles(files);
+    setImportInitialAlbumId(targetAlbumId);
+    setImportInitialLocation(null);
+    setImportInitialMode('files');
+    setIsImportOpen(true);
+    showToast(
+      `Przeciągnięto ${files.length} ${files.length === 1 ? 'zdjęcie' : 'zdjęć'} do katalogu: ${targetAlbum?.name || 'Album'}`,
+      'info'
+    );
   };
 
   // Ulubione
@@ -516,6 +533,7 @@ export default function App() {
                   onSelectAlbum={(id) => setSelectedAlbumId(id)}
                   selectedAlbumId={selectedAlbumId}
                   onOpenOrganizer={(album) => setReorderAlbum(album)}
+                  onDropPhotosOnAlbum={handleDropPhotosOnAlbum}
                   density={settings.galleryDensity}
                   showExifBadges={settings.showExifBadges}
                 />
@@ -546,6 +564,8 @@ export default function App() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {albums.map(album => {
                       const count = photos.filter(p => p.albumId === album.id).length;
+                      const isDragOver = dragOverAlbumId === album.id;
+
                       return (
                         <div
                           key={album.id}
@@ -553,8 +573,52 @@ export default function App() {
                             setSelectedAlbumId(album.id);
                             setActiveTab('gallery');
                           }}
-                          className="group bg-[#0f172a] rounded-2xl border border-slate-800 overflow-hidden shadow-xl hover:border-amber-500/60 hover:shadow-2xl transition-all cursor-pointer flex flex-col"
+                          onDragOver={(e) => {
+                            if (e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setDragOverAlbumId(album.id);
+                            }
+                          }}
+                          onDragLeave={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                              setDragOverAlbumId(null);
+                            }
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setDragOverAlbumId(null);
+                            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                              const validFiles = Array.from(e.dataTransfer.files).filter(f =>
+                                f.type.startsWith('image/') || /\.(jpe?g|png|webp|avif|heic|tiff?|gif)$/i.test(f.name)
+                              );
+                              if (validFiles.length > 0) {
+                                handleDropPhotosOnAlbum(validFiles, album.id);
+                              }
+                            }
+                          }}
+                          className={`group bg-[#0f172a] rounded-2xl border overflow-hidden shadow-xl transition-all cursor-pointer flex flex-col relative ${
+                            isDragOver
+                              ? 'border-amber-400 ring-4 ring-amber-400/40 scale-[1.02] shadow-2xl shadow-amber-500/20'
+                              : 'border-slate-800 hover:border-amber-500/60 hover:shadow-2xl'
+                          }`}
                         >
+                          {/* Aktywna nakładka upuszczenia zdjęć na kartę albumu */}
+                          {isDragOver && (
+                            <div className="absolute inset-0 z-40 bg-amber-500/90 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-slate-950 font-sans border-2 border-dashed border-white animate-in fade-in zoom-in-95 duration-150">
+                              <div className="w-12 h-12 rounded-2xl bg-white/25 flex items-center justify-center mb-2 animate-bounce">
+                                <FolderDown className="w-6 h-6" />
+                              </div>
+                              <h4 className="font-extrabold text-base tracking-tight">Upuść zdjęcia tutaj!</h4>
+                              <p className="text-xs font-semibold mt-0.5 opacity-90 text-center">
+                                Dodaj bezpośrednio do albumu: {album.name}
+                              </p>
+                            </div>
+                          )}
+
                           <div className="relative aspect-16/9 w-full overflow-hidden bg-slate-950">
                             <img
                               src={album.coverUrl}
@@ -934,12 +998,14 @@ export default function App() {
           setIsImportOpen(false);
           setImportInitialLocation(null);
           setImportInitialFiles([]);
+          setImportInitialAlbumId(null);
         }}
         albums={albums}
         onImportComplete={handleImportComplete}
         initialLocation={importInitialLocation}
         initialMode={importInitialMode}
         initialFiles={importInitialFiles}
+        initialAlbumId={importInitialAlbumId}
         onShowToast={showToast}
       />
 
