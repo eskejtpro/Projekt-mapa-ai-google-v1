@@ -3,7 +3,7 @@
 | ID | Priorytet | Moduł | Zadanie | Status | Weryfikacja |
 |---|---|---|---|---|---|
 | PREZ-001 | P0 | Mapa | Interaktywna mapa świata Leaflet z 6 stylami kafelków i pływającymi kontrolkami | **UKOŃCZONE** | Działa w podglądzie (Vite) |
-| PREZ-002 | P0 | Mapa | Klastry pinezek z miniaturami zdjęć i licznikami wspomnień | **UKOŃCZONE** | Działa w podglądzie |
+| PREZ-002 | P0 | Mapa | Dynamiczne klastrowanie `leaflet.markercluster` z animacjami, spiderfy i miniaturami | **UKOŃCZONE** | Wdrożono bibliotekę `leaflet.markercluster` |
 | PREZ-003 | P0 | Mapa | Menu kontekstowe pod prawym przyciskiem myszy (PPM) na mapie | **UKOŃCZONE** | Działa w podglądzie |
 | PREZ-004 | P0 | Mapa | Bezpieczne renderowanie popupów na mapie bez `innerHTML` | **UKOŃCZONE** | Audyt kodu & testy |
 | PREZ-005 | P0 | Import | Naprawa Drag & Drop na mapę z zachowaniem plików i współrzędnych | **UKOŃCZONE** | Działa w podglądzie |
@@ -17,8 +17,7 @@
 | PREZ-013 | P1 | Narzędzia | Paszport podróżnika i statystyki przebytych kilometrów/miast | **UKOŃCZONE** | Działa w podglądzie |
 | PREZ-014 | P1 | Narzędzia | Diagnostyka i usuwanie duplikatów zdjęć | **UKOŃCZONE** | Działa w podglądzie |
 | PREZ-015 | P0 | Ustawienia | 12-kategorialny panel ustawień z kartami motywów i jasnymi etykietami | **UKOŃCZONE** | Działa w podglądzie |
-| PREZ-016 | P1 | UI/UX | Windows 11 Action Center Toasts, dialogi potwierdzeń, okno skrótów | **UKOŃCZONE** | Działa w podglądzie |
-| PREZ-017 | P1 | TV | Tryb TV Salon 4K ze sterowaniem QR Smart Remote | **CZĘŚCIOWE / DEMO** | Pokaz TV działa; pilot QR to prototyp do implementacji w Electronie |
+| PREZ-017 | P0 | TV | Status sieci Wi-Fi/LAN, automatyczne wykrywanie TV (mDNS/UPnP), natywne udostępnianie ekranu (`getDisplayMedia`) i pokaz | **UKOŃCZONE** | Działa w podglądzie (Vite) & Web Screen Share |
 | PREZ-018 | P1 | Mapa | Menedżer pakietów map offline (Polska, Włochy, Grecja, Norwegia) | **DEMONSTRACYJNY** | Podgląd UI z symulacją; pobieranie MBTiles do wdrożenia w Electronie |
 | PREZ-019 | P0 | Electron | Powłoka Electron dla Windows 10/11 z natywnym oknem bez ramek | **DO WDROŻENIA (CODEX)**| Zadanie dla OpenAI Codex |
 | PREZ-020 | P0 | Baza | Migracja pamięci bazy z localStorage do SQLite (better-sqlite3) | **DO WDROŻENIA (CODEX)**| Zadanie dla OpenAI Codex |

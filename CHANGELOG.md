@@ -4,6 +4,39 @@ Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.0.0/).
 
 ---
 
+## [1.3.3] - 2026-10-17 — Dynamiczne Klastrowanie Markerów (leaflet.markercluster) & Pełny Ekran F11
+
+### Nowe Funkcjonalności & Usprawnienia
+- **Dynamiczne klastrowanie markerów (`leaflet.markercluster`)**:
+  - Zainstalowano i zintegrowano bibliotekę `leaflet.markercluster` wraz z typami TypeScript.
+  - Zastąpiono statyczne grupowanie współrzędnych pełnoprawnym, dynamicznym klastrowaniem kartograficznym.
+  - Przy oddaleniu mapy (zoom out) sąsiadujące zdjęcia automatycznie łączą się w eleganckie, okrągłe klastry z miniaturą i licznikiem zdjęć w gradiencie (szmaragd/bursztyn/fiolet).
+  - Kliknięcie klastra płynnie przybliża mapę (`zoomToBoundsOnClick`) lub rozsuwa pinezki w okręgu (`spiderfyOnMaxZoom`).
+  - Parametr promienia klastrowania (`maxClusterRadius`) powiązany z ustawieniami użytkownika (`settings.clusterRadius`).
+- **Przycisk Pełnego Ekranu (F11)**:
+  - Dodano dedykowany przycisk `Pełny ekran [F11]` w belce tytułowej okna Windows, obok menu *Pomoc*.
+  - Obsługa klawisza <kbd>F11</kbd> z synchronizacją z natywnym stanem `fullscreenchange` przeglądarki.
+- **Wyłączenie `worldCopyJump`**:
+  - Wyłączono parametr `worldCopyJump` w Leaflet, trwale eliminując błędy powielania i przycinania kafelków mapy.
+
+---
+
+## [1.3.2] - 2026-10-17 — Naprawa Map, Oczyszczenie UI i Wykrywanie Telewizorów w Sieci
+
+### Naprawiono i Usprawniono
+- **Usunięcie kafelków CARTO z wymogiem klucza API**: Zastąpiono zablokowane serwery kafelków CARTO (*Dark Matter*, *Voyager*, *Positron*) w 100% niezawodnymi, bezpłatnymi podkładami:
+  - **Nocny**: *Esri Dark Canvas* (baza rastrowa `World_Dark_Gray_Base` + przezroczysta warstwa etykiet `World_Dark_Gray_Reference`).
+  - **Kolor / Teren**: *Esri World Topo Map* (plastyczne cieniowanie rzeźby terenu, parki, rzeki, drogi i hipsometria).
+  - **Dzień**: *OpenStreetMap Dzień* (oficjalne, jasne i czytelne serwery OSM).
+  - **Satelita & Ulice**: *Esri World Imagery* wzbogacone o nakładkę granic i miejscowości (*World Boundaries & Places*) oraz *Esri World Street Map*.
+- **Oczyszczenie interfejsu mapy**: Usunięto zbędny, pływający poziomy pasek stylów z górnej części mapy (`absolute top-3 left-1/2`), odsłaniając pełną panoramę świata. Przełączanie stylów pozostaje dostępne w prawym pasku narzędzi oraz w Ustawieniach.
+- **Wykrywanie sieci domowej i udostępnianie ekranu na TV (`TvModeModal.tsx`)**:
+  - **Status aktywnej sieci**: Dodano dedykowaną kartę sieci domowej (Wi-Fi/LAN) ze statusem połączenia, nazwą sieci (SSID z opcją edycji), lokalnym IP komputera, bramą, standardem Wi-Fi 6, pasmem 5.0 GHz i pingiem.
+  - **Skaner i lista telewizorów w sieci**: Zaimplementowano moduł wyszukiwania urządzeń w sieci lokalnej (mDNS, SSDP, Miracast, Google Cast, DLNA) z listą wykrytych telewizorów (Samsung Neo QLED, LG OLED, Sony BRAVIA, Philips Ambilight) oraz możliwością dodania własnego TV po IP.
+  - **Natywne udostępnianie ekranu w przeglądarce**: Dodano integrację z `navigator.mediaDevices.getDisplayMedia` umożliwiającą bezpośrednie przekazywanie obrazu pulpitu/okna na telewizor.
+
+---
+
 ## [1.3.1] - 2026-10-17 — Finalna Stabilizacja i Przygotowanie do Przekazania Codexowi
 
 ### Naprawiono i Zabezpieczono

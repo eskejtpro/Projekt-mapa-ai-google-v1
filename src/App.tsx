@@ -56,7 +56,50 @@ export default function App() {
   // Okno Windows 10/11
   const [isWindowMaximized, setIsWindowMaximized] = useState<boolean>(true);
   const [isWindowMinimized, setIsWindowMinimized] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isAboutOpen, setIsAboutOpen] = useState<boolean>(false);
+
+  const handleToggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => {
+        setIsFullscreen(true);
+        showToast('Włączono tryb pełnego ekranu (F11)', 'info');
+      }).catch(() => {
+        setIsFullscreen(prev => !prev);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().then(() => {
+          setIsFullscreen(false);
+          showToast('Wyłączono tryb pełnego ekranu', 'info');
+        }).catch(() => {
+          setIsFullscreen(false);
+        });
+      }
+    }
+  };
+
+  // Globalna obsługa skrótu F11 i synchronizacja ze stanem przeglądarki
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    const handleGlobalF11 = (e: KeyboardEvent) => {
+      if (e.key === 'F11') {
+        e.preventDefault();
+        handleToggleFullscreen();
+      }
+    };
+
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    window.addEventListener('keydown', handleGlobalF11);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', onFullscreenChange);
+      window.removeEventListener('keydown', handleGlobalF11);
+    };
+  }, []);
 
   // Aktywny widok
   const [activeTab, setActiveTab] = useState<ActiveNavTab>('map');
@@ -328,6 +371,8 @@ export default function App() {
           <WindowsTitleBar
             isMaximized={isWindowMaximized}
             onToggleMaximize={() => setIsWindowMaximized(!isWindowMaximized)}
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={handleToggleFullscreen}
             onMinimize={() => setIsWindowMinimized(true)}
             onCloseApp={handleCloseApp}
             onOpenImport={() => setIsImportOpen(true)}
@@ -371,6 +416,8 @@ export default function App() {
                     tileProvider={settings.defaultMapLayer}
                     onChangeTileProvider={(p) => handleUpdateSettings({ ...settings, defaultMapLayer: p })}
                     showAnimatedRoutes={settings.showAnimatedRoutes}
+                    showMapLabels={settings.showMapLabels}
+                    clusterRadius={settings.clusterRadius}
                     onOpenImport={handleOpenImportWithLocation}
                     onShowToast={showToast}
                     onDropPhotosOnMap={handleDropPhotosOnMap}
@@ -846,6 +893,7 @@ export default function App() {
         photos={photos}
         trips={trips}
         onStartSlideshow={(list) => handleStartSlideshow(list)}
+        onShowToast={showToast}
       />
 
       <OfflineMapsModal

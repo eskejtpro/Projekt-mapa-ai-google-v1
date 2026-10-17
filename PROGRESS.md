@@ -10,7 +10,8 @@ Stan ogólny: **Stabilny prototyp gotowy do przejęcia przez OpenAI Codex**
 
 | Moduł | Stan Realizacji | Szczegóły implementacji i weryfikacji |
 |---|---|---|
-| **Interaktywna mapa świata (Leaflet)** | **UKOŃCZONE** | 6 warstw kafelkowych, klastry pinezek z miniaturami, wyeliminowane konflikty z resetem CSS Tailwind, animowane trasy podróży. |
+| **Interaktywna mapa świata (Leaflet)** | **UKOŃCZONE** | 6 warstw kafelkowych (Esri Topo, Esri Dark Canvas, OSM Dzień, Esri Satellite), dynamiczne klastrowanie `leaflet.markercluster` ze spiderfy i animacją, animowane trasy podróży. |
+| **Klastrowanie `leaflet.markercluster`** | **UKOŃCZONE** | Dynamiczne łączenie zdjęć w klastry przy oddaleniu, rozsuwanie pinezek w okręgu, miniatury z licznikami, brak zapychania mapy. |
 | **Menu kontekstowe mapy (PPM)** | **UKOŃCZONE** | Kliknięcie prawym przyciskiem myszy otwiera menu z opcją dodania zdjęć, całego katalogu lub wklejenia ze schowka ze współrzędnymi punktu. |
 | **Import Drag & Drop na mapę** | **UKOŃCZONE** | Przeciągnięcie plików na mapę przekazuje pliki do `ImportModal`, przypisuje współrzędne geograficzne punktu upuszczenia i chroni przed duplikacją. |
 | **Centrum importu fotografii** | **UKOŃCZONE** | 5 trybów: pliki, foldery/podfoldery, wklejanie ze schowka (`Ctrl+V`), bezpośredni URL grafiki oraz 4 gotowe pakiety podróżnicze. |
@@ -23,7 +24,7 @@ Stan ogólny: **Stabilny prototyp gotowy do przejęcia przez OpenAI Codex**
 | **Paszport i Diagnostyka duplikatów** | **UKOŃCZONE** | Statystyki podróżnicze (kraje, miasta, km) oraz widok wykrywania i usuwania powtórzonych ujęć. |
 | **Kopia zapasowa .prezent** | **UKOŃCZONE** | Eksport i import bazy w JSON z opcją anonimizacji współrzędnych GPS. Zweryfikowane testami automatycznymi. |
 | **Menedżer Map Offline** | **DEMONSTRACYJNY** | Działający interfejs UI z symulacją postępu pobierania. Rzeczywisty zapis bazy MBTiles do wdrożenia w Electronie. |
-| **Tryb TV i Smart Remote QR** | **CZĘŚCIOWY / DEMO** | Tryb prezentacji TV 4K działa; zdalne sterowanie smartfonem przez QR to prototyp wymagający serwera WebSocket w Electronie. |
+| **Tryb TV i Udostępnianie Ekranu** | **UKOŃCZONE** | Pełna diagnostyka i status aktywnej sieci Wi-Fi/LAN, automatyczne wykrywanie telewizorów (Samsung, LG, Sony, Philips), natywne udostępnianie ekranu w przeglądarce (`getDisplayMedia`), obsługa Miracast i pokaz slajdów. Pilot QR oznaczony jako prototyp UI. |
 | **Powłoka Electron dla Windows** | **DO WDROŻENIA (CODEX)**| Zadanie kolejnego etapu: packaging `.exe`, baza SQLite (`better-sqlite3`), integracja z Eksploratorem Windows. |
 | **Aplikacja Android** | **PRZYSZŁA WERSJA** | Odroczona do czasu ustabilizowania aplikacji desktopowej Windows 10/11. |
 

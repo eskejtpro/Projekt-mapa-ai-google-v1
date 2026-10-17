@@ -77,6 +77,21 @@ export interface OfflineMapPackage {
   downloadDate?: string;
 }
 
+export interface DiscoveredTvDevice {
+  id: string;
+  name: string;
+  model: string;
+  brand: 'Samsung' | 'LG' | 'Sony' | 'Philips' | 'Apple' | 'Inny';
+  ip: string;
+  protocol: 'Miracast' | 'Google Cast' | 'AirPlay 2' | 'DLNA';
+  resolution: string;
+  room: string;
+  signalStrength: number;
+  isOnline: boolean;
+  isPaired?: boolean;
+  lastConnected?: string;
+}
+
 // 12-kategorialne ustawienia aplikacji Prezent
 export interface AppSettings {
   // 1. Ogólne

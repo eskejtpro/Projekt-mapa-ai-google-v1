@@ -353,12 +353,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   onChange={e => update('defaultMapLayer', e.target.value as any)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white"
                 >
-                  <option value="dark">CartoDB Dark Matter (Nocny luksusowy)</option>
+                  <option value="dark">Esri Dark Canvas (Nocny luksusowy)</option>
                   <option value="satellite">Esri World Imagery (Fotorealistyczna satelita)</option>
-                  <option value="voyager">OpenStreetMap Voyager (Kolorowy teren i ulice)</option>
+                  <option value="voyager">Esri World Topo (Kolorowy teren i rzeźba terenu)</option>
                   <option value="streets">Esri World Street Map (Klasyczna mapa drogowa)</option>
-                  <option value="light">CartoDB Positron (Minimalistyczny jasny dzień)</option>
-                  <option value="osm">OpenStreetMap Standard</option>
+                  <option value="light">OpenStreetMap Dzień (Jasna, czytelna mapa dzienna)</option>
+                  <option value="osm">OpenStreetMap Humanitarian (Ciepłe pastelowe kolory)</option>
                 </select>
               </div>
 
@@ -781,7 +781,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
               <div className="border-t border-slate-800 pt-3 space-y-2 text-[11px] text-slate-400">
                 <p>• Prezent Mapy – zaprojektowano do prezentowania wspomnień rodzinnych i podróży na mapie świata.</p>
-                <p>• Silnik map: Leaflet & OpenStreetMap / CartoDB / Esri Satellite.</p>
+                <p>• Silnik map: Leaflet & OpenStreetMap / Esri Topo / Esri Dark Canvas / Esri Satellite.</p>
                 <p>• Odczyt metadanych: exifr (GPS, aparat, data).</p>
                 <p>• Dźwięk ambient: Web Audio API (szum oceanu, 100% offline).</p>
               </div>

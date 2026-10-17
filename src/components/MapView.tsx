@@ -1,5 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
+import 'leaflet.markercluster';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { TravelPhoto, TravelTrip, MapTileProvider } from '../types/travel';
 import { 
   Layers, 
@@ -38,6 +41,8 @@ interface MapViewProps {
   tileProvider: MapTileProvider;
   onChangeTileProvider: (provider: MapTileProvider) => void;
   showAnimatedRoutes?: boolean;
+  showMapLabels?: boolean;
+  clusterRadius?: number;
   onOpenImport?: (location?: InitialImportLocation, mode?: ImportTabMode) => void;
   onShowToast?: (message: string, type: 'info' | 'success' | 'warning') => void;
   onDropPhotosOnMap?: (files: File[], lat: number, lng: number) => void;
@@ -45,55 +50,55 @@ interface MapViewProps {
 
 interface TileServerConfig {
   url: string;
+  referenceUrl?: string;
   attribution: string;
   maxZoom: number;
   subdomains?: string;
 }
 
-// 100% stabilne, szybkie i niezawodne serwery kafelków w wysokiej rozdzielczości
+// 100% stabilne, szybkie i niezawodne serwery kafelków w wysokiej rozdzielczości (bez kluczy API)
 const TILE_SERVERS: Record<MapTileProvider, TileServerConfig> = {
   dark: {
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    referenceUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
     maxZoom: 19,
-    subdomains: 'abcd',
   },
   satellite: {
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-    maxZoom: 18,
+    referenceUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP',
+    maxZoom: 19,
   },
   voyager: {
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, USGS, NRCAN',
     maxZoom: 19,
-    subdomains: 'abcd',
-  },
-  osm: {
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    maxZoom: 19,
-    subdomains: 'abcd',
-  },
-  light: {
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    maxZoom: 19,
-    subdomains: 'abcd',
   },
   streets: {
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
     attribution: 'Tiles &copy; Esri &mdash; Sources: Esri, DeLorme, NAVTEQ',
     maxZoom: 19,
   },
+  light: {
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19,
+  },
+  osm: {
+    url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by Humanitarian OpenStreetMap Team',
+    maxZoom: 19,
+    subdomains: 'abc',
+  },
 };
 
 const MAP_STYLES: { id: MapTileProvider; label: string; sub: string; icon: any }[] = [
-  { id: 'dark', label: 'Nocny', sub: 'Dark Matter', icon: Moon },
+  { id: 'dark', label: 'Nocny', sub: 'Esri Dark Canvas', icon: Moon },
   { id: 'satellite', label: 'Satelita', sub: 'Esri World Imagery', icon: Globe },
-  { id: 'voyager', label: 'Kolor / Teren', sub: 'OpenStreetMap', icon: Compass },
+  { id: 'voyager', label: 'Kolor / Teren', sub: 'Esri Topo Teren', icon: Compass },
   { id: 'streets', label: 'Ulice', sub: 'Esri Streets', icon: MapIcon },
-  { id: 'light', label: 'Dzień', sub: 'Positron Light', icon: Sun },
+  { id: 'light', label: 'Dzień', sub: 'OpenStreetMap Dzień', icon: Sun },
 ];
 
 export const MapView: React.FC<MapViewProps> = ({
@@ -105,6 +110,8 @@ export const MapView: React.FC<MapViewProps> = ({
   tileProvider,
   onChangeTileProvider,
   showAnimatedRoutes = true,
+  showMapLabels = true,
+  clusterRadius = 50,
   onOpenImport,
   onShowToast,
   onDropPhotosOnMap,
@@ -112,7 +119,8 @@ export const MapView: React.FC<MapViewProps> = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
-  const markersLayerRef = useRef<L.LayerGroup | null>(null);
+  const referenceLayerRef = useRef<L.TileLayer | null>(null);
+  const clusterGroupRef = useRef<L.MarkerClusterGroup | null>(null);
   const routesLayerRef = useRef<L.LayerGroup | null>(null);
 
   const [mapSearchQuery, setMapSearchQuery] = useState<string>('');
@@ -134,7 +142,7 @@ export const MapView: React.FC<MapViewProps> = ({
   const [isDragOverMap, setIsDragOverMap] = useState<boolean>(false);
   const [dragHoverCoords, setDragHoverCoords] = useState<{ lat: number; lng: number } | null>(null);
 
-  // Inicjalizacja instancji Leaflet z obsługą prawego przycisku myszy
+  // Inicjalizacja instancji Leaflet z obsługą klastrowania leaflet.markercluster
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
@@ -142,9 +150,9 @@ export const MapView: React.FC<MapViewProps> = ({
       center: [36.0, 15.0],
       zoom: 3,
       minZoom: 2,
-      maxZoom: 18,
+      maxZoom: 19,
       zoomControl: false,
-      worldCopyJump: true,
+      worldCopyJump: false,
       fadeAnimation: true,
       zoomAnimation: true,
     });
@@ -155,14 +163,70 @@ export const MapView: React.FC<MapViewProps> = ({
       attribution: config.attribution,
       maxZoom: config.maxZoom,
       subdomains: config.subdomains || 'abc',
+      keepBuffer: 6,
+      updateWhenIdle: false,
     }).addTo(map);
 
+    tileLayer.bringToBack();
     tileLayerRef.current = tileLayer;
 
-    const markersLayer = L.layerGroup().addTo(map);
-    const routesLayer = L.layerGroup().addTo(map);
+    if (config.referenceUrl && showMapLabels) {
+      const refLayer = L.tileLayer(config.referenceUrl, {
+        maxZoom: config.maxZoom,
+        subdomains: config.subdomains || 'abc',
+        opacity: 0.95,
+        keepBuffer: 6,
+        updateWhenIdle: false,
+      }).addTo(map);
+      referenceLayerRef.current = refLayer;
+    }
 
-    markersLayerRef.current = markersLayer;
+    // Inicjalizacja grupy klastrów markerów z leaflet.markercluster
+    const clusterGroup = L.markerClusterGroup({
+      maxClusterRadius: clusterRadius || 50,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      animate: true,
+      iconCreateFunction: (cluster) => {
+        const count = cluster.getChildCount();
+        const allMarkers = cluster.getAllChildMarkers();
+        const firstPhoto = (allMarkers[0] as any)?.photoData as TravelPhoto | undefined;
+        const thumbUrl = firstPhoto?.thumbnailUrl || firstPhoto?.url;
+
+        const badgeBg = count >= 20 
+          ? 'linear-gradient(135deg, #ec4899, #8b5cf6)' 
+          : count >= 5 
+            ? 'linear-gradient(135deg, #f59e0b, #ef4444)' 
+            : 'linear-gradient(135deg, #10b981, #06b6d4)';
+
+        return L.divIcon({
+          className: 'custom-leaflet-cluster',
+          html: `
+            <div style="position: relative; width: 60px; height: 68px; cursor: pointer; display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 10px 18px rgba(0,0,0,0.8)); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);">
+              <div style="width: 50px; height: 50px; border-radius: 9999px; overflow: hidden; border: 3px solid #ffffff; background: #0b1120; box-shadow: 0 0 18px rgba(245, 158, 11, 0.5); position: relative;">
+                ${thumbUrl ? `
+                  <img src="${thumbUrl}" alt="Klastr zdjęć" style="width: 50px !important; height: 50px !important; max-width: none !important; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=150&q=80'" />
+                ` : `
+                  <div style="width: 100%; height: 100%; background: #1e293b; display: flex; align-items: center; justify-content: center; color: #f59e0b; font-weight: bold;">📷</div>
+                `}
+              </div>
+              <div style="position: absolute; top: -3px; right: -3px; background: ${badgeBg}; color: #ffffff; font-size: 11px; font-weight: 900; border-radius: 9999px; min-width: 22px; height: 22px; padding: 0 5px; display: flex; align-items: center; justify-content: center; border: 2px solid #ffffff; box-shadow: 0 3px 8px rgba(0,0,0,0.85); font-family: monospace;">
+                ${count}
+              </div>
+              <div style="width: 8px; height: 8px; background: #f59e0b; border: 2px solid #ffffff; border-radius: 9999px; box-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-top: 3px;"></div>
+            </div>
+          `,
+          iconSize: [60, 68],
+          iconAnchor: [30, 64],
+        });
+      },
+    });
+
+    map.addLayer(clusterGroup);
+    clusterGroupRef.current = clusterGroup;
+
+    const routesLayer = L.layerGroup().addTo(map);
     routesLayerRef.current = routesLayer;
     mapInstanceRef.current = map;
 
@@ -241,34 +305,71 @@ export const MapView: React.FC<MapViewProps> = ({
       window.removeEventListener('resize', handleWindowResize);
       window.removeEventListener('keydown', handleKeyDown);
       if (resizeObserver) resizeObserver.disconnect();
+      if (referenceLayerRef.current) {
+        referenceLayerRef.current.remove();
+        referenceLayerRef.current = null;
+      }
+      if (tileLayerRef.current) {
+        tileLayerRef.current.remove();
+        tileLayerRef.current = null;
+      }
+      if (clusterGroupRef.current) {
+        clusterGroupRef.current.clearLayers();
+        map.removeLayer(clusterGroupRef.current);
+        clusterGroupRef.current = null;
+      }
+      if (routesLayerRef.current) {
+        routesLayerRef.current.clearLayers();
+        map.removeLayer(routesLayerRef.current);
+        routesLayerRef.current = null;
+      }
       map.remove();
       mapInstanceRef.current = null;
     };
   }, []);
 
-  // Zmiana warstwy kafelków
+  // Zmiana warstwy kafelków i etykiet
   useEffect(() => {
     if (!mapInstanceRef.current) return;
     const activeProvider = tileProvider in TILE_SERVERS ? tileProvider : 'dark';
     const config = TILE_SERVERS[activeProvider];
 
+    if (referenceLayerRef.current) {
+      mapInstanceRef.current.removeLayer(referenceLayerRef.current);
+      referenceLayerRef.current = null;
+    }
+
     if (tileLayerRef.current) {
       mapInstanceRef.current.removeLayer(tileLayerRef.current);
+      tileLayerRef.current = null;
     }
 
     const newLayer = L.tileLayer(config.url, {
       attribution: config.attribution,
       maxZoom: config.maxZoom,
       subdomains: config.subdomains || 'abc',
+      keepBuffer: 6,
+      updateWhenIdle: false,
     }).addTo(mapInstanceRef.current);
 
     newLayer.bringToBack();
     tileLayerRef.current = newLayer;
 
+    if (config.referenceUrl && showMapLabels) {
+      const newRefLayer = L.tileLayer(config.referenceUrl, {
+        maxZoom: config.maxZoom,
+        subdomains: config.subdomains || 'abc',
+        opacity: 0.95,
+        keepBuffer: 6,
+        updateWhenIdle: false,
+      }).addTo(mapInstanceRef.current);
+      referenceLayerRef.current = newRefLayer;
+    }
+
     setTimeout(() => {
       mapInstanceRef.current?.invalidateSize({ animate: false });
     }, 50);
-  }, [tileProvider]);
+  }, [tileProvider, showMapLabels]);
 
   // Filtrowanie zdjęć
   const visiblePhotos = photos.filter(photo => {
@@ -285,52 +386,37 @@ export const MapView: React.FC<MapViewProps> = ({
     return true;
   });
 
-  // Renderowanie pinezek ze zdjęciami oraz tras podróży
+  // Renderowanie klastrów markerów z leaflet.markercluster oraz tras podróży
   useEffect(() => {
-    if (!mapInstanceRef.current || !markersLayerRef.current || !routesLayerRef.current) return;
+    if (!mapInstanceRef.current || !clusterGroupRef.current || !routesLayerRef.current) return;
 
-    markersLayerRef.current.clearLayers();
+    clusterGroupRef.current.clearLayers();
     routesLayerRef.current.clearLayers();
-
-    const locationGroups: Record<string, TravelPhoto[]> = {};
-    visiblePhotos.forEach(p => {
-      const key = `${p.location.lat.toFixed(2)}_${p.location.lng.toFixed(2)}`;
-      if (!locationGroups[key]) locationGroups[key] = [];
-      locationGroups[key].push(p);
-    });
 
     const bounds: L.LatLngBounds = L.latLngBounds([]);
 
-    Object.values(locationGroups).forEach(group => {
-      const rep = group[0];
-      const count = group.length;
-      bounds.extend([rep.location.lat, rep.location.lng]);
+    visiblePhotos.forEach(photo => {
+      bounds.extend([photo.location.lat, photo.location.lng]);
 
-      const badgeBg = count > 10 ? '#7c3aed' : count > 2 ? '#2563eb' : '#059669';
-
-      const iconHtml = `
-        <div style="position: relative; width: 56px; height: 64px; cursor: pointer; display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.7)); transition: transform 0.2s ease;">
-          <div style="width: 50px; height: 50px; border-radius: 9999px; overflow: hidden; border: 3px solid #ffffff; background: #0b1120; box-shadow: 0 0 16px rgba(245, 158, 11, 0.4);">
-            <img src="${rep.thumbnailUrl || rep.url}" alt="${rep.title}" style="width: 50px !important; height: 50px !important; max-width: none !important; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=150&q=80'" />
+      const singleIconHtml = `
+        <div style="position: relative; width: 54px; height: 62px; cursor: pointer; display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.7)); transition: transform 0.2s ease;">
+          <div style="width: 48px; height: 48px; border-radius: 9999px; overflow: hidden; border: 3px solid #ffffff; background: #0b1120; box-shadow: 0 0 14px rgba(245, 158, 11, 0.4);">
+            <img src="${photo.thumbnailUrl || photo.url}" alt="${photo.title}" style="width: 48px !important; height: 48px !important; max-width: none !important; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=150&q=80'" />
           </div>
-          ${count > 1 ? `
-            <div style="position: absolute; top: -3px; right: -3px; background: ${badgeBg}; color: #ffffff; font-size: 11px; font-weight: 900; border-radius: 9999px; min-width: 22px; height: 22px; padding: 0 5px; display: flex; align-items: center; justify-content: center; border: 2px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.8); font-family: monospace;">
-              ${count}
-            </div>
-          ` : ''}
           <div style="width: 8px; height: 8px; background: #ffffff; border-radius: 9999px; box-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-top: 3px;"></div>
         </div>
       `;
 
       const customIcon = L.divIcon({
-        className: 'custom-cluster-pin',
-        html: iconHtml,
-        iconSize: [56, 64],
-        iconAnchor: [28, 60],
-        popupAnchor: [0, -56],
+        className: 'custom-photo-pin',
+        html: singleIconHtml,
+        iconSize: [54, 62],
+        iconAnchor: [27, 58],
+        popupAnchor: [0, -54],
       });
 
-      const marker = L.marker([rep.location.lat, rep.location.lng], { icon: customIcon });
+      const marker = L.marker([photo.location.lat, photo.location.lng], { icon: customIcon });
+      (marker as any).photoData = photo;
 
       const popupHtml = document.createElement('div');
       popupHtml.className = 'p-3 text-slate-100 max-w-xs';
@@ -340,28 +426,28 @@ export const MapView: React.FC<MapViewProps> = ({
       imgContainer.className = 'rounded-xl overflow-hidden mb-2 relative shadow-lg bg-slate-950';
 
       const img = document.createElement('img');
-      img.src = rep.url;
-      img.alt = rep.title || 'Wspomnienie';
+      img.src = photo.url;
+      img.alt = photo.title || 'Wspomnienie';
       img.className = 'w-full h-36 object-cover';
       imgContainer.appendChild(img);
 
       const badge = document.createElement('div');
       badge.className = 'absolute top-2 right-2 bg-slate-950/85 backdrop-blur text-amber-400 text-[10px] px-2.5 py-0.5 rounded-full font-bold border border-amber-500/30';
-      badge.textContent = `${rep.location.cityName || 'Lokalizacja'}, ${rep.location.countryName || 'Świat'}`;
+      badge.textContent = `${photo.location.cityName || 'Lokalizacja'}, ${photo.location.countryName || 'Świat'}`;
       imgContainer.appendChild(badge);
       popupHtml.appendChild(imgContainer);
 
       // Tytuł wspomnienia
       const titleEl = document.createElement('h4');
       titleEl.className = 'font-bold text-sm text-white leading-tight mb-1';
-      titleEl.textContent = rep.title;
+      titleEl.textContent = photo.title;
       popupHtml.appendChild(titleEl);
 
       // Opis / Notatka
-      if (rep.notes) {
+      if (photo.notes) {
         const notesEl = document.createElement('p');
         notesEl.className = 'text-xs text-slate-400 line-clamp-2 mb-2 leading-relaxed';
-        notesEl.textContent = rep.notes;
+        notesEl.textContent = photo.notes;
         popupHtml.appendChild(notesEl);
       }
 
@@ -370,11 +456,11 @@ export const MapView: React.FC<MapViewProps> = ({
       metaRow.className = 'flex items-center justify-between pt-2 border-t border-slate-800 text-[11px] text-slate-400';
 
       const dateSpan = document.createElement('span');
-      dateSpan.textContent = `📅 ${rep.date || 'Nieznana data'}`;
+      dateSpan.textContent = `📅 ${photo.date || 'Nieznana data'}`;
       metaRow.appendChild(dateSpan);
 
       const partSpan = document.createElement('span');
-      partSpan.textContent = `👥 ${(rep.participants || []).slice(0, 2).join(', ') || 'Rodzina'}`;
+      partSpan.textContent = `👥 ${(photo.participants || []).slice(0, 2).join(', ') || 'Rodzina'}`;
       metaRow.appendChild(partSpan);
 
       popupHtml.appendChild(metaRow);
@@ -386,11 +472,12 @@ export const MapView: React.FC<MapViewProps> = ({
       const btnSpan = document.createElement('span');
       btnSpan.textContent = 'Otwórz wspomnienie';
       btn.appendChild(btnSpan);
-      btn.onclick = () => onSelectPhoto(rep);
+      btn.onclick = () => onSelectPhoto(photo);
 
       popupHtml.appendChild(btn);
       marker.bindPopup(popupHtml, { minWidth: 260, maxWidth: 300 });
-      markersLayerRef.current?.addLayer(marker);
+
+      clusterGroupRef.current?.addLayer(marker);
     });
 
     if (showAnimatedRoutes) {
@@ -675,29 +762,6 @@ export const MapView: React.FC<MapViewProps> = ({
             {searchFeedback}
           </div>
         )}
-      </div>
-
-      {/* Pływający pasek bezpośredniego wyboru stylu mapy */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 hidden lg:flex items-center gap-1 bg-[#0c101c]/90 backdrop-blur-md border border-slate-700/80 p-1 rounded-2xl shadow-2xl">
-        {MAP_STYLES.map(style => {
-          const Icon = style.icon;
-          const isActive = tileProvider === style.id || (style.id === 'voyager' && tileProvider === 'osm');
-          return (
-            <button
-              key={style.id}
-              onClick={() => onChangeTileProvider(style.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                isActive
-                  ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
-              }`}
-              title={`${style.label} (${style.sub})`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              <span>{style.label}</span>
-            </button>
-          );
-        })}
       </div>
 
       {/* Pływające kontrolki mapy po prawej stronie */}
