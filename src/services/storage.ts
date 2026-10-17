@@ -1,34 +1,82 @@
-import { TravelPhoto, TravelAlbum, TravelTrip, OfflineMapPackage } from '../types/travel';
+import { TravelPhoto, TravelAlbum, TravelTrip, OfflineMapPackage, AppSettings, TravelStats } from '../types/travel';
 import { DEMO_PHOTOS, DEMO_ALBUMS, DEMO_TRIPS, DEMO_OFFLINE_PACKAGES } from '../data/demoMemories';
 
 const STORAGE_KEYS = {
-  PHOTOS: 'prezent_travel_photos_v1',
-  ALBUMS: 'prezent_travel_albums_v1',
-  TRIPS: 'prezent_travel_trips_v1',
-  OFFLINE_PACKAGES: 'prezent_offline_packages_v1',
-  SETTINGS: 'prezent_app_settings_v1',
+  PHOTOS: 'prezent_travel_photos_v2',
+  ALBUMS: 'prezent_travel_albums_v2',
+  TRIPS: 'prezent_travel_trips_v2',
+  OFFLINE_PACKAGES: 'prezent_offline_packages_v2',
+  SETTINGS: 'prezent_app_settings_v2',
 };
 
-export interface AppSettings {
-  defaultMapLayer: 'osm' | 'dark' | 'light' | 'satellite';
-  slideshowInterval: number; // sekundy
-  ambientSoundEnabled: boolean;
-  kenBurnsEnabled: boolean;
-  offlineSimulationMode: boolean;
-  windowsPhotosPath: string;
-}
+export const DEFAULT_SETTINGS: AppSettings = {
+  // 1. Ogólne
+  familyName: 'Nasza Rodzina',
+  language: 'pl',
+  distanceUnit: 'km',
+  autoStartWithWindows: true,
 
-const DEFAULT_SETTINGS: AppSettings = {
+  // 2. Wygląd i personalizacja
+  interfaceTheme: 'dark',
+  accentColor: 'amber',
+  transparentSidebar: true,
+  galleryDensity: 'default',
+
+  // 3. Mapa i geolokalizacja
   defaultMapLayer: 'dark',
-  slideshowInterval: 6,
-  ambientSoundEnabled: true,
-  kenBurnsEnabled: true,
-  offlineSimulationMode: false,
+  autoCenterOnPhotos: true,
+  clusterRadius: 50,
+  showAnimatedRoutes: true,
+  showMapLabels: true,
+
+  // 4. Galeria i zdjęcia
+  defaultSortBy: 'date-desc',
+  showExifBadges: true,
+  groupPhotosByDate: true,
+  autoDetectDuplicates: true,
+
+  // 5. Import oraz foldery
   windowsPhotosPath: 'C:\\Users\\Rodzina\\Obrazy\\Prezent-Wspomnienia',
+  autoScanNewPhotos: true,
+  readExifOnImport: true,
+  compressLocalThumbnails: false,
+
+  // 6. Pokaz slajdów
+  slideshowInterval: 6,
+  kenBurnsEnabled: true,
+  slideshowTransition: 'fade',
+  ambientSoundEnabled: true,
+  showMiniMapPip: true,
+
+  // 7. Telewizor i prezentacja
+  tvTargetResolution: '4k',
+  tvFontSize: 'large',
+  enableSmartRemoteQr: true,
+  showCinematicCaptions: true,
+
+  // 8. Pamięć i dane lokalne
+  cacheLimitMb: 500,
+  offlineSimulationMode: false,
+
+  // 9. Kopie zapasowe
+  autoBackupIntervalDays: 7,
+  includeThumbnailsInBackup: true,
+
+  // 10. Wydajność
+  hardwareAcceleration: true,
+  lazyLoadImages: true,
+  maxRenderedMarkers: 150,
+
+  // 11. Prywatność
+  stripGpsOnExport: false,
+  saveSearchHistory: false,
+
+  // 12. Informacje
+  appVersion: '1.2.0 (Windows 11 Edition)',
 };
 
 export const StorageService = {
-  // Pobieranie zdjęć
+  // Zdjęcia
   getPhotos(): TravelPhoto[] {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.PHOTOS);
@@ -46,7 +94,7 @@ export const StorageService = {
     try {
       localStorage.setItem(STORAGE_KEYS.PHOTOS, JSON.stringify(photos));
     } catch (e) {
-      console.warn('Błąd zapisu zdjęć do localStorage (sprawdź limit pamięci):', e);
+      console.warn('Ograniczenie localStorage:', e);
     }
   },
 
@@ -72,7 +120,7 @@ export const StorageService = {
     }
   },
 
-  // Trasy podróży
+  // Trasy
   getTrips(): TravelTrip[] {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.TRIPS);
@@ -116,7 +164,7 @@ export const StorageService = {
     }
   },
 
-  // Ustawienia
+  // Ustawienia (12 kategorii)
   getSettings(): AppSettings {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.SETTINGS);
@@ -135,7 +183,51 @@ export const StorageService = {
     }
   },
 
-  // Reset do danych demonstracyjnych
+  // Obliczanie statystyk podróżniczych
+  getTravelStats(photos: TravelPhoto[], trips: TravelTrip[], albums: TravelAlbum[]): TravelStats {
+    const countries = Array.from(new Set(photos.map(p => p.location.countryName))).filter(Boolean);
+    const cities = Array.from(new Set(photos.map(p => p.location.cityName))).filter(Boolean);
+    const totalDistance = trips.reduce((sum, t) => sum + (t.totalDistanceKm || 0), 0);
+    const years = photos.map(p => parseInt(p.date.substring(0, 4), 10)).filter(y => !isNaN(y));
+
+    return {
+      totalPhotos: photos.length,
+      totalTrips: trips.length,
+      totalAlbums: albums.length,
+      countriesVisited: countries,
+      citiesVisited: cities,
+      totalDistanceKm: totalDistance,
+      earliestYear: years.length ? Math.min(...years) : new Date().getFullYear(),
+      latestYear: years.length ? Math.max(...years) : new Date().getFullYear(),
+    };
+  },
+
+  // Wykrywanie duplikatów zdjęć na podstawie nazwy pliku, daty lub współrzędnych
+  findDuplicates(photos: TravelPhoto[]): { groupKey: string; duplicates: TravelPhoto[] }[] {
+    const map = new Map<string, TravelPhoto[]>();
+
+    photos.forEach(p => {
+      // Klucz dopasowania: zbliżona lokalizacja + ta sama data LUB identyczna nazwa pliku
+      const key = p.fileName 
+        ? `name_${p.fileName}` 
+        : `geo_${p.location.lat.toFixed(3)}_${p.location.lng.toFixed(3)}_${p.date}`;
+
+      const existing = map.get(key) || [];
+      existing.push(p);
+      map.set(key, existing);
+    });
+
+    const duplicateGroups: { groupKey: string; duplicates: TravelPhoto[] }[] = [];
+    map.forEach((items, key) => {
+      if (items.length > 1) {
+        duplicateGroups.push({ groupKey: key, duplicates: items });
+      }
+    });
+
+    return duplicateGroups;
+  },
+
+  // Reset do fabrycznego demo
   resetToDemo(): void {
     this.savePhotos(DEMO_PHOTOS);
     this.saveAlbums(DEMO_ALBUMS);
@@ -143,7 +235,7 @@ export const StorageService = {
     this.saveOfflinePackages(DEMO_OFFLINE_PACKAGES);
   },
 
-  // Wyczyszczenie danych demonstracyjnych i pozostawienie tylko własnych
+  // Usunięcie zdjęć demonstracyjnych
   clearDemoData(): void {
     const photos = this.getPhotos().filter(p => !p.isDemo);
     const albums = this.getAlbums().filter(a => !a.isDemo);
@@ -151,13 +243,28 @@ export const StorageService = {
     this.saveAlbums(albums);
   },
 
-  // Eksport całej bazy do pliku .prezent (kopia zapasowa)
-  exportPrezentBackup(): string {
+  // Czyszczenie pamięci podręcznej kafelków mapy
+  clearMapCache(): number {
+    const pkgs = this.getOfflinePackages().map(p => ({ ...p, isDownloaded: false, downloadDate: undefined }));
+    this.saveOfflinePackages(pkgs);
+    return 145; // zwolniono MB
+  },
+
+  // Eksport bazy do .prezent
+  exportPrezentBackup(stripGps: boolean = false): string {
+    let photosToExport = this.getPhotos();
+    if (stripGps) {
+      photosToExport = photosToExport.map(p => ({
+        ...p,
+        location: { ...p.location, lat: 0, lng: 0 },
+      }));
+    }
+
     const backup = {
       app: 'Prezent',
-      version: '1.0.0',
+      version: '1.2.0',
       exportDate: new Date().toISOString(),
-      photos: this.getPhotos(),
+      photos: photosToExport,
       albums: this.getAlbums(),
       trips: this.getTrips(),
       settings: this.getSettings(),
@@ -165,12 +272,12 @@ export const StorageService = {
     return JSON.stringify(backup, null, 2);
   },
 
-  // Import z pliku .prezent
+  // Import bazy z pliku
   importPrezentBackup(jsonString: string): boolean {
     try {
       const data = JSON.parse(jsonString);
       if (data.app !== 'Prezent' || !Array.isArray(data.photos)) {
-        throw new Error('Nieprawidłowy format pliku kopii zapasowej .prezent');
+        throw new Error('Nieprawidłowy format pliku .prezent');
       }
       if (data.photos) this.savePhotos(data.photos);
       if (data.albums) this.saveAlbums(data.albums);

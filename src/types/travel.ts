@@ -28,8 +28,10 @@ export interface TravelPhoto {
     iso?: string;
   };
   fileSize?: string;
+  fileSizeBytes?: number;
   fileName?: string;
   localFilePath?: string; // np. "C:\Prezent\Zdjecia\Santorini_2024.jpg"
+  duplicateGroup?: string;
 }
 
 export interface TravelTrip {
@@ -58,9 +60,11 @@ export interface TravelAlbum {
   year: number;
   country: string;
   isDemo?: boolean;
+  isSmartAlbum?: boolean;
+  smartFilter?: 'favorites' | 'nature' | 'family' | 'food' | 'recent';
 }
 
-export type MapTileProvider = 'osm' | 'dark' | 'light' | 'satellite';
+export type MapTileProvider = 'dark' | 'satellite' | 'osm' | 'light';
 
 export interface OfflineMapPackage {
   id: string;
@@ -71,4 +75,82 @@ export interface OfflineMapPackage {
   isDownloaded: boolean;
   downloadProgress?: number;
   downloadDate?: string;
+}
+
+// 12-kategorialne ustawienia aplikacji Prezent
+export interface AppSettings {
+  // 1. Ogólne
+  familyName: string;
+  language: 'pl' | 'en';
+  distanceUnit: 'km' | 'mi';
+  autoStartWithWindows: boolean;
+
+  // 2. Wygląd i personalizacja
+  interfaceTheme: 'dark' | 'light' | 'system';
+  accentColor: 'amber' | 'emerald' | 'indigo' | 'rose' | 'sky';
+  transparentSidebar: boolean;
+  galleryDensity: 'default' | 'compact' | 'large';
+
+  // 3. Mapa i geolokalizacja
+  defaultMapLayer: MapTileProvider;
+  autoCenterOnPhotos: boolean;
+  clusterRadius: number; // np. 50
+  showAnimatedRoutes: boolean;
+  showMapLabels: boolean;
+
+  // 4. Galeria i zdjęcia
+  defaultSortBy: 'date-desc' | 'date-asc' | 'location' | 'title';
+  showExifBadges: boolean;
+  groupPhotosByDate: boolean;
+  autoDetectDuplicates: boolean;
+
+  // 5. Import oraz foldery
+  windowsPhotosPath: string;
+  autoScanNewPhotos: boolean;
+  readExifOnImport: boolean;
+  compressLocalThumbnails: boolean;
+
+  // 6. Pokaz slajdów
+  slideshowInterval: number; // sekundy
+  kenBurnsEnabled: boolean;
+  slideshowTransition: 'fade' | 'slide' | 'zoom';
+  ambientSoundEnabled: boolean;
+  showMiniMapPip: boolean;
+
+  // 7. Telewizor i prezentacja
+  tvTargetResolution: '4k' | '1080p';
+  tvFontSize: 'normal' | 'large' | 'huge';
+  enableSmartRemoteQr: boolean;
+  showCinematicCaptions: boolean;
+
+  // 8. Pamięć i dane lokalne
+  cacheLimitMb: number;
+  offlineSimulationMode: boolean;
+
+  // 9. Kopie zapasowe
+  autoBackupIntervalDays: number;
+  includeThumbnailsInBackup: boolean;
+
+  // 10. Wydajność
+  hardwareAcceleration: boolean;
+  lazyLoadImages: boolean;
+  maxRenderedMarkers: number;
+
+  // 11. Prywatność
+  stripGpsOnExport: boolean;
+  saveSearchHistory: boolean;
+
+  // 12. Informacje
+  appVersion: string;
+}
+
+export interface TravelStats {
+  totalPhotos: number;
+  totalTrips: number;
+  totalAlbums: number;
+  countriesVisited: string[];
+  citiesVisited: string[];
+  totalDistanceKm: number;
+  earliestYear: number;
+  latestYear: number;
 }
