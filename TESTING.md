@@ -98,3 +98,11 @@ Kontynuacja SQLite: verify PASS (12 Vitest + 10 tooling + 2 SQLite). Testy bazy 
 - `npm run verify`: PASS (9 testów aplikacji, 10 tooling, typecheck/build).
 - Electron 44.9.0 `--smoke-test`: PASS, raport `reports/desktop-smoke.json`; dostępny izolowany mostek, brak `window.require`.
 - Screenshot: `reports/desktop-smoke.png`. Kontrola wyglądu, interakcji okna, złego nadawcy IPC i instalatora pozostaje UNVERIFIED.
+# Aktualny dowód pakowania Windows — 2026-10-17
+
+- Commit: `9c4f45b`.
+- `npm run package:windows`: PASS; NSIS i portable utworzone.
+- `win-unpacked --smoke-test --offline-smoke-test`: PASS; `packaged=true`, SQLite, CSP, izolacja IPC i 24 lokalne kafelki.
+- NSIS w izolowanym katalogu: instalacja PASS, smoke zainstalowanego programu PASS, deinstalacja PASS; brak pliku programu po odinstalowaniu.
+- SHA-256: NSIS `93E7D26DF57B5FAAC0BF48D4EDF7194D30F25A3408E2AC3EEA4386A35BFF0AF3`; portable `B523E459C3CF9F7914DC1D5D3EF78265263FBC2D65860E4E102328E53A083C33`.
+
