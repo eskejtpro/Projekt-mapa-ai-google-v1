@@ -6,7 +6,7 @@
 - Etap: 0, środowisko i audyt; PARTIAL.
 - Branch: work/windows-desktop-foundation; baseline commit 1be0136.
 - Aktualne zadanie: weryfikacja środowiska i zapis dowodów.
-- Ostatni zakończony krok: commit środowiska 57b1587 wysłany na origin/work/windows-desktop-foundation; zdalny Quality run 39005537274 PASS. Finalny commit dokumentacji odczytaj przez git log -1.
+- Ostatni zakończony krok: commit środowiska 57b1587 wysłany na origin/work/windows-desktop-foundation; zdalny Quality run 39005537274 PASS. Następnie commit dokumentacji a4ff5ac wysłany z `[skip ci]`.
 - Zweryfikowane rezultaty końcowe: TESTING.md; maszynowy raport reports/verification.json.
 - Zmiany bieżącej iteracji: skrypty jakości, CI, hooki Git/Codex, skille, rejestr funkcji, testy integracyjne/tooling.
 - Plik użytkownika moje instrukcje do projektu.txt pozostaje osobny, nieśledzony.
