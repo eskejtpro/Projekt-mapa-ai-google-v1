@@ -7,7 +7,7 @@
 - P1: kafelki online i obrazy demo wymagają sieci. Automatyczne wysyłanie koordynatów z mapy/PiP usunięte; tryb offline blokuje HTTP(S). Import MBTiles działa; źródła/licencje rzeczywistych pakietów regionalnych nieustalone.
 - P1: DLNA discovery oraz pilot QR/HTTP działają w testach; brak fizycznego TV i telefonu do potwierdzenia kompatybilności. Casting niezaimplementowany. Pilot HTTP wyłącznie do zaufanej sieci LAN.
 - P1: pozostałe ustawienia wymagają macierzy efektów, zwłaszcza język, motywy i akceleracja. Folder/autostart i harmonogram backupów podłączone; autostart zainstalowanej aplikacji i wielodniowa eksploatacja kopii nieprzetestowane. Kopie pozostają na tym samym dysku i nie zastępują kopii zewnętrznej.
-- P1: instalacja/start/deinstalacja NSIS przetestowane na Windows 10; aktualizacja istniejącej biblioteki, portable, 4K/drugi monitor i Windows 11 pozostają otwarte. Pakiety lokalne poprzedzają aktualny kod.
+- P1: instalacja/start/deinstalacja NSIS oraz smoke aktualnego portable przetestowane na Windows 10; aktualizacja istniejącej biblioteki, 4K/drugi monitor i Windows 11 pozostają otwarte. Pakiety odpowiadają commitowi 9c4f45b; dokumentacja macierzy jest aktualizowana osobno.
 - P2: wymagane dalsze pomiary rzeczywistych zdjęć, wydajności galerii/mapy i szczytowej pamięci. Pomiar syntetycznych metadanych nie dowodzi 60 FPS ani kosztu pełnowymiarowych obrazów.
 
 Aktualne dowody: TESTING.md i reports/. Stan funkcji: docs/FEATURE_MATRIX.md. Historia wcześniejszych usterek pozostaje w Git.
