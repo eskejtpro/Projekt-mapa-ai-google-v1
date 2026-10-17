@@ -114,3 +114,4 @@ Kontynuacja SQLite: verify PASS (12 Vitest + 10 tooling + 2 SQLite). Testy bazy 
 - Electron `--smoke-test --map-layers-smoke-test`: PASS, Nocny 24 / Dzień 24 / Kolor-Teren 21 kafelków o szerokości minimum 256; zrzut `reports/desktop-smoke.png` obejrzany.
 - Skan SSDP LAN: 0 urządzeń, brak błędu. Fizyczny TV i przesyłanie pokazu UNVERIFIED.
 - Computer Use: okno wykryte, przechwycenie `FrameArrived timed out`; testy klikane pluginem NOT RUN.
+- Pakowanie do `release-current`: NSIS i portable PASS. Nowy win-unpacked w izolowanym profilu: `packaged=true`, `bulkDeletionPersisted=true`, `albumDeletedPhotosPreserved=true`, 24 kafelki MBTiles. Fizyczna instalacja tej iteracji NOT RUN; poprzedni instalator przetestowano osobno.
