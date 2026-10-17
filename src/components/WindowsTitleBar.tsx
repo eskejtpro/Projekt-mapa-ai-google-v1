@@ -68,7 +68,7 @@ export const WindowsTitleBar: React.FC<WindowsTitleBarProps> = ({
           </div>
 
           <span className="font-semibold text-slate-200 text-[11px] tracking-wide mr-2 flex items-center gap-1.5">
-            Prezent – Rodzinne Wspomnienia i Podróże na Mapie Świata
+            Prezent Mapy – Rodzinne Wspomnienia i Podróże na Mapie Świata
             <span className="text-[10px] text-slate-400 font-normal hidden sm:inline">[Windows 11 Desktop Edition]</span>
           </span>
 
@@ -236,10 +236,10 @@ export const WindowsTitleBar: React.FC<WindowsTitleBarProps> = ({
                     onClick={() => { closeMenu(); onOpenAbout(); }}
                     className="w-full px-3 py-1.5 hover:bg-amber-500 hover:text-slate-950 flex items-center gap-2 transition-colors text-left"
                   >
-                    <Info className="w-3.5 h-3.5" /> O programie Prezent
+                    <Info className="w-3.5 h-3.5" /> O programie Prezent Mapy
                   </button>
                   <button
-                    onClick={() => { closeMenu(); alert('Skróty klawiszowe programu Prezent:\n\n• Spacja: Uruchom/Pauza pokazu slajdów\n• Strzałki ← / →: Następne/poprzednie zdjęcie\n• F11: Pełny ekran\n• Esc: Wyjście z pokazu\n• Ctrl+O: Import zdjęć z dysku\n• Win+K: Przesyłanie na TV'); }}
+                    onClick={() => { closeMenu(); alert('Skróty klawiszowe programu Prezent Mapy:\n\n• Spacja: Uruchom/Pauza pokazu slajdów\n• Strzałki ← / →: Następne/poprzednie zdjęcie\n• F11: Pełny ekran\n• Esc: Wyjście z pokazu\n• Ctrl+O: Import zdjęć z dysku\n• Win+K: Przesyłanie na TV'); }}
                     className="w-full px-3 py-1.5 hover:bg-amber-500 hover:text-slate-950 flex items-center gap-2 transition-colors text-left"
                   >
                     <HelpCircle className="w-3.5 h-3.5" /> Skróty klawiszowe

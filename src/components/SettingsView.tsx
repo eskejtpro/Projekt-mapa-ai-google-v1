@@ -745,13 +745,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <Settings className="w-6 h-6 stroke-[2.2]" />
                 </div>
                 <div>
-                  <h4 className="text-base font-bold text-white">Prezent – Desktop Edition</h4>
+                  <h4 className="text-base font-bold text-white">Prezent Mapy – Desktop Edition</h4>
                   <p className="text-[11px] text-slate-400">Wersja {settings.appVersion}</p>
                 </div>
               </div>
 
               <div className="border-t border-slate-800 pt-3 space-y-2 text-[11px] text-slate-400">
-                <p>• Zaprojektowano do prezentowania wspomnień rodzinnych i podróży na mapie świata.</p>
+                <p>• Prezent Mapy – zaprojektowano do prezentowania wspomnień rodzinnych i podróży na mapie świata.</p>
                 <p>• Silnik map: Leaflet & OpenStreetMap / CartoDB / Esri Satellite.</p>
                 <p>• Odczyt metadanych: exifr (GPS, aparat, data).</p>
                 <p>• Dźwięk ambient: Web Audio API (szum oceanu, 100% offline).</p>

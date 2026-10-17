@@ -184,7 +184,7 @@ export default function App() {
   };
 
   const handleCloseApp = () => {
-    if (confirm('Czy chcesz zamknąć aplikację Prezent?')) {
+    if (confirm('Czy chcesz zamknąć aplikację Prezent Mapy?')) {
       setIsWindowMinimized(true);
     }
   };
@@ -212,7 +212,7 @@ export default function App() {
               <Globe2 className="w-10 h-10 stroke-[2.2]" />
             </div>
             <div>
-              <h3 className="font-bold text-lg text-white">Okno programu Prezent jest zminimalizowane</h3>
+              <h3 className="font-bold text-lg text-white">Okno programu Prezent Mapy jest zminimalizowane</h3>
               <p className="text-xs text-slate-400 mt-1">
                 Aplikacja działa w tle w systemie Windows 10/11. Kliknij poniżej, aby powrócić do przeglądania wspomnień.
               </p>
@@ -221,7 +221,7 @@ export default function App() {
               onClick={() => setIsWindowMinimized(false)}
               className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg transition-all cursor-pointer"
             >
-              Przywróć okno programu
+              Przywróć okno programu Prezent Mapy
             </button>
           </div>
         </div>

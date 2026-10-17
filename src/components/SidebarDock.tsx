@@ -57,11 +57,11 @@ export const SidebarDock: React.FC<SidebarDockProps> = ({
         <button
           onClick={() => onSelectTab('map')}
           className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-amber-400 to-emerald-400 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-amber-500/20 hover:scale-105 transition-all cursor-pointer group relative"
-          title="Prezent – Strona główna mapy"
+          title="Prezent Mapy – Strona główna mapy"
         >
           <Globe2 className="w-5 h-5 stroke-[2.4]" />
           <span className="absolute left-14 bg-slate-900 border border-slate-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl z-50">
-            Prezent – Mapa Świata
+            Prezent Mapy – Mapa Świata
           </span>
         </button>
 

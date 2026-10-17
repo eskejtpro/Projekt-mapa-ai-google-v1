@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { OfflineMapPackage } from '../types/travel';
 import { 
   WifiOff, 
@@ -31,35 +31,48 @@ export const OfflineMapsModal: React.FC<OfflineMapsModalProps> = ({
 }) => {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
+  const intervalRef = useRef<number | null>(null);
+
+  // Czyszczenie timera przy odmontowaniu
+  React.useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
 
   if (!isOpen) return null;
 
   const handleDownload = (pkgId: string) => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
     setDownloadingId(pkgId);
     setDownloadProgress(10);
+    let currentProgress = 10;
 
-    const interval = setInterval(() => {
-      setDownloadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setDownloadingId(null);
-          // Zaktualizuj pakiet na pobrany
-          const updated = packages.map(p => {
-            if (p.id === pkgId) {
-              return {
-                ...p,
-                isDownloaded: true,
-                downloadDate: new Date().toISOString().split('T')[0],
-              };
-            }
-            return p;
-          });
-          onUpdatePackages(updated);
-          return 100;
-        }
-        return prev + 20;
-      });
-    }, 300);
+    intervalRef.current = window.setInterval(() => {
+      currentProgress += 25;
+      if (currentProgress >= 100) {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        intervalRef.current = null;
+        setDownloadProgress(100);
+        setDownloadingId(null);
+
+        const updated = packages.map(p => {
+          if (p.id === pkgId) {
+            return {
+              ...p,
+              isDownloaded: true,
+              downloadDate: new Date().toISOString().split('T')[0],
+            };
+          }
+          return p;
+        });
+        onUpdatePackages(updated);
+      } else {
+        setDownloadProgress(currentProgress);
+      }
+    }, 250);
   };
 
   const handleDelete = (pkgId: string) => {

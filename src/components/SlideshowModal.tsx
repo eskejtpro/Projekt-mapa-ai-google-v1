@@ -140,7 +140,7 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
             {currentIndex + 1} / {photos.length}
           </div>
           <span className="text-xs font-semibold tracking-wide text-slate-200">
-            Kinowy Pokaz Slajdów „Prezent”
+            Kinowy Pokaz Slajdów „Prezent Mapy”
           </span>
         </div>
 

@@ -261,7 +261,7 @@ export const StorageService = {
     }
 
     const backup = {
-      app: 'Prezent',
+      app: 'Prezent Mapy',
       version: '1.2.0',
       exportDate: new Date().toISOString(),
       photos: photosToExport,
@@ -276,7 +276,7 @@ export const StorageService = {
   importPrezentBackup(jsonString: string): boolean {
     try {
       const data = JSON.parse(jsonString);
-      if (data.app !== 'Prezent' || !Array.isArray(data.photos)) {
+      if ((data.app !== 'Prezent' && data.app !== 'Prezent Mapy') || !Array.isArray(data.photos)) {
         throw new Error('Nieprawidłowy format pliku .prezent');
       }
       if (data.photos) this.savePhotos(data.photos);

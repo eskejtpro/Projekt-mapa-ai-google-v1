@@ -3,6 +3,11 @@
 Wszystkie znaczące zmiany w tym projekcie są rejestrowane w tym dokumencie.
 Format oparty na [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.2.2] - 2026-10-17
+### Naprawiono
+- Wyeliminowano błąd React `Cannot update a component (App) while rendering a different component (OfflineMapsModal)` poprzez zabezpieczenie timera pobierania pakietów map i odseparowanie aktualizacji stanu rodzica od funkcyjnego reducera postępu.
+- Oficjalna nazwa programu została zaktualizowana na: **„Prezent Mapy”** (w belce okna Windows 10/11, menu, oknie właściwości, docku bocznym, eksporcie bazy oraz w znacznikach strony).
+
 ## [1.2.0] - 2026-10-17
 ### Dodano
 - **Design System z załączonych zrzutów ekranu**:

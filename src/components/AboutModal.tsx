@@ -23,7 +23,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({
         <div className="bg-[#0f172a] px-4 py-2.5 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Globe2 className="w-4 h-4 text-amber-400" />
-            <span className="font-semibold text-xs text-white">Prezent – Właściwości Programu</span>
+            <span className="font-semibold text-xs text-white">Prezent Mapy – Właściwości Programu</span>
           </div>
           <button
             onClick={onClose}
@@ -40,8 +40,8 @@ export const AboutModal: React.FC<AboutModalProps> = ({
               <Globe2 className="w-8 h-8 stroke-[2.2]" />
             </div>
             <div>
-              <h3 className="font-bold text-base text-white">Prezent</h3>
-              <p className="text-[11px] text-slate-400">Wersja 1.0.0 (Kompilacja 26100.Windows_11.x64)</p>
+              <h3 className="font-bold text-base text-white">Prezent Mapy</h3>
+              <p className="text-[11px] text-slate-400">Wersja 1.2.0 (Kompilacja 26100.Windows_11.x64)</p>
               <p className="text-[11px] text-emerald-400 font-medium mt-0.5">Program gotowy do użytku lokalnego</p>
             </div>
           </div>
