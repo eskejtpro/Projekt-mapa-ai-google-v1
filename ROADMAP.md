@@ -1,5 +1,15 @@
 # ROADMAP.md - Plan Rozwoju Aplikacji „Prezent Mapy”
 
+## Aktualny plan Codex
+0. Środowisko: E0 w TASKS.md; audyt i automatyzacja, bez przebudowy UI.
+1. Fundament Windows: Electron, preload, bezpieczne IPC, okno i natywne dialogi.
+2. Biblioteka: SQLite, migracje, pliki, EXIF, miniatury, integralność .prezent.
+3. Uzupełnienie ustawień, pokazu, wielomonitorowości i wykrywania TV.
+4. Offline zgodne z licencją, pomiary dużych bibliotek i poprawki.
+5. Zweryfikowane NSIS/portable i zatwierdzona publikacja.
+
+Etapy opisane poniżej zachowują historię AI Studio, nie dowodzą aktualnego ukończenia. Android pozostaje poza bieżącym wydaniem Windows.
+
 ## Etap 1: Fundamenty i Interaktywna Mapa (UKOŃCZONE)
 - [x] Inicjalizacja projektu w React 19 + TypeScript + Vite + Tailwind CSS.
 - [x] Konfiguracja mapy świata Leaflet z obsługą wielu warstw kafelkowych (CartoDB, Esri, OSM).

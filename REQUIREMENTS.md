@@ -1,5 +1,10 @@
 # REQUIREMENTS.md - Wymagania Funkcjonalne i Niefunkcjonalne
 
+Aktualne statusy i kryteria weryfikacji: docs/FEATURE_MATRIX.md. Poniższa kolumna Stan realizacji jest historyczną deklaracją AI Studio.
+
+- REQ-ENV (P0): środowisko umożliwia npm ci, verify, testy hooków, kontrolę Git i CI. Kryterium: świeże wyniki lokalne oraz rzeczywiste uruchomienie CI i hooków klienta.
+- REQ-TV-LAN (P1): program wyszukuje dostępne telewizory w sieci w czasie używania funkcji TV (wymaganie z pliku użytkownika). Kryterium: wykrycie rzeczywistego kompatybilnego TV, odświeżanie i obsługa rozłączenia. Protokół i model TV: WYMAGA_UZUPELNIENIA przed implementacją tej funkcji.
+
 ## Wymagania Funkcjonalne
 
 | ID | Wymaganie | Stan realizacji | Uwagi architektoniczne |

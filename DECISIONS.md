@@ -1,5 +1,10 @@
 # DECISIONS.md - Rejestr Decyzji Architektonicznych (ADR)
 
+## ADR-005: Przejęcie Codex, 2026-10-17
+Pracujemy w A:\Prezent na rocznicę i eskejtpro/Projekt-mapa-ai-google-v1; zachowujemy zatwierdzony UI. Pierwsza iteracja obejmuje środowisko i audyt, nie cały produkt. package.json jest źródłem wersji 1.3.1 podglądu, potwierdzonej historycznym changelogiem i kodem; nie oznacza stable Windows. npm/package-lock.json są kanoniczne. Dopasowano esbuild do wymagań Vite po odtworzonym ERESOLVE. Projektowa konfiguracja Codexa zawiera wyłącznie obsługiwane ustawienie hooks; metadane pozostają w dokumentach.
+
+Korekta ADR-001 poniżej: Leaflet nie gwarantuje bezpłatności, prywatności ani uprawnienia do offline wszystkich dostawców kafelków. Obecna mapa wymaga sieci.
+
 ## ADR-001: Wybór Leaflet zamiast ciężkich silników komercyjnych (Google Maps / Mapbox)
 - **Kontekst**: Aplikacja wymaga działania lokalnego na komputerze Windows bez wymuszonej konieczności podawania kart kredytowych, kluczy API chmury czy stałego połączenia z internetem.
 - **Decyzja**: Wykorzystanie biblioteki Leaflet z otwartymi kafelkami OpenStreetMap, CartoDB oraz Esri Satellite.

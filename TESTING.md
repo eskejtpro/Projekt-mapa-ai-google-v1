@@ -1,5 +1,31 @@
 # TESTING.md - Procedury Testowe i Raport Weryfikacji
 
+## Codex — świeża weryfikacja 2026-10-17
+Baseline źródeł: 1be0136 + zmiany gałęzi work/windows-desktop-foundation. System wykonania: Windows 10 Pro 10.0.19045 x64, Node 26.8.1, npm 11.19.0; CI skonfigurowane na Node 24/windows-latest (wynik zdalny osobno).
+
+| Kontrola | Wynik | Dowód i ograniczenia |
+|---|---|---|
+| Instalacja początkowa | FAIL → PASS | npm install początkowo ERESOLVE: esbuild 0.25 kontra Vite 8; po dopasowaniu do 0.28 instalacja 204 pakietów |
+| npm run verify | PASS | project:check, lint, typecheck, test, test:tooling, build; raport reports/verification.json |
+| Vitest | PASS | 9/9: 6 istniejących + 3 integracyjne round-trip/anonimizacja/wersja; localStorage jest zastępczym magazynem w pamięci, nie SQLite ani przeglądarką |
+| npm run test:integration | PASS | 3/3; test starej wersji wykazał FAIL przed poprawką, po poprawce weryfikowany ponownie |
+| Node tooling | PASS | 10/10: siedem zdarzeń, ostrzeżenie force-push, bramka release, Windows launcher z podkatalogu |
+| npm audit --omit=dev --audit-level=high | PASS | 0 podatności raportowanych przez npm; nie oznacza pełnego audytu bezpieczeństwa aplikacji |
+| Walidator skill-creator | PASS | 6/6 katalogów poprawnych; odkrycie nowo dodanych skilli w następnej sesji UNVERIFIED |
+| Podgląd HTTP | PASS | Vite 127.0.0.1:3000, GET / → 200; to nie dowód renderowania UI |
+| release:check | BLOCKED | Oczekiwany exit 1 i ready=false, brak Electron/instalatora; test tooling potwierdza blokadę |
+| Hooki automatyczne Codex | UNVERIFIED | Skrypty i launcher PASS; logi manual-test nie stanowią dowodu zdarzenia klienta; wymagany przegląd /hooks |
+| GitHub Actions | UNVERIFIED | Workflow przygotowany; status zdalnego wykonania wymaga osobnego dowodu |
+| UI, screenshots, E2E | BLOCKED | Wbudowana przeglądarka: Browser is not available: iab; nie wykonano zrzutów ani oceny wizualnej |
+| Electron / SQLite / EXE / dodatkowy ekran | NOT RUN | Funkcje jeszcze niezaimplementowane |
+| Pokrycie kodu | NOT RUN | Nie mierzono; nie podajemy procentu |
+
+W trakcie tworzenia środowiska Vitest błędnie zebrał plik node:test; odtworzono FAIL i ograniczono npm test do src/__tests__. Oddzielne test:tooling uruchamia Node test runner. Końcowy pakiet przechodzi.
+
+Czyste npm ci w izolowanym katalogu tymczasowym: PASS, 204 pakiety. npm 11 zgłosiło niezatwierdzone skrypty instalacyjne trzech zależności; nie zmieniano polityki globalnej. Build i testy sprawdzono z aktualną lokalną instalacją.
+
+Poniżej zachowany historyczny raport AI Studio. Dawne checklisty UI nie są świeżym dowodem Codexa:
+
 ## 1. Testy Automatyczne (Vitest)
 Polecenie: `npm test` (`vitest run`)  
 Środowisko: Node.js + Vitest 5  

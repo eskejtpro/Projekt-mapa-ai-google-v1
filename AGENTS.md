@@ -1,5 +1,15 @@
 # AGENTS.md - Instrukcja Architekta i Zespołu Inżynierskiego „Prezent Mapy”
 
+## Start i ciągłość (Codex, 2026-10-17)
+- Odczytaj `PROGRESS.md` / `SESSION HANDOFF`, `TASKS.md`, `docs/FEATURE_MATRIX.md` oraz stan Git przed edycją.
+- Użyj `.agents/skills/project-continuity/SKILL.md`; pozostałe procedury: feature-development, test-automation, windows-electron, photo-library, maps-offline.
+- Aktualny rejestr dowodów ma pierwszeństwo przed historycznymi deklaracjami AI Studio o ukończeniu.
+- Główne polecenie kontroli: `npm run verify`. `lint` obecnie oznacza kontrolę typów, nie ESLint.
+- Przed commitem: `.githooks/pre-commit`; przed pushem: `.githooks/pre-push`. Aktywuj przez `npm run hooks:install`.
+- Zachowuj ciemny interfejs, akcenty bursztynowe, dock i mapę. Przed zmianą wyglądu wykonaj zrzut rzeczywistej aplikacji, jeśli narzędzie jest dostępne.
+- W razie istotnej utraty kontekstu zapisz handoff, wyniki kontroli i stan Git, a następnie zaproponuj kolejny czat; nie twórz go bez zlecenia użytkownika.
+- Hooki projektowe wymagają przeglądu zaufania klienta. Sam test skryptu nie potwierdza automatycznego uruchamiania.
+
 ## Rola i Odpowiedzialność
 Rola agenta: **Starszy Architekt Oprogramowania i Inżynier Desktop/Web (Senior Software Architect & Staff Engineer)**.
 Projekt: **Prezent Mapy** – lokalna aplikacja dla systemu **Windows 10/11** do prezentowania rodzinnych fotografii, wspomnień i podróży na interaktywnej mapie świata.

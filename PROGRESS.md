@@ -1,5 +1,22 @@
 # PROGRESS.md - Rzeczywisty Stan Postępów Projektu „Prezent Mapy”
 
+## SESSION HANDOFF — Codex 2026-10-17
+- Cel: środowisko istniejącej aplikacji przed implementacją Windows; zachowanie UI.
+- Wersja: 1.3.1 Desktop Preview; źródło wersji package.json.
+- Etap: 0, środowisko i audyt; PARTIAL.
+- Branch: work/windows-desktop-foundation; baseline commit 1be0136.
+- Aktualne zadanie: weryfikacja środowiska i zapis dowodów.
+- Ostatni zakończony krok: backup Git bundle, naprawa konfliktu esbuild/Vite, pierwszy PASS 6 testów + typecheck + build.
+- Zweryfikowane rezultaty końcowe: TESTING.md; maszynowy raport reports/verification.json.
+- Zmiany bieżącej iteracji: skrypty jakości, CI, hooki Git/Codex, skille, rejestr funkcji, testy integracyjne/tooling.
+- Plik użytkownika moje instrukcje do projektu.txt pozostaje osobny, nieśledzony.
+- Problemy i blokery: docs/KNOWN_ISSUES.md; brak przeglądarki iab i screenshotu; brak dowodu automatycznego uruchomienia hooków oraz CI na GitHub.
+- Backup: A:\Prezent Mapy backups\2026-10-17-initialization\google-ai-studio.bundle (bundle verify PASS) i kopia pliku użytkownika.
+- Następny krok: bezpieczna powłoka Electron i podpięcie kontrolek okna. Kryteria: okno Windows, izolowany preload, odrzucone nieprawidłowe IPC, zachowany podgląd Vite i npm run verify. Numer kolejnej wersji rozwojowej ustalić przy implementacji.
+- Przy utracie kontekstu: zaktualizuj ten handoff, stan Git i dowody, zaproponuj nowy czat i polecenie odczytu PROGRESS/TASKS/FEATURE_MATRIX.
+
+Poniższa tabela i wyniki to historyczne deklaracje AI Studio. Aktualne statusy funkcji są wyłącznie w docs/FEATURE_MATRIX.md; dawne UKOŃCZONE nie oznacza weryfikacji Windows.
+
 Data aktualizacji: **2026-10-17**  
 Wersja bieżąca: **1.3.1 (Desktop Preview / Handover to Codex)**  
 Stan ogólny: **Stabilny prototyp gotowy do przejęcia przez OpenAI Codex**

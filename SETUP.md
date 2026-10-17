@@ -1,14 +1,16 @@
 # SETUP.md - Instrukcja Uruchomienia i Budowania Aplikacji Prezent
 
 ## 1. Wymagania Środowiskowe
-- **Node.js**: Wersja 20+ lub 22+ LTS
-- **Menedżer pakietów**: npm lub yarn
+- **Node.js**: 24 (CI) lub lokalna zgodna wersja 24–26; sprawdzono 26.8.1.
+- **Menedżer pakietów**: npm i package-lock.json są kanoniczne; bun.lock zachowano historycznie.
 - **Docelowy system operacyjny**: Windows 10 / Windows 11 (64-bit)
 
 ## 2. Uruchomienie Podglądu Deweloperskiego (Vite)
 Aby uruchomić interaktywny podgląd aplikacji w przeglądarce:
 ```bash
-npm install
+npm ci
+npm run hooks:install
+npm run verify
 npm run dev
 ```
 Aplikacja będzie dostępna pod adresem: `http://localhost:3000`.
@@ -20,6 +22,7 @@ npm run build
 Zbudowane zoptymalizowane pliki produkcyjne znajdą się w katalogu `/dist`.
 
 ## 4. Przygotowanie do Uruchomienia jako Aplikacja Windows (Electron)
+Poniżej plan przyszłego etapu. Electron nie jest zainstalowany; electron:dev/electron:build nie są jeszcze działającymi poleceniami. Patrz RELEASES.md.
 Aplikacja jest zaprojektowana tak, aby rdzeń interfejsu React SPA współpracował z procesem głównym Electrona:
 ```bash
 # Instalacja Electrona (jeśli nie jest zainstalowany)

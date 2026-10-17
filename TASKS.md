@@ -1,5 +1,18 @@
 # TASKS.md - Rejestr Zadań i Implementacji Projektu „Prezent Mapy”
 
+## Iteracja środowiska E0 (2026-10-17)
+| ID | Waga | Priorytet | Wymaganie | Warunek zakończenia | Status |
+|---|---|---|---|---|---|
+| E0-01 | 2 | P0 | REQ-ENV | Backup historii i pliku użytkownika, branch, bundle verify | DONE |
+| E0-02 | 3 | P0 | REQ-ENV | Powtarzalna instalacja, typecheck, testy, build | DONE |
+| E0-03 | 2 | P0 | REQ-ENV | Kontrole Git i wykonanie GitHub Actions | IN_REVIEW |
+| E0-04 | 2 | P0 | REQ-ENV | Testy skryptów hooków oraz dowód uruchomienia przez klienta | IN_REVIEW |
+| E0-05 | 1 | P0 | REQ-ENV | Dokumenty, walidacja skilli, rejestr braków i handoff | DONE |
+
+Postęp zamknięcia tej iteracji = suma wag DONE / 10 (aktualnie 60%). Całość Windows nie ma zatwierdzonych wag i zamrożonego zakresu; nie podajemy procentu.
+
+Tabela PREZ poniżej zachowuje historyczne statusy AI Studio. Aktualny audyt: docs/FEATURE_MATRIX.md. Dowody bieżącej iteracji: TESTING.md.
+
 | ID | Priorytet | Moduł | Zadanie | Status | Weryfikacja |
 |---|---|---|---|---|---|
 | PREZ-001 | P0 | Mapa | Interaktywna mapa świata Leaflet z 6 stylami kafelków i pływającymi kontrolkami | **UKOŃCZONE** | Działa w podglądzie (Vite) |

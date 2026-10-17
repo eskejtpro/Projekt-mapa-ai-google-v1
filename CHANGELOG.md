@@ -1,5 +1,11 @@
 # CHANGELOG.md - Historia Zmian Projektu „Prezent Mapy”
 
+## Unreleased — środowisko Codex
+- Dopasowano esbuild do Vite 8 po błędzie instalacji, dodano npm lockfile i kanoniczną wersję 1.3.1 w package.json.
+- Dodano quality gates, kontrole Git, konfigurację hooków Codex, workflow Windows CI i blokadę niegotowego wydania.
+- Dodano testy integracji kopii i środowiska, skille oraz rzeczywisty rejestr braków i ciągłości.
+- Zachowano UI; brak nowego instalatora i brak deklaracji ukończenia Windows.
+
 Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.0.0/).
 
 ---

@@ -1,0 +1,92 @@
+{
+  "description": "Lekkie kontrole i snapshoty Prezent Mapy. Bez zapisu promptów i pełnego builda po narzędziu.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact|fork",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/lifecycle.mjs\"",
+            "commandWindows": "powershell.exe -NoProfile -Command \"$r=git rev-parse --show-toplevel; & node (Join-Path $r '.codex/hooks/lifecycle.mjs')\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/lifecycle.mjs\"",
+            "commandWindows": "powershell.exe -NoProfile -Command \"$r=git rev-parse --show-toplevel; & node (Join-Path $r '.codex/hooks/lifecycle.mjs')\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/lifecycle.mjs\"",
+            "commandWindows": "powershell.exe -NoProfile -Command \"$r=git rev-parse --show-toplevel; & node (Join-Path $r '.codex/hooks/lifecycle.mjs')\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/lifecycle.mjs\"",
+            "commandWindows": "powershell.exe -NoProfile -Command \"$r=git rev-parse --show-toplevel; & node (Join-Path $r '.codex/hooks/lifecycle.mjs')\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/lifecycle.mjs\"",
+            "commandWindows": "powershell.exe -NoProfile -Command \"$r=git rev-parse --show-toplevel; & node (Join-Path $r '.codex/hooks/lifecycle.mjs')\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/lifecycle.mjs\"",
+            "commandWindows": "powershell.exe -NoProfile -Command \"$r=git rev-parse --show-toplevel; & node (Join-Path $r '.codex/hooks/lifecycle.mjs')\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/lifecycle.mjs\"",
+            "commandWindows": "powershell.exe -NoProfile -Command \"$r=git rev-parse --show-toplevel; & node (Join-Path $r '.codex/hooks/lifecycle.mjs')\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

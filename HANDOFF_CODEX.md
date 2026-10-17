@@ -1,5 +1,7 @@
 # HANDOFF_CODEX.md - Dokument Przekazania Projektu „Prezent Mapy” do OpenAI Codex
 
+> Aktualny handoff sesji: PROGRESS.md / SESSION HANDOFF. Aktualne funkcje: docs/FEATURE_MATRIX.md; testy: TESTING.md. Poniższy dokument to historyczne przekazanie i projekt architektury AI Studio; jego deklaracje 100%, 4K, offline i bezpłatnych kafelków nie są świeżymi dowodami. Nie pobieraj masowo kafelków bez sprawdzenia licencji dostawcy.
+
 **Projekt**: Prezent Mapy  
 **Repozytorium GitHub**: `https://github.com/eskejtpro/Projekt-mapa-ai-google-v1`  
 **Wersja przekazania**: 1.3.1 (Desktop Preview & Architecture Frozen)  

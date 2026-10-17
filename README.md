@@ -2,14 +2,14 @@
 
 **Prezent Mapy** to nowoczesna, lokalna aplikacja zaprojektowana dla systemu **Windows 10/11**, służąca do prezentowania rodzinnych zdjęć, wspomnień i podróży na interaktywnej mapie świata.
 
-Aplikacja działa w 100% lokalnie i z poszanowaniem prywatności (**Offline-First**) – bez konieczności rejestracji konta w chmurze ani wysyłania prywatnych fotografii na zewnętrzne serwery.
+Aplikacja jest obecnie podglądem web; celem jest lokalna wersja Windows. Kafelki map, obrazy demo i geokodowanie korzystają z sieci. Aktualne statusy i ograniczenia: `docs/FEATURE_MATRIX.md` i `docs/KNOWN_ISSUES.md`.
 
 Repozytorium GitHub: `https://github.com/eskejtpro/Projekt-mapa-ai-google-v1`
 
 ---
 
 ## 🚀 Architektura i Środowisko
-- **Aktualny stan (Google AI Studio / Web Preview)**: Kompletny, w 100% działający interfejs w React 19, TypeScript, Vite, Tailwind CSS 4 oraz Leaflet 1.9.
+- **Aktualny stan (Web Preview)**: React 19, TypeScript, Vite, Tailwind CSS 4 oraz Leaflet 1.9; zakres runtime Windows pozostaje niezweryfikowany.
 - **Odczyt metadanych**: Biblioteka `exifr` do automatycznego wyciągania współrzędnych GPS, daty wykonania i modelu aparatu.
 - **Efekty dźwiękowe**: Synteza nastrojowego szumu oceanu przez Web Audio API (bez zewnętrznych plików mp3).
 - **Następny etap (OpenAI Codex)**: Opakowanie gotowego interfejsu w powłokę **Electron** dla Windows 10/11, migracja bazy z localStorage do SQLite (`better-sqlite3`), obsługa natywnego Eksploratora Windows i pakowanie instalatora NSIS.
@@ -50,7 +50,7 @@ Repozytorium GitHub: `https://github.com/eskejtpro/Projekt-mapa-ai-google-v1`
 ### 5. Bezpieczeństwo i Kopia Zapasowa `.prezent`
 - Eksport całej bazy (zdjęcia, albumy, trasy, ustawienia) do pojedynczego pliku `.prezent`.
 - Możliwość wymazania współrzędnych GPS przed udostępnieniem pliku rodzinie.
-- Bezpieczny import archiwum z pełną walidacją struktury JSON.
+- Import archiwum JSON; pełna walidacja i atomowość zapisu wymagają poprawy.
 
 ---
 
@@ -58,7 +58,7 @@ Repozytorium GitHub: `https://github.com/eskejtpro/Projekt-mapa-ai-google-v1`
 
 ```bash
 # Instalacja zależności
-npm install
+npm ci
 
 # Uruchomienie deweloperskie (port 3000)
 npm run dev

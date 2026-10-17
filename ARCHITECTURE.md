@@ -1,5 +1,8 @@
 # ARCHITECTURE.md - Architektura Aplikacji „Prezent Mapy”
 
+## Stan po inicjalizacji środowiska Codex
+Runtime nadal web/Vite/localStorage; brak procesu main/preload, SQLite i NSIS. src/version.ts czyta wersję package.json. scripts/verify.mjs uruchamia kontrole i zapisuje reports/verification.json. Hooki Codex wykonują lekkie kontrole i snapshoty w reports/; skrypty Git wykonują quality gates. Rejestr aktualnych ograniczeń: docs/KNOWN_ISSUES.md. Diagram desktop poniżej przedstawia projekt docelowy, nie istniejącą implementację.
+
 Aplikacja **„Prezent Mapy”** jest zaprojektowana według wzorca **Separacji Odpowiedzialności (SoC)**, **Offline-First** oraz czystego odseparowania warstwy prezentacji (React) od środowiska uruchomieniowego (Browser Preview vs Docelowy Electron dla Windows 10/11).
 
 ```

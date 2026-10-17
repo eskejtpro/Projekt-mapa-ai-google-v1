@@ -1,5 +1,6 @@
 import { TravelPhoto, TravelAlbum, TravelTrip, OfflineMapPackage, AppSettings, TravelStats } from '../types/travel';
 import { DEMO_PHOTOS, DEMO_ALBUMS, DEMO_TRIPS, DEMO_OFFLINE_PACKAGES } from '../data/demoMemories';
+import { APP_VERSION } from '../version';
 
 const STORAGE_KEYS = {
   PHOTOS: 'prezent_travel_photos_v2',
@@ -72,7 +73,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   saveSearchHistory: false,
 
   // 12. Informacje
-  appVersion: '1.3.1 (Windows 11 Edition / Codex Handover)',
+  appVersion: `${APP_VERSION} (Desktop Preview / Codex)`,
 };
 
 export const StorageService = {
@@ -177,7 +178,7 @@ export const StorageService = {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.SETTINGS);
       if (!data) return DEFAULT_SETTINGS;
-      return { ...DEFAULT_SETTINGS, ...JSON.parse(data) };
+      return { ...DEFAULT_SETTINGS, ...JSON.parse(data), appVersion: DEFAULT_SETTINGS.appVersion };
     } catch {
       return DEFAULT_SETTINGS;
     }
@@ -290,7 +291,7 @@ export const StorageService = {
 
     const backup = {
       app: 'Prezent Mapy',
-      version: '1.3.1',
+      version: APP_VERSION,
       exportDate: new Date().toISOString(),
       photos: photosToExport,
       albums: this.getAlbums(),

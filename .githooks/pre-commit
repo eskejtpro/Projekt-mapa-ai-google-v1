@@ -1,0 +1,4 @@
+#!/bin/sh
+git diff --cached --check || exit 1
+node scripts/staged-check.mjs || exit 1
+node scripts/verify.mjs --quick

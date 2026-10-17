@@ -1,24 +1,4 @@
-# .codex/config.toml - Konfiguracja projektu Prezent Mapy dla OpenAI Codex
-
-[project]
-name = "Prezent Mapy"
-repository = "eskejtpro/Projekt-mapa-ai-google-v1"
-target_platform = "Windows 10/11 Desktop (x64)"
-preview_environment = "React + TypeScript + Vite + Tailwind CSS"
-desktop_runtime = "Electron (planowany w kolejnym etapie)"
-language = "TypeScript"
-
-[stack]
-frontend = "React 19"
-bundler = "Vite 8"
-styling = "Tailwind CSS 4"
-map_engine = "Leaflet 1.9 + OpenStreetMap / CartoDB / Esri"
-exif_parser = "exifr"
-testing = "Vitest"
-
-[commands]
-# Prawdziwe polecenia npm zdefiniowane w package.json
-dev = "npm run dev"
-build = "npm run build"
-lint = "npm run lint"
-test = "npm test"
+# Model, uprawnienia i MCP dziedziczone z konfiguracji użytkownika.
+# Metadane produktu: GOALS.md; polecenia: package.json.
+[features]
+hooks = true
