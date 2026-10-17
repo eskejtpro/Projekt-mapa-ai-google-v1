@@ -43,6 +43,7 @@ interface ImportModalProps {
   onImportComplete: (photos: TravelPhoto[], newAlbum?: TravelAlbum) => void;
   initialLocation?: InitialImportLocation | null;
   initialMode?: ImportTabMode;
+  initialFiles?: File[];
   onShowToast?: (message: string, type: 'info' | 'success' | 'warning') => void;
 }
 
@@ -66,6 +67,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   onImportComplete,
   initialLocation,
   initialMode = 'files',
+  initialFiles,
   onShowToast,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -130,6 +132,30 @@ export const ImportModal: React.FC<ImportModalProps> = ({
     }
   }, [initialMode, isOpen]);
 
+  // Automatyczne wczytanie plików przekazanych do modalu (np. przeciągnięcie na mapę Drag & Drop)
+  const processedFilesKeyRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!isOpen) {
+      processedFilesKeyRef.current.clear();
+      return;
+    }
+
+    if (initialFiles && initialFiles.length > 0) {
+      const unprocessed = initialFiles.filter(f => {
+        const key = `${f.name}_${f.size}_${f.lastModified}`;
+        if (processedFilesKeyRef.current.has(key)) return false;
+        processedFilesKeyRef.current.add(key);
+        return true;
+      });
+
+      if (unprocessed.length > 0) {
+        processIncomingFiles(unprocessed);
+        setActiveTab('files');
+      }
+    }
+  }, [isOpen, initialFiles]);
+
   // Nasłuchiwanie skrótu wklejania ze schowka (Ctrl+V) gdy modal jest otwarty
   useEffect(() => {
     if (!isOpen) return;
@@ -158,8 +184,6 @@ export const ImportModal: React.FC<ImportModalProps> = ({
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
   }, [isOpen]);
-
-  if (!isOpen) return null;
 
   // Przetwarzanie plików i wyciąganie metadanych EXIF
   const processIncomingFiles = async (files: File[]) => {
@@ -200,7 +224,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
         });
 
         newQueued.push({
-          id: `queue-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 5)}`,
+          id: `queue-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 6)}`,
           file,
           dataUrl,
           name: file.name,
@@ -219,7 +243,12 @@ export const ImportModal: React.FC<ImportModalProps> = ({
       }
     }
 
-    setQueuedItems(prev => [...prev, ...newQueued]);
+    setQueuedItems(prev => {
+      // Zapobieganie powielaniu w kolejce
+      const existingSignatures = new Set(prev.map(p => `${p.name}_${p.sizeStr}`));
+      const filtered = newQueued.filter(item => !existingSignatures.has(`${item.name}_${item.sizeStr}`));
+      return [...prev, ...filtered];
+    });
     setIsProcessing(false);
   };
 
@@ -363,7 +392,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
         cameraInfo: item.camera,
         fileName: item.name,
         fileSize: item.sizeStr,
-        localFilePath: `C:\\Users\\Rodzina\\Obrazy\\Prezent-Wspomnienia\\${item.name}`,
+        localFilePath: (item.file as any)?.path || undefined,
       };
     });
 
@@ -371,6 +400,8 @@ export const ImportModal: React.FC<ImportModalProps> = ({
     onShowToast?.(`Pomyślnie dodano ${importedPhotos.length} zdjęć do mapy świata!`, 'success');
     onClose();
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">

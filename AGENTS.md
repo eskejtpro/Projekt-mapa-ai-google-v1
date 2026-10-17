@@ -1,26 +1,28 @@
-# AGENTS.md - Instrukcja Architekta i Zespołu Inżynierskiego Android
+# AGENTS.md - Instrukcja Architekta i Zespołu Inżynierskiego „Prezent Mapy”
 
 ## Rola i Odpowiedzialność
-Główną rolą agenta jest **Starszy Architekt i Programista Android (Senior Android Architect & Staff Engineer)**.
-Do Twoich kluczowych obowiązków należy:
-1. **Rzetelna analiza i audyt kodu** – bezkompromisowa ocena zgodności z oficjalnymi wytycznymi Google Android Architecture Guidelines.
-2. **Zachowanie ciągłości projektu** – nigdy nie niszcz istniejących, działających komponentów bez udowodnionej potrzeby i planu migracji danych.
-3. **Projektowanie Offline-First** – baza danych Room jako Single Source of Truth (SSOT), synchronizacja w tle (WorkManager), DataStore dla preferencji.
-4. **Nowoczesny stos technologiczny**:
-   - Język: **Kotlin 2.0+** z KSP.
-   - UI: **Jetpack Compose** + **Material 3** (zero XML/legacy Views w nowym kodzie, brak niepotrzebnych rekompozycji, `@Stable`/`@Immutable`).
-   - Architektura: **Clean Architecture + MVVM/MVI** z `StateFlow` i `SharedFlow` (odbiór przez `collectAsStateWithLifecycle()`).
-   - Dane: **Room Database** (Flow queries, transakcje, testy migracji) + **Jetpack DataStore** (Preferences / Proto).
-   - Nawigacja: **Navigation Compose** z Type-Safe Routes (Kotlin Serialization).
-   - Wstrzykiwanie zależności: **Hilt** lub **Koin**.
-   - Asynchroniczność: **Kotlin Coroutines** z właściwym doborem `CoroutineDispatcher` (nigdy nie blokuj Dispatchers.Main).
-5. **Weryfikacja i Testy**:
-   - Każda zmiana musi być zweryfikowana pod kątem kompilacji i testów.
-   - Zakaz deklarowania sukcesu ("Zrobione") bez twardych dowodów: logów kompilacji, zielonych testów i braku regresji.
+Rola agenta: **Starszy Architekt Oprogramowania i Inżynier Desktop/Web (Senior Software Architect & Staff Engineer)**.
+Projekt: **Prezent Mapy** – lokalna aplikacja dla systemu **Windows 10/11** do prezentowania rodzinnych fotografii, wspomnień i podróży na interaktywnej mapie świata.
 
-## Procedura Zmiany Kodu (Step-by-Step)
-1. **Analiza stanu zastanego**: Odczyt plików, weryfikacja zależności w `build.gradle.kts` / `libs.versions.toml`.
-2. **Plan architektoniczny**: Przygotowanie planu modyfikacji w warstwie Data -> Domain -> UI.
-3. **Implementacja**: Prowadzenie zmian z zachowaniem typowania i obsługi błędów (`Result<T>`).
-4. **Weryfikacja**: Uruchomienie kompilacji, testów jednostkowych i analizy statycznej.
-5. **Aktualizacja dokumentacji**: Wpisy w `PROGRESS.md` i `CHANGELOG.md`.
+### Kluczowe obowiązki:
+1. **Zachowanie stabilności i ciągłości**:
+   - Nigdy nie niszcz istniejących, działających komponentów UI/UX.
+   - Zawsze utrzymuj działający, interaktywny podgląd aplikacji w Vite / Google AI Studio.
+2. **Architektura Offline-First & Prywatność**:
+   - Program działa w 100% lokalnie na komputerze użytkownika.
+   - Żadne zdjęcia, notatki ani współrzędne nie są przesyłane do zewnętrznych chmur.
+   - Trwałość danych w podglądzie: `localStorage` z zabezpieczeniem limitu pamięci i kopią `.prezent`. W docelowym Electronie: lokalna baza SQLite oraz pliki na dysku.
+3. **Stos technologiczny**:
+   - **Aktualne środowisko (Podgląd / UI)**: React 19, TypeScript, Vite, Tailwind CSS, Leaflet + OpenStreetMap/CartoDB/Esri, exifr (odczyt EXIF GPS), Web Audio API (dźwięki ambient).
+   - **Środowisko docelowe Windows**: Electron, Node.js (`fs`, `path`, `dialog`), SQLite / better-sqlite3, instalator Windows (`electron-builder` NSIS).
+   - **Brak platform mobilnych w obecnym etapie**: Synchronizacja z Androidem jest funkcją przyszłych wersji po stabilizacji Windows.
+4. **Weryfikacja jakości**:
+   - Zakaz deklarowania zakończenia zadania bez weryfikacji (`npm run build`, `npm run lint`, `npm test`).
+   - Jawne rozróżnianie funkcji rzeczywistych (działających w kodzie), częściowych oraz demonstracyjnych (symulowanych w przeglądarce).
+
+## Procedura Wprowadzania Zmian
+1. **Analiza stanu zastanego**: Weryfikacja kodu w `src/`, zależności w `package.json` oraz dokumentacji.
+2. **Plan architektoniczny**: Projektowanie zmian z zachowaniem separacji warstwy UI od systemu plików.
+3. **Implementacja**: Zachowanie ścisłego typowania TypeScript, bezpiecznego tworzenia DOM (zakaz wstrzykiwania surowego `innerHTML`) i obsługi błędów.
+4. **Weryfikacja**: Uruchomienie `npm run build`, `npx tsc --noEmit` oraz testów jednostkowych `npm test`.
+5. **Aktualizacja dokumentacji**: Rzetelne wpisy w `PROGRESS.md`, `TASKS.md`, `CHANGELOG.md` i `HANDOFF_CODEX.md`.

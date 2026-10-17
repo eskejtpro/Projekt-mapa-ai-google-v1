@@ -1,42 +1,252 @@
-# HANDOFF_CODEX.md - Przekazanie Rozbudowanego Projektu do OpenAI Codex
+# HANDOFF_CODEX.md - Dokument Przekazania Projektu „Prezent Mapy” do OpenAI Codex
 
-**Data aktualizacji**: 2026-10-17  
-**Wersja**: 1.2.0 (Windows 11 Desktop Edition)  
-**Status**: W pełni przetestowany, zgodny ze wskazanym stylem wizualnym, gotowy do budowy instalatora Windows.
-
----
-
-## 1. Zaimplementowany Design System i Moduły
-Projekt został rozbudowany w oparciu o trzy kluczowe wzorce interfejsu przesłane przez użytkownika:
-1. **Pionowy Dock Ikon & Luksusowa Mapa Świata (Obraz 3)**:
-   - Plik: `/src/components/SidebarDock.tsx`
-   - Plik: `/src/components/MapView.tsx`
-   - Wąski dock z lewej strony z efektem przezroczystości Mica/Acrylic.
-   - Pływające kontrolki mapy po prawej stronie (`+`, `-`, warstwy, globus, GPS, pokaz slajdów).
-   - Zaokrąglone klastry zdjęć z fioletowymi i błękitnymi licznikami.
-2. **Galeria Wszystkie Zdjęcia (Obraz 2 - Windows Photos)**:
-   - Plik: `/src/components/GalleryView.tsx`
-   - Sekcje chronologiczne dat (miesiące/lata), odznaki EXIF GPS w rogu miniatur, zróżnicowane kafelki.
-3. **12-kategorialny Panel Ustawień (Obraz 1 - Untitled UI)**:
-   - Plik: `/src/components/SettingsView.tsx`
-   - Kategorie: *Ogólne, Wygląd i personalizacja, Mapa i geolokalizacja, Galeria i zdjęcia, Import oraz foldery, Pokaz slajdów, Telewizor i prezentacja, Pamięć i dane lokalne, Kopie zapasowe, Wydajność, Prywatność, Informacje o aplikacji*.
-   - Wizualne karty motywu (System / Dark / Light), suwaki, przełączniki trwale zapisywane w `localStorage`.
-4. **Narzędzia analityczne i porządkowe**:
-   - `/src/components/StatsView.tsx` (Paszport podróżnika, dystans km, odwiedzone kraje i miasta).
-   - `/src/components/DuplicatesView.tsx` (Wykrywanie i usuwanie powtarzających się fotografii).
-5. **Menu Kontekstowe Mapy (PPM) & Wielofunkcyjny Import Zdjęć**:
-   - `/src/components/MapView.tsx` (obsługa prawego przycisku myszy, geokodowanie współrzędnych, dodawanie zdjęć/katalogu w klikniętym punkcie, Drag & Drop na mapę).
-   - `/src/components/ImportModal.tsx` (5 zakładek: pliki zdjęć, cały katalog/folder z podkatalogami, schowek systemowy Ctrl+V, URL grafiki, gotowe pakiety podróżnicze, szybki wybór miast).
-   - `/src/services/geoService.ts` (odwrotne geokodowanie, odczyt obrazu ze schowka `readImageFromClipboard`, lokalna baza miast).
-   - `/src/data/travelPacks.ts` (gotowe pakiety podróżnicze: Tatry, Bałtyk, Cinque Terre, Paryż, Dalmacja).
+**Projekt**: Prezent Mapy  
+**Repozytorium GitHub**: `https://github.com/eskejtpro/Projekt-mapa-ai-google-v1`  
+**Wersja przekazania**: 1.3.1 (Desktop Preview & Architecture Frozen)  
+**Platforma docelowa**: Windows 10 / Windows 11 Desktop (x64)  
+**Autor przekazania**: Senior Software Architect & Staff Engineer (AI Studio)  
+**Odbiorca**: OpenAI Codex / Zespół Inżynierski Desktop Windows  
 
 ---
 
-## 2. Kolejne Zadania dla Codexa przy Przejęciu z GitHuba
-1. **Opakowanie Electron**:
-   - Stworzenie `electron/main.ts` z oknem `BrowserWindow({ frame: false, titleBarStyle: 'hidden' })` wykorzystującym gotowy `WindowsTitleBar`.
-   - Zapewnienie natywnego dialogu wyboru folderu (`dialog.showOpenDialog`).
-2. **Kompilacja instalatora**:
-   - Konfiguracja `electron-builder` pod cel `nsis` (Windows 10/11 x64 installer).
-3. **Android**:
-   - Wykorzystanie schematu bazy z `/src/types/travel.ts` i generatora kopii zapasowej `.prezent` w aplikacji Jetpack Compose.
+## 1. Opis Całego Programu
+
+„Prezent Mapy” to elegancka, zorientowana na prywatność aplikacja dla systemów Windows 10/11, stworzona do prezentowania rodzinnych wspomnień, fotografii i wakacyjnych podróży na interaktywnej mapie świata.
+
+Głównym założeniem programu jest zasada **Offline-First**:
+- Żadne zdjęcia użytkownika, współrzędne geograficzne ani prywatne notatki nie są wysyłane do chmury.
+- Zdjęcia przechowywane są lokalnie na dysku twardym użytkownika.
+- Aplikacja łączy w sobie cechy interaktywnego atlasu geograficznego, menedżera galerii zdjęć, paszportu statystyk podróżniczych oraz kinowego odtwarzacza wspomnień dostosowanego do ekranów komputerowych i telewizorów 4K w salonie.
+
+---
+
+## 2. Architektura i Technologie
+
+Projekt wykorzystuje nowoczesny, lekki i stabilny stos technologiczny z wyraźną separacją warstwy prezentacji od środowiska wykonawczego:
+
+- **Warstwa Prezentacji (UI)**: React 19, TypeScript, Tailwind CSS 4, Lucide React Icons.
+- **Silnik Mapowy**: Leaflet 1.9 z customowymi klastrami DIV i 6 warstwami kafelkowymi (CartoDB Dark Matter, Positron, Esri World Imagery, Esri World Street Map, OpenStreetMap Voyager, OSM Standard).
+- **Odczyt Metadanych**: `exifr` (automatyczne wyciąganie EXIF GPS, daty wykonania, parametrów ekspozycji i aparatu).
+- **Silnik Dźwięku**: Web Audio API (proceduralna synteza uspokajającego szumu fal morskich, 100% offline, brak zewnętrznych plików audio).
+- **Zarządzanie Stanem**: Czysta architektura komponentowa z centralnym serwisem `StorageService`, reaktywnymi hookami i immutability.
+- **Trwałość Danych (obecna)**: `localStorage` z zabezpieczeniem przepełnienia pamięci i zrzutem do pliku archiwalnego `.prezent` (JSON).
+- **Docelowy Runtime Windows**: Electron (z włączoną izolacją kontekstu i bezpiecznym mostkiem IPC) + SQLite (`better-sqlite3`).
+
+---
+
+## 3. Struktura Najważniejszych Plików
+
+```
+/app/applet/
+├── .codex/
+│   └── config.toml                  # Konfiguracja środowiska i komend dla Codexa
+├── .agents/skills/project-continuity/
+│   └── SKILL.md                     # Instrukcja ciągłości architektury
+├── src/
+│   ├── components/
+│   │   ├── MapView.tsx              # Mapa świata Leaflet, klastry, trasy, menu PPM
+│   │   ├── GalleryView.tsx          # Galeria: Siatka, Albumy, Oś Czasu (Timeline)
+│   │   ├── ImportModal.tsx          # Centrum importu: pliki, foldery, schowek, URL, pakiety
+│   │   ├── SlideshowModal.tsx       # Kinowy odtwarzacz Ken Burns, PiP mini-mapa, audio
+│   │   ├── SettingsView.tsx         # 12-kategorialny panel ustawień (styl Untitled UI)
+│   │   ├── SidebarDock.tsx          # Wąski boczny dock nawigacyjny (styl Mica)
+│   │   ├── WindowsTitleBar.tsx      # Pasek tytułowy Windows 11 z kontrolkami okna
+│   │   ├── StatsView.tsx            # Paszport podróżnika, zliczanie km, krajów i miast
+│   │   ├── DuplicatesView.tsx       # Narzędzie wykrywania i usuwania duplikatów
+│   │   ├── TvModeModal.tsx          # Przygotowanie prezentacji na telewizorze 4K
+│   │   ├── OfflineMapsModal.tsx     # Menedżer pakietów map regionalnych (prototyp)
+│   │   ├── PhotoDetailModal.tsx     # Okno szczegółów i edycji metadanych zdjęcia
+│   │   ├── ShortcutsModal.tsx       # Ściągawka skrótów klawiaturowych i myszy
+│   │   └── AboutModal.tsx           # Informacje o programie i licencji
+│   ├── services/
+│   │   ├── storage.ts               # StorageService: obsługa bazy, limity, eksport .prezent
+│   │   ├── geoService.ts            # Odwrotne geokodowanie, baza miast, obsługa schowka
+│   │   └── audioAmbient.ts          # Proceduralna synteza audio (Web Audio API)
+│   ├── data/
+│   │   ├── demoMemories.ts          # Początkowe dane demonstracyjne
+│   │   └── travelPacks.ts           # Gotowe pakiety (Tatry, Włochy, Francja, Dalmacja)
+│   ├── types/
+│   │   └── travel.ts                # Główne interfejsy TypeScript (Photo, Album, Trip, Settings)
+│   ├── __tests__/
+│   │   └── services.test.ts         # Pakiet testów jednostkowych w Vitest (100% zielone)
+│   ├── App.tsx                      # Główny stan aplikacji i orkiestracja widoków
+│   ├── main.tsx                     # Punkt wejścia React
+│   └── index.css                    # Import Tailwind CSS i definicje klastrów
+├── index.html                       # Entry point HTML (język pl, metadane)
+├── package.json                     # Zależności i skrypty (dev, build, lint, test)
+├── tsconfig.json                    # Konfiguracja kompilatora TypeScript
+├── vite.config.ts                   # Konfiguracja bundlera Vite
+├── AGENTS.md                        # Wytyczne roli inżynierskiej dla projektu
+├── ARCHITECTURE.md                  # Szczegółowa specyfikacja architektoniczna
+├── DEFINITION_OF_DONE.md            # Kryteria jakości i ukończenia zadań
+├── REQUIREMENTS.md                  # Rejestr wymagań funkcjonalnych i stanów
+├── ROADMAP.md                       # Harmonogram i etapy wdrożenia
+├── TASKS.md                         # Tabela zadań i ich statusów
+├── PROGRESS.md                      # Rzetelne sprawozdanie z postępów
+├── TESTING.md                       # Procedury testowe i logi weryfikacji
+└── CHANGELOG.md                     # Historia zmian
+```
+
+---
+
+## 4. Lista Rzeczywiście Działających Funkcji
+
+Poniższe moduły są w 100% funkcjonalne w kodzie i zweryfikowane w interaktywnym podglądzie:
+1. **Interaktywna mapa świata Leaflet**: obsługa powiększania, przesuwania, 6 warstw kafelkowych, rysowanie animowanych tras podróży z dystansem w km.
+2. **Klastry pinezek**: automatyczne grupowanie fotografii według współrzędnych z miniaturami i licznikami.
+3. **Bezpieczne popupy na mapie**: renderowanie tytułów, lokalizacji, dat i opisów za pomocą bezpiecznych węzłów DOM (brak podatności XSS).
+4. **Menu kontekstowe pod prawym przyciskiem myszy (PPM)**: kliknięcie w dowolny punkt mapy pobiera współrzędne geograficzne i pozwala otworzyć import przypisany do tej lokalizacji lub wycentrować widok.
+5. **Drag & Drop na mapę**: upuszczenie plików na mapę otwiera centrum importu z zachowaniem plików, współrzędnych i metadanych EXIF.
+6. **Centrum importu fotografii**:
+   - Wybór plików z dysku.
+   - Wybór całego katalogu z podfolderami.
+   - Wklejanie ze schowka systemowego (`Ctrl + V`).
+   - Import z adresu URL z podglądem na żywo.
+   - Pakiety gotowych fotografii podróżniczych (Tatry, Włochy, Francja, Chorwacja).
+   - Ochrona przed duplikacją plików w kolejce oraz w głównej bibliotece.
+7. **Odczyt metadanych EXIF GPS**: wyciąganie szerokości/długości geograficznej, daty wykonania oraz modelu aparatu przez `exifr`.
+8. **Galeria i Oś Czasu (Timeline)**: widok siatki kafelków, widok kart albumów oraz chronologiczna oś czasu podzielona na lata i wyprawy.
+9. **Kinowy pokaz slajdów (Ken Burns)**: tryb pełnoekranowy, płynne zbliżanie kadru, mini-mapa PiP ze wskazaniem bieżącego zdjęcia, ambientowy szum oceanu (Web Audio API), pełna obsługa klawiaturą (Spacja, Strzałki, F11, Esc).
+10. **Paszport podróżnika i detekcja duplikatów**: kalkulator statystyk przebytych kilometrów i odwiedzonych miast/krajów oraz narzędzie czyszczenia powtórzonych ujęć.
+11. **Eksport i import `.prezent`**: pełna serializacja/deserializacja bazy do formatu JSON z opcją anonimizacji współrzędnych GPS.
+12. **Zabezpieczenie limitu pamięci**: `StorageService` wyłapuje błędy `localStorage` i wyświetla powiadomienie Windows Toast.
+
+---
+
+## 5. Lista Funkcji Demonstracyjnych / Prototypowych
+
+Te funkcje posiadają gotowy, dopracowany interfejs UI w podglądzie przeglądarkowym, lecz ich pełne działanie wymaga środowiska Electron:
+1. **Menedżer Map Offline (`OfflineMapsModal.tsx`)**: interfejs wyboru regionów i pasek postępu pobierania działają jako symulacja. Pełny zapis kafelków w plikach MBTiles wymaga wdrożenia w Electronie.
+2. **Pilot Smart Remote QR (`TvModeModal.tsx`)**: interfejs z kodem QR jest prototypem. Bezprzewodowe sterowanie ze smartfona w sieci domowej wymaga uruchomienia lokalnego serwera WebSocket w Electronie.
+3. **Autostart z Windows (`SettingsView.tsx`)**: przełącznik w ustawieniach zapisuje preferencję, ale rzeczywisty wpis w rejestrze `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` zostanie dodany w Electronie.
+4. **Otwieranie folderu w Eksploratorze Windows**: przycisk kopiuje ścieżkę do schowka, a w Electronie wywoła `shell.showItemInFolder()`.
+
+---
+
+## 6. Wszystkie Znane Ograniczenia i Kwestie do Uwzględnienia
+
+1. **Limit pamięci `localStorage` w przeglądarce**: Standardowy limit przeglądarki wynosi ok. 5MB. Przy dodaniu kilkudziesięciu zdjęć w base64 limit ten zostaje osiągnięty. W przeglądarce użytkownik otrzymuje ostrzeżenie, natomiast docelowym rozwiązaniem problemu jest SQLite w Electronie.
+2. **Brak dostępu do natywnego systemu plików w Web Preview**: Przeglądarka z powodów bezpieczeństwa nie udostępnia pełnych ścieżek bezwzględnych (`C:\...`) przy standardowym `<input type="file">`. Właściwość `localFilePath` pozostaje `undefined` do momentu uruchomienia w powłoce Electron.
+3. **Dźwięk ambient w pokazie slajdów**: Przeglądarki wymagają uprzedniej interakcji użytkownika (kliknięcia), aby Web Audio API mogło wygenerować dźwięk (AudioContext autoplay policy).
+
+---
+
+## 7. Brakujące Integracje Windows (Zadania dla Codexa)
+
+1. **Powłoka Electron**: Konfiguracja procesu głównego (`electron/main.ts`) z bezramkowym oknem (`frame: false, titleBarStyle: 'hidden'`).
+2. **Integracja z paskiem tytułowym**: Podpięcie istniejącego komponentu `WindowsTitleBar.tsx` pod natywne IPC okna: `minimize`, `maximize`/`unmaximize`, `close`.
+3. **Natywne okna dialogowe**: Podpięcie `dialog.showOpenDialog` pod przyciski wyboru folderów i importu.
+4. **Otwieranie Eksploratora Windows**: Podpięcie `shell.openPath()` oraz `shell.showItemInFolder()`.
+5. **Autostart Windows**: Wykorzystanie biblioteki `auto-launch` lub natywnego rejestru Windows.
+
+---
+
+## 8. Plan Wdrożenia Electron
+
+Kroki wdrożeniowe dla OpenAI Codex:
+1. Zainstalować `electron`, `electron-builder` i `@types/node` w `devDependencies`.
+2. Dodać katalog `electron/` w katalogu głównym:
+   - `electron/main.ts`: Utworzenie `BrowserWindow`, konfiguracja protokołu `photo://` dla lokalnych plików, obsługa zdarzeń okna i IPC.
+   - `electron/preload.ts`: Wystawienie bezpiecznego `contextBridge.exposeInMainWorld('electronAPI', { ... })`.
+3. Skonfigurować skrypt w `package.json`:
+   - `"electron:dev": "concurrently \"vite\" \"electron .\""`
+   - `"electron:build": "vite build && electron-builder"`
+4. Zachować kompatybilność hybrydową: `window.electronAPI ? window.electronAPI.doSomething() : fallbackWeb()`, aby kod nadal działał w przeglądarce.
+
+---
+
+## 9. Plan Migracji Danych do SQLite
+
+1. Zainstalować `better-sqlite3` w procesie głównym Electrona (nie w rendererze React!).
+2. Utworzyć bazę danych w `%APPDATA%/PrezentMapy/prezent.db`.
+3. Schemat tabel:
+   - `photos` (id TEXT PRIMARY KEY, url TEXT, title TEXT, date TEXT, lat REAL, lng REAL, city TEXT, country TEXT, album_id TEXT, notes TEXT, is_favorite INTEGER, camera_info TEXT, local_path TEXT)
+   - `albums` (id TEXT PRIMARY KEY, name TEXT, description TEXT, cover_url TEXT, year INTEGER, country TEXT)
+   - `trips` (id TEXT PRIMARY KEY, title TEXT, year INTEGER, route_points TEXT, distance_km REAL, color TEXT)
+   - `settings` (key TEXT PRIMARY KEY, value TEXT)
+4. Udostępnić w `preload.ts` metody:
+   - `window.electronAPI.getPhotos()`
+   - `window.electronAPI.savePhoto(photo)`
+   - `window.electronAPI.deletePhoto(id)`
+5. W `src/services/storage.ts` podmienić implementację na wywołania `window.electronAPI` z zachowaniem fallbacku na `localStorage` w trybie web.
+
+---
+
+## 10. Plan Obsługi Lokalnych Folderów i Fotografii
+
+1. Przy imporcie katalogu w Electronie, proces główny skanuje rekurencyjnie pliki `.jpg`, `.jpeg`, `.png`, `.webp`.
+2. Oryginalne pliki pozostają w lokalizacji wybranej przez użytkownika (np. `C:\Users\Nazwa\Obrazy\Prezent-Wspomnienia`).
+3. Miniatury (`thumbnailUrl`) generowane są w tle w folderze `%APPDATA%/PrezentMapy/thumbnails/` (np. przez `sharp`), co zapewnia błyskawiczne przewijanie galerii nawet przy 100 000 zdjęć.
+4. Pełnowymiarowe fotografie serwowane są za pomocą bezpiecznego protokołu `photo://path/to/image.jpg`.
+
+---
+
+## 11. Plan Map Offline
+
+1. Pobieranie kafelków w wybranym zoomie (np. zoom 0–14 dla Polski, Włoch itp.) do pliku bazy SQLite w formacie **MBTiles**.
+2. W procesie głównym Electrona zaimplementować prosty handler protokołu kafelków `mbtiles://` lub lokalny serwer Express/Node serwujący kafelki z pliku `.mbtiles`.
+3. W `MapView.tsx` warstwa kafelków w trybie offline wskazuje na `mbtiles://{z}/{x}/{y}.png`.
+
+---
+
+## 12. Plan Prezentacji na Telewizorze (Salon 4K)
+
+1. Pokaz slajdów w `SlideshowModal.tsx` jest już w 100% zoptymalizowany pod pełny ekran i wysoką rozdzielczość 4K.
+2. Zdalne sterowanie (Smart Remote):
+   - W procesie głównym Electrona uruchomić lekki serwer HTTP i WebSocket na losowym wolnym porcie lokalnym (np. 8989).
+   - Generować dynamiczny kod QR prowadzący do `http://<IP_KOMPUTERA>:8989/remote`.
+   - Serwer serwuje minimalistyczną stronę mobilną z przyciskami Poprzednie / Następne / Pauza / Info.
+   - Po naciśnięciu przycisku na telefonie, serwer przesyła zdarzenie przez WebSocket do Electrona, który emuluje naciśnięcie klawisza lub wywołuje metodę w React.
+
+---
+
+## 13. Wymagania Bezpieczeństwa
+
+1. **Context Isolation**: W Electronie zawsze `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`.
+2. **CSP (Content Security Policy)**: Ścisła polityka zezwalająca wyłącznie na lokalne assety i zaufane domeny kafelków mapy (CartoDB, Esri, OSM).
+3. **Brak XSS**: Kontynuacja wprowadzonej w wersji 1.3.1 zasady bezpiecznego tworzenia węzłów DOM bez `innerHTML`.
+4. **Prywatność EXIF**: Zachowanie opcji wymazywania koordynatów GPS przy eksporcie archiwum dla znajomych (`stripGpsOnExport`).
+
+---
+
+## 14. Zalecane Testy
+
+Przed każdym wydaniem instalatora Windows należy przeprowadzić:
+1. `npm test` – uruchomienie testów jednostkowych Vitest (zgodność logiki biznesowej, statystyk, duplikatów i formatu `.prezent`).
+2. `npm run lint` – weryfikacja statyczna typów TypeScript (`tsc --noEmit`).
+3. `npm run build` – test czystego budowania pakietu produkcyjnego.
+4. Testy integracyjne Electrona:
+   - Sprawdzenie minimalizacji, maksymalizacji i zamykania okna przez `WindowsTitleBar`.
+   - Test przeciągnięcia 500 zdjęć z pulpitu Windows na mapę.
+   - Test działania aplikacji bez aktywnego połączenia internetowego (tryb offline).
+
+---
+
+## 15. Instrukcja Budowania Aplikacji
+
+### Środowisko Web (Vite):
+```bash
+npm install
+npm run dev      # Uruchomienie na porcie 3000
+npm run build    # Budowa paczki produkcyjnej w /dist
+npm test         # Uruchomienie 6 testów jednostkowych Vitest
+npm run lint     # Weryfikacja typów TypeScript
+```
+
+### Docelowe Budowanie w Electronie (po dodaniu konfiguracji przez Codexa):
+```bash
+npm run electron:dev     # Uruchomienie deweloperskie z oknem Electron
+npm run electron:build   # Generowanie instalatora Windows NSIS (.exe) w folderze /release
+```
+
+---
+
+## 16. Kolejność Następnych Etapów dla OpenAI Codex
+
+1. **Krok 1 (Baza i powłoka)**: Zainstalować Electrona, dodać `electron/main.ts` i `electron/preload.ts`, podłączyć kontrolki `WindowsTitleBar.tsx` pod zdarzenia okna.
+2. **Krok 2 (SQLite)**: Dodać `better-sqlite3` w procesie głównym, zaimplementować mostek IPC i podłączyć `StorageService` do SQLite.
+3. **Krok 3 (System plików)**: Wdrożyć natywne okno wyboru folderu (`dialog.showOpenDialog`) oraz protokół `photo://` dla lokalnych grafik.
+4. **Krok 4 (Mapy offline & Smart Remote)**: Wdrożyć obsługę plików MBTiles oraz lekki serwer WebSocket dla pilota na smartfonie.
+5. **Krok 5 (Packaging)**: Skonfigurować `electron-builder` i wygenerować instalator Windows 10/11 (`Prezent-Mapy-Setup-1.3.1.exe`).
+
+**ZASADA NACZELNA**: Wszystkie powyższe kroki należy realizować bez niszczenia i bez przebudowywania istniejącego, ustabilizowanego interfejsu React!

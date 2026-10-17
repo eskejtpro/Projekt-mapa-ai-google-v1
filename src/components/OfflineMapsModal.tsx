@@ -124,6 +124,17 @@ export const OfflineMapsModal: React.FC<OfflineMapsModalProps> = ({
 
         {/* Zawartość */}
         <div className="p-6 space-y-6 text-xs text-slate-300">
+          {/* Baner transparentności: Funkcja demonstracyjna */}
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3.5 flex items-start gap-3">
+            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <span className="font-bold text-amber-300 text-xs">Tryb demonstracyjny w podglądzie przeglądarkowym:</span>
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                Pobieranie kafelków w obecnej wersji podglądu symuluje działanie interfejsu. Rzeczywiste pobieranie i buforowanie plików baz kafelkowych (MBTiles / SQLite) na dysku lokalnym Windows zostanie wdrożone przez Codexa w środowisku Electron.
+              </p>
+            </div>
+          </div>
+
           {/* Przełącznik trybu Offline (Samolotowego) */}
           <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl flex items-center justify-between gap-4">
             <div className="space-y-1">

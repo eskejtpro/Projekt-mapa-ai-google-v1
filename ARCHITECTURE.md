@@ -1,50 +1,87 @@
-# ARCHITECTURE.md - Architektura Aplikacji „Prezent”
+# ARCHITECTURE.md - Architektura Aplikacji „Prezent Mapy”
 
-Aplikacja **„Prezent”** została zaprojektowana zgodnie z zasadami **Offline-First**, **Modular Component Design** oraz separacji warstwy interfejsu użytkownika od środowiska uruchomieniowego (Browser vs Electron).
+Aplikacja **„Prezent Mapy”** jest zaprojektowana według wzorca **Separacji Odpowiedzialności (SoC)**, **Offline-First** oraz czystego odseparowania warstwy prezentacji (React) od środowiska uruchomieniowego (Browser Preview vs Docelowy Electron dla Windows 10/11).
 
 ```
-+-------------------------------------------------------------------------+
-|                              WARSTWA UI                                 |
-|                                                                         |
-|  +-------------------+  +--------------------+  +--------------------+  |
-|  |     MapView       |  |    GalleryView     |  |   SlideshowModal   |  |
-|  | (Leaflet + Tiles) |  | (Grid / Timeline)  |  | (Ken Burns + PiP)  |  |
-|  +-------------------+  +--------------------+  +--------------------+  |
-|                                                                         |
-|  +-------------------+  +--------------------+  +--------------------+  |
-|  |    ImportModal    |  |     TvModeModal    |  | OfflineMapsManager |  |
-|  |  (EXIF GPS / D&D) |  |   (Salon 4K / QR)  |  |  (Pakiety Cache)   |  |
-|  +-------------------+  +--------------------+  +--------------------+  |
-+-------------------------------------------------------------------------+
-                                    │
-                                    ▼
-+-------------------------------------------------------------------------+
-|                         WARSTWA LOGIKI I USŁUG                          |
-|                                                                         |
-|  • StorageService (Zarządzanie stanem, eksport/import .prezent)         |
-|  • AudioAmbientEngine (Synteza fal i natury przez Web Audio API)         |
-|  • ExifParserService (Biblioteka exifr dla współrzędnych i aparatów)    |
-|  • OfflineMapCacheService (Zarządzanie kafelkami regionalnymi)          |
-|  • GeoService (Odwrotne geokodowanie, schowek i detekcja miast)         |
-|  • TravelPacksEngine (Zestawy gotowych kolekcji fotografii)             |
-+-------------------------------------------------------------------------+
-                                    │
-            ┌───────────────────────┴───────────────────────┐
-            ▼                                               ▼
-+---------------------------+               +-----------------------------+
-|    ŚRODOWISKO BROWSER     |               |    ŚRODOWISKO ELECTRON      |
-|   (Podgląd AI Studio)     |               |    (Windows 10/11 .exe)     |
-| • localStorage / IDB      |               | • fs / path / OS dialogs    |
-| • File API (Drag & Drop)  |               | • Bezpośredni dostęp do     |
-| • Fullscreen API          |               |   Eksploratora Windows      |
-+---------------------------+               +-----------------------------+
++-----------------------------------------------------------------------------------+
+|                        WARSTWA PREZENTACJI (REACT / UI)                           |
+|                                                                                   |
+|  +--------------------+  +----------------------+  +---------------------------+  |
+|  |     MapView        |  |     GalleryView      |  |      SlideshowModal       |  |
+|  | (Leaflet + Tiles + |  | (Grid / Albums /     |  | (Ken Burns + PiP MiniMap  |  |
+|  |  Context Menu PPM) |  |  Timeline + Filters) |  |  + Web Audio Ambient)     |  |
+|  +--------------------+  +----------------------+  +---------------------------+  |
+|                                                                                   |
+|  +--------------------+  +----------------------+  +---------------------------+  |
+|  |    ImportModal     |  |     SettingsView     |  |        TvModeModal        |  |
+|  | (5 trybów importu, |  | (12 kategorii stylu  |  |  (Salon 4K + instrukcje   |  |
+|  |  D&D, EXIF GPS)    |  |  Untitled UI)        |  |   Miracast / HDMI)        |  |
+|  +--------------------+  +----------------------+  +---------------------------+  |
+|                                                                                   |
+|  +--------------------+  +----------------------+  +---------------------------+  |
+|  |  DuplicatesView    |  |      StatsView       |  |     WindowsTitleBar       |  |
+|  | (Detekcja duplikat)|  | (Paszport podróżny)  |  |  (Fluent UI Chrome & Dock)|  |
+|  +--------------------+  +----------------------+  +---------------------------+  |
++-----------------------------------------------------------------------------------+
+                                         │
+                                         ▼
++-----------------------------------------------------------------------------------+
+|                           WARSTWA USŁUG I DOMENY (SERVICES)                       |
+|                                                                                   |
+|  • StorageService: Zarządzanie stanem, limity pamięci, eksport/import .prezent    |
+|  • GeoService: Odwrotne geokodowanie heurystyczne, formatowanie współrzędnych      |
+|  • AudioAmbientEngine: Proceduralna synteza oceanu via Web Audio API (offline)    |
+|  • TravelPacks: Pakiety startowe (Tatry, Włochy, Francja, Chorwacja)              |
+|  • exifr: Bezpieczna analiza nagłówków EXIF (GPS, data, aparat fotograficzny)     |
++-----------------------------------------------------------------------------------+
+                                         │
+                ┌────────────────────────┴────────────────────────┐
+                ▼                                                 ▼
++--------------------------------+               +----------------------------------+
+|    ŚRODOWISKO BROWSER (TERAZ)  |               |  ŚRODOWISKO ELECTRON (DLA CODEX) |
+|   (Podgląd w Google AI Studio) |               |      (Docelowy Windows 10/11)    |
+|                                |               |                                  |
+| • localStorage (z detekcją     |               | • SQLite (better-sqlite3) dla    |
+|   przekroczenia limitu ~5MB)   |               |   setek tysięcy zdjęć            |
+| • HTML5 File API & Drag&Drop   |               | • Node.js fs / path dla plików   |
+| • window.navigator.clipboard   |               | • electron.dialog (wybór folderu)|
+| • Fullscreen API               |               | • IPC Bridge (preload.ts) z      |
+| • Zrzut .prezent do pobrania   |               |   contextIsolation: true         |
++--------------------------------+               +----------------------------------+
 ```
 
-## Kontrakt Danych `.prezent` (Kompatybilność z Android Room)
-Plik `.prezent` stanowi ustrukturyzowany zrzut bazy w JSON:
-- `photos`: tablica encji fotografii z kluczem głównym `id`, relacją `albumId`, współrzędnymi `lat`/`lng` i metadanymi.
-- `albums`: tablica encji albumów.
-- `trips`: tablica encji podróży z punktami `routePoints`.
-- `settings`: preferencje widoku i motywu.
+---
 
-Dzięki temu aplikacja na system Android będzie mogła dokonać deserializacji do obiektów `@Entity` biblioteki Room w jednej transakcji bazy danych.
+## 1. Architektura Danych
+
+### Główne Encje (`src/types/travel.ts`):
+1. **TravelPhoto**:
+   - `id`: string (unikalny identyfikator)
+   - `url`, `thumbnailUrl`: string (w podglądzie base64 / URL; w Electronie `file://` lub protokół niestandardowy `photo://`)
+   - `title`: string
+   - `date`: string (ISO `YYYY-MM-DD`)
+   - `location`: `GeoLocation` (`lat`, `lng`, `cityName`, `countryName`, `countryCode`, `placeName`)
+   - `albumId`: string (relacja do albumu)
+   - `participants`: string[]
+   - `tags`: string[]
+   - `isFavorite`: boolean
+   - `isDemo`: boolean
+   - `fileName`, `fileSize`, `cameraInfo`: metadane techniczne
+   - `localFilePath`?: string (ścieżka systemowa – wypełniana wyłącznie przez Electron/IPC, zakaz fikcyjnych ścieżek).
+
+2. **TravelAlbum**:
+   - `id`, `name`, `description`, `coverUrl`, `year`, `country`, `startDate`, `endDate`, `isDemo`.
+
+3. **TravelTrip**:
+   - `id`, `title`, `description`, `year`, `countryCode`, `routePoints`, `totalDistanceKm`, `color`.
+
+4. **AppSettings**:
+   - 12 kategorii preferencji personalizacji, mapy, importu i prezentacji.
+
+---
+
+## 2. Bezpieczeństwo i Zasady Kodowania
+
+1. **Brak wstrzykiwania kodu HTML**: Wszelkie elementy dynamiczne (np. popupy na mapie w `MapView.tsx`) są tworzone za pomocą `document.createElement`, a dane tekstowe przypisywane przez `textContent`. Eliminuje to podatności XSS przy nazwach plików i opisach wspomnień.
+2. **Obsługa limitu pamięci przeglądarki**: `StorageService.savePhotos()` i metody pokrewne zwracają status `boolean`. Przy wystąpieniu `QuotaExceededError` aplikacja nie ulega awarii, a użytkownik otrzymuje czytelne powiadomienie z propozycją pobrania kopii `.prezent`.
+3. **Izolacja IPC w Electronie**: W kolejnym etapie OpenAI Codex zaimplementuje `preload.ts` z `contextIsolation: true` i `nodeIntegration: false`, udostępniając bezpieczne API `window.electronAPI`.

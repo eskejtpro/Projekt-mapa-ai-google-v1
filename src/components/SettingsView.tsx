@@ -188,8 +188,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
               <div className="pt-2 flex items-center justify-between border-t border-slate-800">
                 <div>
-                  <div className="text-white font-semibold">Automatyczny start z systemem Windows:</div>
-                  <div className="text-slate-400 text-[11px]">Uruchamiaj aplikację po zalogowaniu do systemu Windows 10/11</div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-white font-semibold">Automatyczny start z systemem Windows:</span>
+                    <span className="px-2 py-0.5 rounded-full bg-slate-800 text-amber-300/80 text-[10px] font-medium border border-slate-700">
+                      Wymaga integracji Electron
+                    </span>
+                  </div>
+                  <div className="text-slate-400 text-[11px]">Preferencja autostartu po zalogowaniu do Windows (wpis HKCU Run zostanie podłączony w Electronie)</div>
                 </div>
                 <input
                   type="checkbox"
@@ -448,7 +453,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
             <div className="bg-[#121829] border border-slate-800 rounded-2xl p-5 space-y-4">
               <div className="space-y-1.5">
-                <label className="text-white font-semibold">Katalog roboczy w systemie Windows:</label>
+                <div className="flex items-center gap-2">
+                  <label className="text-white font-semibold">Katalog roboczy w systemie Windows:</label>
+                  <span className="px-2 py-0.5 rounded-full bg-slate-800 text-amber-300/80 text-[10px] font-medium border border-slate-700">
+                    Wymaga integracji Electron
+                  </span>
+                </div>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
@@ -689,8 +699,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <div className="bg-[#121829] border border-slate-800 rounded-2xl p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-white font-semibold">Akceleracja sprzętowa GPU:</div>
-                  <div className="text-slate-400 text-[11px]">Wykorzystaj kartę graficzną do płynnych animacji mapy Leaflet</div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-white font-semibold">Akceleracja sprzętowa GPU:</span>
+                    <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-mono border border-slate-700">
+                      Flaga Electron
+                    </span>
+                  </div>
+                  <div className="text-slate-400 text-[11px]">Wspomaganie GPU dla płynnych animacji mapy Leaflet (w Electron: przełącznik Chromium)</div>
                 </div>
                 <input
                   type="checkbox"

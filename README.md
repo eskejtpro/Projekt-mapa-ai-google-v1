@@ -1,49 +1,76 @@
-# Prezent – Rodzinne Wspomnienia i Podróże na Mapie Świata
+# Prezent Mapy – Rodzinne Wspomnienia i Podróże na Mapie Świata
 
-Aplikacja **„Prezent”** to nowoczesny program przeznaczony na systemy **Windows 10/11** (oparty na Electron + React + TypeScript + Leaflet), służący do prezentowania rodzinnych zdjęć, wspomnień i wakacyjnych podróży na interaktywnej mapie świata.
+**Prezent Mapy** to nowoczesna, lokalna aplikacja zaprojektowana dla systemu **Windows 10/11**, służąca do prezentowania rodzinnych zdjęć, wspomnień i podróży na interaktywnej mapie świata.
 
-Aplikacja działa w 100% lokalnie i prywatnie (offline-first), bez konieczności tworzenia konta w chmurze ani wysyłania prywatnych fotografii na zewnętrzne serwery.
+Aplikacja działa w 100% lokalnie i z poszanowaniem prywatności (**Offline-First**) – bez konieczności rejestracji konta w chmurze ani wysyłania prywatnych fotografii na zewnętrzne serwery.
+
+Repozytorium GitHub: `https://github.com/eskejtpro/Projekt-mapa-ai-google-v1`
 
 ---
 
-## Główne Możliwości Programu
+## 🚀 Architektura i Środowisko
+- **Aktualny stan (Google AI Studio / Web Preview)**: Kompletny, w 100% działający interfejs w React 19, TypeScript, Vite, Tailwind CSS 4 oraz Leaflet 1.9.
+- **Odczyt metadanych**: Biblioteka `exifr` do automatycznego wyciągania współrzędnych GPS, daty wykonania i modelu aparatu.
+- **Efekty dźwiękowe**: Synteza nastrojowego szumu oceanu przez Web Audio API (bez zewnętrznych plików mp3).
+- **Następny etap (OpenAI Codex)**: Opakowanie gotowego interfejsu w powłokę **Electron** dla Windows 10/11, migracja bazy z localStorage do SQLite (`better-sqlite3`), obsługa natywnego Eksploratora Windows i pakowanie instalatora NSIS.
 
-1. **Interaktywna Mapa Świata**:
-   - Centralny element aplikacji prezentujący odwiedzone zakątki globu.
-   - Niestandardowe pinezki ze zdjęciami, liczniki wspomnień i popupy z notatkami rodzinnymi.
-   - Wizualizacja wieloetapowych tras podróży (linie tras, łączny dystans, punkty przystankowe).
-   - 4 tryby mapy: Ciemna (Nocna elegancja), Jasna (Minimalistyczna), Satelitarna (Zdjęcia z lotu ptaka), Standardowa OpenStreetMap.
+---
 
-2. **Galeria Rodzinna & Albumy**:
-   - Grupowanie zdjęć w albumy podróżnicze i chronologiczną Oś Czasu (Timeline wypraw rok po roku).
-   - Filtrowanie po kraju, roku, albumie, ulubionych oraz natychmiastowe wyszukiwanie.
-   - Wyraźne oznaczenie demonstracyjnych wspomnień od Twoich prywatnych zdjęć.
+## 🌟 Główne Funkcje
 
-3. **Import z Komputera & Odczyt EXIF GPS**:
-   - Wybór pojedynczych fotografii lub całych folderów z dysku komputera.
-   - Automatyczny odczyt geolokalizacji z metadanych EXIF aparatu/smartfona (szerokość i długość geograficzna, data, model aparatu).
-   - Awaryjne przypisanie lokalizacji dla fotografii bez koordynatów GPS.
+### 1. Interaktywna Mapa Świata
+- Podkłady mapowe: CartoDB Dark Matter, Positron, Esri World Imagery (satelita), Esri World Street Map, OpenStreetMap Voyager i Standard.
+- Klastrowanie pinezek z miniaturami zdjęć i licznikami wspomnień.
+- Bezpieczne popupy DOM (zabezpieczenie przed atakami XSS).
+- Wieloetapowe trasy podróży z dystansem w kilometrach.
+- **Menu kontekstowe prawego przycisku myszy (PPM)**: kliknij w dowolny punkt mapy, aby wycentrować widok lub dodać zdjęcia/katalog przypisane do tych współrzędnych.
 
-4. **Kinowy Pokaz Slajdów (Slideshow)**:
-   - Tryb pełnoekranowy (Full Window / Fullscreen API).
-   - Efekt powolnego przybliżenia i panoramy *Ken Burns*.
-   - Picture-in-Picture Mini-Mapa w dolnym rogu z animowaną lokalizacją zdjęcia.
-   - Nastrojowy ambient dźwiękowy oceanu w tle generowany przez Web Audio API (100% offline).
-   - Pełna obsługa klawiaturą (Strzałki, Spacja, Esc).
+### 2. Centrum Importu Fotografii (5 Trybów)
+- **Wybór plików**: Pojedyncze lub wielokrotne zdjęcia z dysku z podglądem i paskiem postępu.
+- **Całe katalogi**: Import folderów wraz z podkatalogami.
+- **Drag & Drop na mapę**: Przeciągnij zdjęcia bezpośrednio na mapę świata – współrzędne punktu upuszczenia zostaną automatycznie przypisane fotografiom bez własnego GPS.
+- **Wklejanie ze schowka systemowego**: Klawisz `Ctrl + V` lub dedykowany przycisk w oknie importu.
+- **Zdjęcia z internetu (URL)**: Podgląd na żywo i pobranie grafiki do biblioteki.
+- **Gotowe pakiety podróżnicze**: Błyskawiczny import tematycznych kolekcji wspomnień (Tatry, Włochy, Lazurowe Wybrzeże, Dalmacja).
+- **Zabezpieczenie przed duplikatami**: Automatyczne wykrywanie i pomijanie powtórzonych ujęć.
 
-5. **Prezentacja na Telewizorze (Tryb TV / Salon 4K)**:
-   - Przystosowany do oglądania z kanapy w salonie (duża typografia, kontrast).
-   - Instrukcja połączenia bezprzewodowego (Miracast Win+K), kabla HDMI i Google Cast.
-   - Sterowanie pilotem TV lub smartfonem przez Smart Remote QR.
+### 3. Galeria i Albumy
+- Przełączanie widoków: Siatka kafelków, Albumy wypraw oraz Oś Czasu (Timeline rok po roku).
+- Filtrowanie po kraju, roku, albumie, ulubionych oraz natychmiastowa wyszukiwarka.
+- Diagnostyka i usuwanie duplikatów.
+- Paszport Podróżnika ze statystykami (liczba odwiedzonych krajów, miast, łączny dystans wypraw).
 
-6. **Mapy Offline (Tryb Podróżny)**:
-   - Menedżer pakietów map regionalnych (Polska, Włochy, Grecja, Japonia, Norwegia) zapisywanych w lokalnym cache.
-   - Przełącznik symulacji trybu samolotowego.
+### 4. Kinowy Pokaz Slajdów & Prezentacja TV
+- Płynny efekt powolnego zbliżenia kadru (*Ken Burns*).
+- Mini-mapa Picture-in-Picture w rogu ekranu wskazująca lokalizację aktualnego zdjęcia.
+- Szum oceanu w tle (Web Audio API).
+- Pełna obsługa z klawiatury (Spacja = pauza/start, Strzałki = nawigacja, F11 = pełny ekran, Esc = wyjście).
+- Przygotowanie do salonu 4K i dużych telewizorów (duża typografia, tryb kinowy).
 
-7. **Dostęp do Plików Windows & Prywatność**:
-   - Oryginalne zdjęcia i struktura folderów zachowana w `C:\Users\Rodzina\Obrazy\Prezent-Wspomnienia\`.
-   - Błyskawiczny dostęp do plików w Eksploratorze Windows.
+### 5. Bezpieczeństwo i Kopia Zapasowa `.prezent`
+- Eksport całej bazy (zdjęcia, albumy, trasy, ustawienia) do pojedynczego pliku `.prezent`.
+- Możliwość wymazania współrzędnych GPS przed udostępnieniem pliku rodzinie.
+- Bezpieczny import archiwum z pełną walidacją struktury JSON.
 
-8. **Synchronizacja Android & Kopia Zapasowa .prezent**:
-   - Eksport całej bazy do pojedynczego, bezpiecznego pliku `.prezent`.
-   - Architektura bazy zgodna 1:1 ze schematem SQLite / Android Room Database na potrzeby przyszłej aplikacji mobilnej Jetpack Compose.
+---
+
+## 🛠️ Uruchomienie i Rozwój
+
+```bash
+# Instalacja zależności
+npm install
+
+# Uruchomienie deweloperskie (port 3000)
+npm run dev
+
+# Kompilacja produkcyjna
+npm run build
+
+# Analiza statyczna typów
+npm run lint
+
+# Testy jednostkowe
+npm test
+```
+
+Dokładne wytyczne architektoniczne i instrukcja przekazania projektu do OpenAI Codex znajdują się w pliku `HANDOFF_CODEX.md`.

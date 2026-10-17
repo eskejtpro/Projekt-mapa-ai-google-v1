@@ -67,6 +67,7 @@ export default function App() {
   const [isImportOpen, setIsImportOpen] = useState<boolean>(false);
   const [importInitialLocation, setImportInitialLocation] = useState<InitialImportLocation | null>(null);
   const [importInitialMode, setImportInitialMode] = useState<ImportTabMode>('files');
+  const [importInitialFiles, setImportInitialFiles] = useState<File[]>([]);
   const [isSlideshowOpen, setIsSlideshowOpen] = useState<boolean>(false);
   const [slideshowPhotos, setSlideshowPhotos] = useState<TravelPhoto[]>([]);
   const [slideshowStartIndex, setSlideshowStartIndex] = useState<number>(0);
@@ -123,29 +124,49 @@ export default function App() {
     return StorageService.findDuplicates(photos);
   }, [photos]);
 
-  // Obsługa dodania zdjęć z importu
+  // Obsługa dodania zdjęć z importu z zabezpieczeniem przed duplikatami i obsługą limitu pamięci
   const handleImportComplete = (newPhotos: TravelPhoto[], newAlbum?: TravelAlbum) => {
-    const updatedPhotos = [...newPhotos, ...photos];
-    setPhotos(updatedPhotos);
-    StorageService.savePhotos(updatedPhotos);
+    setPhotos(prev => {
+      const existingSignatures = new Set(
+        prev.map(p => `${p.fileName || p.title}_${p.location.lat.toFixed(3)}_${p.location.lng.toFixed(3)}`)
+      );
+      const uniqueNew = newPhotos.filter(
+        np => !existingSignatures.has(`${np.fileName || np.title}_${np.location.lat.toFixed(3)}_${np.location.lng.toFixed(3)}`)
+      );
+
+      const updatedPhotos = [...uniqueNew, ...prev];
+      const saved = StorageService.savePhotos(updatedPhotos);
+      if (!saved) {
+        showToast('Uwaga: Limit pamięci podręcznej przeglądarki (localStorage) został osiągnięty. Zalecany eksport .prezent.', 'warning');
+      }
+      return updatedPhotos;
+    });
 
     if (newAlbum) {
-      const updatedAlbums = [newAlbum, ...albums];
-      setAlbums(updatedAlbums);
-      StorageService.saveAlbums(updatedAlbums);
+      setAlbums(prev => {
+        if (prev.some(a => a.id === newAlbum.id)) return prev;
+        const updatedAlbums = [newAlbum, ...prev];
+        StorageService.saveAlbums(updatedAlbums);
+        return updatedAlbums;
+      });
     }
+
+    setImportInitialFiles([]);
+    setImportInitialLocation(null);
   };
 
   // Otwarcie centrum importu zdjęć z predefiniowaną lokalizacją (np. kliknięcie PPM na mapie lub z menu)
-  const handleOpenImportWithLocation = (location?: InitialImportLocation, mode: ImportTabMode = 'files') => {
+  const handleOpenImportWithLocation = (location?: InitialImportLocation, mode: ImportTabMode = 'files', files?: File[]) => {
     setImportInitialLocation(location || null);
     setImportInitialMode(mode);
+    setImportInitialFiles(files || []);
     setIsImportOpen(true);
   };
 
   // Upuszczenie plików bezpośrednio na określony punkt mapy świata (Drag & Drop)
-  const handleDropPhotosOnMap = (_files: File[], lat: number, lng: number) => {
+  const handleDropPhotosOnMap = (files: File[], lat: number, lng: number) => {
     const guess = guessNearestLocation(lat, lng);
+    setImportInitialFiles(files);
     setImportInitialLocation({
       lat,
       lng,
@@ -155,7 +176,7 @@ export default function App() {
     });
     setImportInitialMode('files');
     setIsImportOpen(true);
-    showToast(`Przeciągnięto pliki na mapę: ${guess.cityName} (${lat.toFixed(4)}, ${lng.toFixed(4)})`, 'info');
+    showToast(`Przeciągnięto ${files.length} zdjęć na mapę: ${guess.cityName} (${lat.toFixed(4)}, ${lng.toFixed(4)})`, 'info');
   };
 
   // Ulubione
@@ -802,11 +823,13 @@ export default function App() {
         onClose={() => {
           setIsImportOpen(false);
           setImportInitialLocation(null);
+          setImportInitialFiles([]);
         }}
         albums={albums}
         onImportComplete={handleImportComplete}
         initialLocation={importInitialLocation}
         initialMode={importInitialMode}
+        initialFiles={importInitialFiles}
         onShowToast={showToast}
       />
 

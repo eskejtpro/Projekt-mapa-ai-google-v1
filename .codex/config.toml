@@ -1,27 +1,24 @@
-# .codex/config.toml - Konfiguracja reguł inżynieryjnych i narzędzi weryfikacji
+# .codex/config.toml - Konfiguracja projektu Prezent Mapy dla OpenAI Codex
 
 [project]
-name = "Android Architecture & Advisory Studio"
-target_platform = "Android SDK 35 (VanillaIceCream) / Min SDK 26"
-language = "Kotlin 2.0.21"
-ui_framework = "Jetpack Compose + Material 3"
-state_management = "StateFlow / SharedFlow with Lifecycle 2.8+"
-database = "Room 2.6+ (Offline-First SSOT)"
-preferences = "DataStore Preferences"
-di = "Dagger Hilt 2.52"
+name = "Prezent Mapy"
+repository = "eskejtpro/Projekt-mapa-ai-google-v1"
+target_platform = "Windows 10/11 Desktop (x64)"
+preview_environment = "React + TypeScript + Vite + Tailwind CSS"
+desktop_runtime = "Electron (planowany w kolejnym etapie)"
+language = "TypeScript"
 
-[quality_gates]
-ktlint_enabled = true
-detekt_enabled = true
-android_lint_abort_on_error = true
-unit_test_coverage_threshold = 80
-enforce_offline_first = true
-forbid_main_thread_io = true
-forbid_livedata_in_compose = true # Wymagany StateFlow + collectAsStateWithLifecycle
+[stack]
+frontend = "React 19"
+bundler = "Vite 8"
+styling = "Tailwind CSS 4"
+map_engine = "Leaflet 1.9 + OpenStreetMap / CartoDB / Esri"
+exif_parser = "exifr"
+testing = "Vitest"
 
-[verification_commands]
-build = "./gradlew assembleDebug"
-test = "./gradlew testDebugUnitTest"
-lint = "./gradlew lintDebug"
-detekt = "./gradlew detekt"
-ktlint = "./gradlew ktlintCheck"
+[commands]
+# Prawdziwe polecenia npm zdefiniowane w package.json
+dev = "npm run dev"
+build = "npm run build"
+lint = "npm run lint"
+test = "npm test"

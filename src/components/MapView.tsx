@@ -334,24 +334,58 @@ export const MapView: React.FC<MapViewProps> = ({
 
       const popupHtml = document.createElement('div');
       popupHtml.className = 'p-3 text-slate-100 max-w-xs';
-      popupHtml.innerHTML = `
-        <div class="rounded-xl overflow-hidden mb-2 relative shadow-lg bg-slate-950">
-          <img src="${rep.url}" alt="${rep.title}" class="w-full h-36 object-cover" />
-          <div class="absolute top-2 right-2 bg-slate-950/85 backdrop-blur text-amber-400 text-[10px] px-2.5 py-0.5 rounded-full font-bold border border-amber-500/30">
-            ${rep.location.cityName}, ${rep.location.countryName}
-          </div>
-        </div>
-        <h4 class="font-bold text-sm text-white leading-tight mb-1">${rep.title}</h4>
-        <p class="text-xs text-slate-400 line-clamp-2 mb-2 leading-relaxed">${rep.notes}</p>
-        <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-[11px] text-slate-400">
-          <span>📅 ${rep.date}</span>
-          <span>👥 ${rep.participants.slice(0, 2).join(', ')}</span>
-        </div>
-      `;
 
+      // Podgląd zdjęcia
+      const imgContainer = document.createElement('div');
+      imgContainer.className = 'rounded-xl overflow-hidden mb-2 relative shadow-lg bg-slate-950';
+
+      const img = document.createElement('img');
+      img.src = rep.url;
+      img.alt = rep.title || 'Wspomnienie';
+      img.className = 'w-full h-36 object-cover';
+      imgContainer.appendChild(img);
+
+      const badge = document.createElement('div');
+      badge.className = 'absolute top-2 right-2 bg-slate-950/85 backdrop-blur text-amber-400 text-[10px] px-2.5 py-0.5 rounded-full font-bold border border-amber-500/30';
+      badge.textContent = `${rep.location.cityName || 'Lokalizacja'}, ${rep.location.countryName || 'Świat'}`;
+      imgContainer.appendChild(badge);
+      popupHtml.appendChild(imgContainer);
+
+      // Tytuł wspomnienia
+      const titleEl = document.createElement('h4');
+      titleEl.className = 'font-bold text-sm text-white leading-tight mb-1';
+      titleEl.textContent = rep.title;
+      popupHtml.appendChild(titleEl);
+
+      // Opis / Notatka
+      if (rep.notes) {
+        const notesEl = document.createElement('p');
+        notesEl.className = 'text-xs text-slate-400 line-clamp-2 mb-2 leading-relaxed';
+        notesEl.textContent = rep.notes;
+        popupHtml.appendChild(notesEl);
+      }
+
+      // Metadane: data i uczestnicy
+      const metaRow = document.createElement('div');
+      metaRow.className = 'flex items-center justify-between pt-2 border-t border-slate-800 text-[11px] text-slate-400';
+
+      const dateSpan = document.createElement('span');
+      dateSpan.textContent = `📅 ${rep.date || 'Nieznana data'}`;
+      metaRow.appendChild(dateSpan);
+
+      const partSpan = document.createElement('span');
+      partSpan.textContent = `👥 ${(rep.participants || []).slice(0, 2).join(', ') || 'Rodzina'}`;
+      metaRow.appendChild(partSpan);
+
+      popupHtml.appendChild(metaRow);
+
+      // Przycisk otwarcia szczegółów
       const btn = document.createElement('button');
       btn.className = 'w-full mt-3 py-1.5 px-3 bg-gradient-to-r from-amber-500 to-emerald-500 text-slate-950 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 hover:brightness-110 shadow-md cursor-pointer';
-      btn.innerHTML = `<span>Otwórz wspomnienie</span>`;
+
+      const btnSpan = document.createElement('span');
+      btnSpan.textContent = 'Otwórz wspomnienie';
+      btn.appendChild(btnSpan);
       btn.onclick = () => onSelectPhoto(rep);
 
       popupHtml.appendChild(btn);

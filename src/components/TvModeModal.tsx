@@ -147,12 +147,17 @@ export const TvModeModal: React.FC<TvModeModalProps> = ({
           {/* Pilot zdalnego sterowania na smartfonie */}
           <div className="bg-indigo-950/30 border border-indigo-900/50 p-4 rounded-2xl flex items-center justify-between gap-4">
             <div className="space-y-1">
-              <div className="font-bold text-white flex items-center gap-2">
-                <QrCode className="w-4 h-4 text-indigo-400" />
-                Sterowanie pilotem z telefonu (Smart Remote)
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-white flex items-center gap-2">
+                  <QrCode className="w-4 h-4 text-indigo-400" />
+                  Sterowanie pilotem z telefonu (Smart Remote)
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/30">
+                  Prototyp UI (Wymaga serwera Electron)
+                </span>
               </div>
-              <p className="text-[11px] text-slate-300">
-                Możesz przewijać zdjęcia z kanapy za pomocą smartfona lub klawiszy strzałek <kbd className="bg-slate-800 px-1 py-0.5 rounded text-white">←</kbd> <kbd className="bg-slate-800 px-1 py-0.5 rounded text-white">→</kbd> i spacji.
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                Podgląd interfejsu pilota. W docelowej aplikacji Windows Codex uruchomi lekki lokalny serwer HTTP/WebSocket w sieci domowej Wi-Fi. W bieżącym oknie nawiguj klawiszami strzałek <kbd className="bg-slate-800 px-1 py-0.5 rounded text-white font-mono">←</kbd> <kbd className="bg-slate-800 px-1 py-0.5 rounded text-white font-mono">→</kbd> i spacją.
               </p>
             </div>
             <div className="w-16 h-16 rounded-xl bg-white p-1 shadow-lg shrink-0 flex items-center justify-center">

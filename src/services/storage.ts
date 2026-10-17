@@ -72,7 +72,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   saveSearchHistory: false,
 
   // 12. Informacje
-  appVersion: '1.2.0 (Windows 11 Edition)',
+  appVersion: '1.3.1 (Windows 11 Edition / Codex Handover)',
 };
 
 export const StorageService = {
@@ -90,11 +90,13 @@ export const StorageService = {
     }
   },
 
-  savePhotos(photos: TravelPhoto[]): void {
+  savePhotos(photos: TravelPhoto[]): boolean {
     try {
       localStorage.setItem(STORAGE_KEYS.PHOTOS, JSON.stringify(photos));
-    } catch (e) {
-      console.warn('Ograniczenie localStorage:', e);
+      return true;
+    } catch (e: any) {
+      console.error('Błąd zapisu fotografii w localStorage (możliwe przekroczenie limitu pamięci):', e);
+      return false;
     }
   },
 
@@ -112,11 +114,13 @@ export const StorageService = {
     }
   },
 
-  saveAlbums(albums: TravelAlbum[]): void {
+  saveAlbums(albums: TravelAlbum[]): boolean {
     try {
       localStorage.setItem(STORAGE_KEYS.ALBUMS, JSON.stringify(albums));
+      return true;
     } catch (e) {
-      console.warn('Błąd zapisu albumów:', e);
+      console.error('Błąd zapisu albumów w localStorage:', e);
+      return false;
     }
   },
 
@@ -134,11 +138,13 @@ export const StorageService = {
     }
   },
 
-  saveTrips(trips: TravelTrip[]): void {
+  saveTrips(trips: TravelTrip[]): boolean {
     try {
       localStorage.setItem(STORAGE_KEYS.TRIPS, JSON.stringify(trips));
+      return true;
     } catch (e) {
-      console.warn('Błąd zapisu tras:', e);
+      console.error('Błąd zapisu tras w localStorage:', e);
+      return false;
     }
   },
 
@@ -156,11 +162,13 @@ export const StorageService = {
     }
   },
 
-  saveOfflinePackages(packages: OfflineMapPackage[]): void {
+  saveOfflinePackages(packages: OfflineMapPackage[]): boolean {
     try {
       localStorage.setItem(STORAGE_KEYS.OFFLINE_PACKAGES, JSON.stringify(packages));
+      return true;
     } catch (e) {
-      console.warn('Błąd zapisu pakietów map:', e);
+      console.error('Błąd zapisu pakietów map w localStorage:', e);
+      return false;
     }
   },
 
@@ -175,11 +183,31 @@ export const StorageService = {
     }
   },
 
-  saveSettings(settings: AppSettings): void {
+  saveSettings(settings: AppSettings): boolean {
     try {
       localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+      return true;
     } catch (e) {
-      console.warn('Błąd zapisu ustawień:', e);
+      console.error('Błąd zapisu ustawień w localStorage:', e);
+      return false;
+    }
+  },
+
+  // Statystyka zajętości pamięci w localStorage
+  getStorageStats(): { usedKb: number; isNearLimit: boolean } {
+    try {
+      let total = 0;
+      for (const key in localStorage) {
+        if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
+          total += (localStorage[key]?.length || 0) * 2; // UTF-16
+        }
+      }
+      const usedKb = Math.round(total / 1024);
+      // Większość przeglądarek ma limit ~5MB (5120 KB)
+      const isNearLimit = usedKb > 4000;
+      return { usedKb, isNearLimit };
+    } catch {
+      return { usedKb: 0, isNearLimit: false };
     }
   },
 
@@ -262,7 +290,7 @@ export const StorageService = {
 
     const backup = {
       app: 'Prezent Mapy',
-      version: '1.2.0',
+      version: '1.3.1',
       exportDate: new Date().toISOString(),
       photos: photosToExport,
       albums: this.getAlbums(),

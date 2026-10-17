@@ -1,30 +1,41 @@
-# PROGRESS.md - Aktualny Raport Realizacji i Rozbudowy Projektu „Prezent”
+# PROGRESS.md - Rzeczywisty Stan Postępów Projektu „Prezent Mapy”
 
-Data: 2026-10-17  
-Wersja aplikacji: **1.2.0 (Windows 11 Desktop Edition)**  
-Status: **ROZBUDOWANY, ZGODNY ZE WZORCAMI WIZUALNYMI I ZWERYFIKOWANY**  
+Data aktualizacji: **2026-10-17**  
+Wersja bieżąca: **1.3.1 (Desktop Preview / Handover to Codex)**  
+Stan ogólny: **Stabilny prototyp gotowy do przejęcia przez OpenAI Codex**
 
 ---
 
-## 1. Faktyczny Postęp w Kodzie i Wdrożone Moduły
+## Tabela Postępu Modułów
 
-| Obszar / Wymóg | Status | Szczegóły Wdrożenia |
+| Moduł | Stan Realizacji | Szczegóły implementacji i weryfikacji |
 |---|---|---|
-| **Stylistyka wg Obrazu 1 (Settings / Untitled UI)** | UKOŃCZONE | 12 pełnych kategorii ustawień z wyszukiwarką, kartami wizualnymi motywu (System/Dark/Light), suwakami i przełącznikami. |
-| **Stylistyka wg Obrazu 2 (All Photos / Windows Photos)** | UKOŃCZONE | Nagłówek All Photos z licznikiem, sekcje z podziałem chronologicznym na miesiące/lata, odznaki EXIF w rogu miniatur i zróżnicowana siatka. |
-| **Stylistyka wg Obrazu 3 (Map View & Icon Dock)** | UKOŃCZONE | Ciemny globus świata, okrągłe pinezki klastrów z fioletowo-błękitnymi plakietkami liczb, pływające kontrolki mapy po prawej stronie (+, -, Warstwy, Globus, Celownik GPS, Pokaz slajdów), wąski lewy dock ikon. |
-| **Narzędzia użytkownika: Statystyki podróży** | UKOŃCZONE | Paszport podróżnika (`StatsView`), odwiedzone kraje, miasta, łączny dystans km i zakres lat. |
-| **Narzędzia użytkownika: Wykrywanie duplikatów** | UKOŃCZONE | Diagnostyka powtarzających się ujęć (`DuplicatesView`) z możliwością usunięcia zbędnych fotografii. |
-| **Natywna ramka okna Windows 10/11** | UKOŃCZONE | Pasek tytułowy Windows, rozwijane menu Plik/Widok/Narzędzia/Pomoc, przyciski systemowe (—, 🗖, ✕), pasek stanu na dole okna. |
-| **Prezentacja wspomnień (Pokaz slajdów & TV)** | UKOŃCZONE | Kinowy Ken Burns, mini-mapa PiP, szum oceanu Web Audio API, tryb salonowy TV 4K i pilot QR. |
-| **Naprawa i optymalizacja wyglądu mapy (Leaflet)** | UKOŃCZONE | Wyeliminowano konflikt z resetem Tailwind CSS (`max-width: none !important`), dodano bezpośredni pasek zmiany wyglądu mapy (Nocny CartoDB, Satelita Esri, Teren/Kolor Voyager OSM, Drogi Esri, Dzień), zabezpieczono serwery kafelków przed blokadami i dodano wieloetapowe odświeżanie rozmiaru. |
-| **Menu kontekstowe PPM na mapie świata** | UKOŃCZONE | Kliknięcie prawym przyciskiem myszy w dowolnym miejscu na mapie otwiera menu z opcjami: dodanie zdjęć w punkcie, dodanie całego katalogu, wklejenie ze schowka (Ctrl+V), dodanie gotowej paczki, link URL oraz kopiowanie współrzędnych. |
-| **Wielofunkcyjne centrum dodawania zdjęć (ImportModal)** | UKOŃCZONE | 5 zakładek: pliki zdjęć, cały katalog/folder z podkatalogami (`webkitdirectory`), wklejanie ze schowka systemowego (Clipboard API), dodawanie z linku URL oraz gotowe pakiety podróżnicze (Tatry, Bałtyk, Cinque Terre, Paryż, Dalmacja). |
-| **Przeciągnij i upuść (Drag & Drop) na mapę** | UKOŃCZONE | Bezpośrednie upuszczenie plików na mapę przypisuje współrzędne geograficzne punktu pod kursorem do fotografii bez GPS w EXIF. |
+| **Interaktywna mapa świata (Leaflet)** | **UKOŃCZONE** | 6 warstw kafelkowych, klastry pinezek z miniaturami, wyeliminowane konflikty z resetem CSS Tailwind, animowane trasy podróży. |
+| **Menu kontekstowe mapy (PPM)** | **UKOŃCZONE** | Kliknięcie prawym przyciskiem myszy otwiera menu z opcją dodania zdjęć, całego katalogu lub wklejenia ze schowka ze współrzędnymi punktu. |
+| **Import Drag & Drop na mapę** | **UKOŃCZONE** | Przeciągnięcie plików na mapę przekazuje pliki do `ImportModal`, przypisuje współrzędne geograficzne punktu upuszczenia i chroni przed duplikacją. |
+| **Centrum importu fotografii** | **UKOŃCZONE** | 5 trybów: pliki, foldery/podfoldery, wklejanie ze schowka (`Ctrl+V`), bezpośredni URL grafiki oraz 4 gotowe pakiety podróżnicze. |
+| **Odczyt metadanych EXIF** | **UKOŃCZONE** | Biblioteka `exifr` wyciąga koordynaty GPS, datę wykonania i aparat. Bezpieczny fallback przy braku danych EXIF. |
+| **Bezpieczeństwo DOM** | **UKOŃCZONE** | Usunięto podatności `innerHTML` w `MapView.tsx`. Popupy renderowane przez bezpieczne tworzenie węzłów DOM i `textContent`. |
+| **Trwałość danych i ochrona pamięci** | **UKOŃCZONE** | Metody `StorageService` zwracają status zapisu boolean, chronią przed błędem przepełnienia `localStorage` i informują użytkownika. |
+| **Galeria i Oś Czasu (Timeline)** | **UKOŃCZONE** | Widok siatki, widok albumów, chronologiczna oś czasu rok po roku, filtry krajów, lat i ulubionych. |
+| **Kinowy pokaz slajdów (Ken Burns)** | **UKOŃCZONE** | Płynny zoom/pan Ken Burns, mini-mapa PiP z lokalizacją, ambientowy szum oceanu Web Audio API, pełna obsługa klawiatury. |
+| **Panel Ustawień (12 kategorii)** | **UKOŃCZONE** | Motywy ciemny/jasny/systemowy, konfiguracja mapy, klastrowania, sortowania. Oznaczenie opcji integrujących się z Windows. |
+| **Paszport i Diagnostyka duplikatów** | **UKOŃCZONE** | Statystyki podróżnicze (kraje, miasta, km) oraz widok wykrywania i usuwania powtórzonych ujęć. |
+| **Kopia zapasowa .prezent** | **UKOŃCZONE** | Eksport i import bazy w JSON z opcją anonimizacji współrzędnych GPS. Zweryfikowane testami automatycznymi. |
+| **Menedżer Map Offline** | **DEMONSTRACYJNY** | Działający interfejs UI z symulacją postępu pobierania. Rzeczywisty zapis bazy MBTiles do wdrożenia w Electronie. |
+| **Tryb TV i Smart Remote QR** | **CZĘŚCIOWY / DEMO** | Tryb prezentacji TV 4K działa; zdalne sterowanie smartfonem przez QR to prototyp wymagający serwera WebSocket w Electronie. |
+| **Powłoka Electron dla Windows** | **DO WDROŻENIA (CODEX)**| Zadanie kolejnego etapu: packaging `.exe`, baza SQLite (`better-sqlite3`), integracja z Eksploratorem Windows. |
+| **Aplikacja Android** | **PRZYSZŁA WERSJA** | Odroczona do czasu ustabilizowania aplikacji desktopowej Windows 10/11. |
 
 ---
 
-## 2. Dowody Weryfikacji Środowiska
-- **Kompilacja aplikacji (`compile_applet`)**: `Build succeeded - the applet is compiled`
-- **Analiza statyczna TypeScript (`lint_applet` / `tsc --noEmit`)**: `0 errors, 0 warnings`
-- **Podgląd interaktywny w Google AI Studio**: Działa płynnie na żywo.
+## Wyniki Ostatnich Testów Weryfikacyjnych
+
+1. **Analiza statyczna typów (`npm run lint` / `npx tsc --noEmit`)**:
+   - Status: **0 błędów**.
+2. **Kompilacja produkcyjna (`npm run build`)**:
+   - Status: **SUKCES** (utworzono zoptymalizowany pakiet `dist/`).
+3. **Testy jednostkowe (`npm test` / `vitest run`)**:
+   - Plik: `src/__tests__/services.test.ts`
+   - Liczba testów: **6/6 ZDANYCH (100% zielonych)**.
+   - Zweryfikowano: `StorageService.getTravelStats`, `StorageService.findDuplicates`, spójność eksportu/importu `.prezent`, heurystykę geokodowania `guessNearestLocation` i konwersję pakietów `travelPacks`.

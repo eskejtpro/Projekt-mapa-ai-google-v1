@@ -1,21 +1,34 @@
 # REQUIREMENTS.md - Wymagania Funkcjonalne i Niefunkcjonalne
 
-## Wymagania Funkcjonalne (FR)
-- [x] **FR-01: Interaktywna mapa świata** – obsługa mapy Leaflet z zoomem, przesuwaniem, klastrowaniem i zmianą warstw (Dark, Light, OSM, Satelita).
-- [x] **FR-02: Niestandardowe pinezki ze zdjęciami** – znaczniki na mapie zawierają miniatury zdjęć oraz liczbę wspomnień w danym mieście.
-- [x] **FR-03: Trasy podróży** – wizualizacja połączeń etapowych między miastami z podsumowaniem kilometrów.
-- [x] **FR-04: Galeria i Albumy** – widok siatki, widok albumów oraz chronologiczna Oś Czasu (Timeline).
-- [x] **FR-05: Wyszukiwarka i zaawansowane filtry** – wyszukiwanie po tytule, mieście, kraju, notatkach, uczestnikach, tagach oraz filtr roku i ulubionych.
-- [x] **FR-06: Import zdjęć z EXIF GPS** – automatyczne wyciąganie współrzędnych geograficznych i daty z plików fotograficznych aparatu.
-- [x] **FR-07: Import całych folderów** – możliwość przeciągnięcia lub wskazania katalogu ze zdjęciami.
-- [x] **FR-08: Kinowy pokaz slajdów (Slideshow)** – płynny efekt Ken Burns, pełny ekran, Picture-in-Picture mini-mapa, nastrojowy ambient audio.
-- [x] **FR-09: Tryb TV / Salon 4K** – interfejs wielkoekranowy z instrukcją Miracast/HDMI oraz pilotem QR.
-- [x] **FR-10: Mapy offline** – menedżer pakietów regionalnych do użytku w podróży bez internetu.
-- [x] **FR-11: Kopia zapasowa .prezent** – eksport i import całej bazy do pojedynczego pliku archiwalnego.
-- [x] **FR-12: Zarządzanie danymi demo** – wyraźne oznaczenie danych demonstracyjnych oraz możliwość ich usunięcia jednym kliknięciem.
+## Wymagania Funkcjonalne
 
-## Wymagania Niefunkcjonalne (NFR)
-- [x] **NFR-01: Prywatność (Offline-first)** – brak zewnętrznych serwerów bazy danych; trwałość w localStorage / IndexedDB.
-- [x] **NFR-02: Wydajność renderowania** – płynne animacje 60 FPS, leniwe ładowanie miniatur (`loading="lazy"`), optymalizacja kafelków.
-- [x] **NFR-03: Dostępność podglądu w przeglądarce** – pełna interaktywność w Google AI Studio bez wymogu środowiska natywnego Windows w sandboxie.
-- [x] **NFR-04: Gotowość do migracji Electron** – czyste oddzielenie logiki UI od interfejsu systemu plików Windows.
+| ID | Wymaganie | Stan realizacji | Uwagi architektoniczne |
+|---|---|---|---|
+| REQ-01 | Interaktywna mapa świata (Leaflet) z klastrami i 6 podkładami kafelkowymi | **UKOŃCZONE** | Działa w pełni w podglądzie (CartoDB, Esri, OSM) |
+| REQ-02 | Menu kontekstowe pod prawym przyciskiem myszy (PPM) na mapie | **UKOŃCZONE** | Pozwala dodać zdjęcia, cały folder lub wkleić ze schowka w punkcie kliknięcia |
+| REQ-03 | Import Drag & Drop bezpośrednio na mapę | **UKOŃCZONE** | Przekazuje pliki do okna importu i przypisuje współrzędne upuszczenia |
+| REQ-04 | 5 trybów importu (pliki, folder, schowek Ctrl+V, URL, pakiety startowe) | **UKOŃCZONE** | Obsługa przez HTML5 File API, Clipboard API i pakiety tematyczne |
+| REQ-05 | Odczyt metadanych EXIF GPS, daty i aparatu przez `exifr` | **UKOŃCZONE** | Automatyczne wyciąganie koordynatów lub fallback na punkt mapy |
+| REQ-06 | Ochrona przed duplikatami fotografii | **UKOŃCZONE** | Sprawdzanie sygnatur w kolejce importu i bibliotece głównej |
+| REQ-07 | Galeria z widokiem siatki, albumów i chronologicznej osi czasu | **UKOŃCZONE** | Filtrowanie po kraju, roku, albumie, wyszukiwanie fraz |
+| REQ-08 | Kinowy pokaz slajdów (Ken Burns, PiP mini-mapa, audio ambient) | **UKOŃCZONE** | Skróty Spacja, Strzałki, F11, Esc, Web Audio API |
+| REQ-09 | Eksport i import pliku kopii zapasowej `.prezent` | **UKOŃCZONE** | Zrzut JSON ze strukturą bazy, obsługa wymazywania GPS |
+| REQ-10 | Panel ustawień (12 kategorii stylu Untitled UI) | **UKOŃCZONE** | Personalizacja motywu, kafelków, sortowania i prezentacji |
+| REQ-11 | Menedżer map offline (pakiety regionalne) | **DEMONSTRACYJNY** | Podgląd UI z symulacją; zapis MBTiles zaplanowany w Electronie |
+| REQ-12 | Tryb TV Salon 4K ze sterowaniem QR Smart Remote | **CZĘŚCIOWY / DEMO** | Tryb kinowy działa; pilot QR wymaga serwera WebSocket w Electron |
+| REQ-13 | Natywna powłoka Windows 10/11 (Electron .exe, SQLite) | **DO WDROŻENIA (CODEX)**| Kolejny etap prac realizowany przez OpenAI Codex |
+| REQ-14 | Synchronizacja z aplikacją Android | **PRZYSZŁA WERSJA** | Odroczona do czasu stabilizacji aplikacji desktopowej |
+
+---
+
+## Wymagania Niefunkcjonalne
+
+1. **Prywatność i bezpieczeństwo**:
+   - Zero telemetrii, zero zewnętrznych serwerów przetwarzających zdjęcia.
+   - Brak podatności XSS (węzły DOM tworzone bezpiecznie).
+2. **Wydajność**:
+   - Płynne 60 FPS podczas przesuwania i przybliżania mapy świata.
+   - Płynne animacje przejścia w pokazie slajdów bez zacięć pamięci.
+3. **Stabilność**:
+   - Bezpieczny fallback przy przekroczeniu limitu `localStorage`.
+   - Brak awarii przy uszkodzonym lub brakującym EXIF w importowanych plikach.
