@@ -3,6 +3,7 @@
 > Aktualny handoff sesji: PROGRESS.md / SESSION HANDOFF. Aktualne funkcje: docs/FEATURE_MATRIX.md; testy: TESTING.md. Poniższy dokument to historyczne przekazanie i projekt architektury AI Studio; jego deklaracje 100%, 4K, offline i bezpłatnych kafelków nie są świeżymi dowodami. Nie pobieraj masowo kafelków bez sprawdzenia licencji dostawcy.
 
 **Projekt**: Prezent Mapy  
+NSIS: test instalacji/startu offline/deinstalacji PASS w katalogu testowym. Pakiet poprzedza TV discovery; aktualizację/zachowanie danych i portable trzeba sprawdzić oddzielnie. Następny zakres to pilot TV, pełna walidacja/duplikaty i pozostałe kryteria macierzy.
 Kontynuacja: offline smoke renderuje 24 lokalne kafelki; dodano tv-discovery.cjs, parser i listę odświeżaną w panelu. Rzeczywisty skan LAN: 0 odpowiedzi, casting i pilot nadal otwarte. Trwający build package:windows uruchomiono przed zmianami TV; jego pakiety wymagają późniejszej przebudowy przed wydaniem.
 Nowy stan: kandydat NSIS/portable zbudowany i smoke packaged PASS; wymaga przebudowy po zmianach offline. Czytnik/import MBTiles podłączony, runtime render offline otwarty. Pełna lista pozostałych kryteriów w PROGRESS.md.
 Ostatnia iteracja: media-store.cjs, backup-validation.ts, atomowy snapshot Vite; szczegóły i nierozstrzygnięty model TV w PROGRESS.md. Testy 29/29 PASS.

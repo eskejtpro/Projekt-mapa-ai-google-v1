@@ -1,6 +1,7 @@
 # TASKS.md - Rejestr Zadań i Implementacji Projektu „Prezent Mapy”
 
 ## Iteracja środowiska E0 (2026-10-17)
+F11: instalacja/start/deinstalacja NSIS w wydzielonym katalogu PASS. Pozostają: przebudowa po TV discovery, test portable, aktualizacja i zachowanie biblioteki oraz podpis wydawcy.
 REQ-TV-LAN: IN_PROGRESS — wyszukiwanie DLNA/SSDP w otwartym panelu wdrożone, test parsera PASS, skan LAN 0 odpowiedzi; test fizycznego TV/casting/pilot pozostają otwarte. PREZ-018: smoke lokalnego renderu MBTiles przy blokadzie HTTP(S) PASS (24 kafelki syntetyczne); prawdziwe regionalne pakiety i test importu dialogiem otwarte.
 PREZ-018: IN_PROGRESS — import rastrowego MBTiles, lokalny czytnik i warstwa Leaflet; test renderowania bez sieci otwarty. PREZ-021/022: IN_PROGRESS — podłączono folder/autostart; autostart wymaga testu zainstalowanej wersji. F11: IN_PROGRESS — NSIS/portable zbudowane, spakowany program startuje; instalacja/deinstalacja i przebudowa po offline do wykonania.
 PREZ-020: dodano pliki obrazów pod SHA-256 i odczyt z kontrolą integralności; test powtórnego otwarcia PASS. PREZ-010: walidacja rekordów .prezent, atomowy zapis i błąd quota PASS; pełne relacje i ograniczenia ustawień pozostają IN_PROGRESS.
