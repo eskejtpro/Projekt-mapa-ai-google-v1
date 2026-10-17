@@ -3,6 +3,7 @@
 > Aktualny handoff sesji: PROGRESS.md / SESSION HANDOFF. Aktualne funkcje: docs/FEATURE_MATRIX.md; testy: TESTING.md. Poniższy dokument to historyczne przekazanie i projekt architektury AI Studio; jego deklaracje 100%, 4K, offline i bezpłatnych kafelków nie są świeżymi dowodami. Nie pobieraj masowo kafelków bez sprawdzenia licencji dostawcy.
 
 **Projekt**: Prezent Mapy  
+Ostatnia iteracja: media-store.cjs, backup-validation.ts, atomowy snapshot Vite; szczegóły i nierozstrzygnięty model TV w PROGRESS.md. Testy 29/29 PASS.
 Aktualna iteracja: rozpoczęta implementacja `electron/main.cjs` i `electron/preload.cjs`, polecenie `npm run desktop`; stan testów w PROGRESS.md.
 Kontynuacja: `electron/database.cjs` i `src/services/persistence.ts` realizują SQLite oraz migrację. 24 testy i smoke SQLite w Electron PASS. Pliki zdjęć i pełny import .prezent do dokończenia.
 **Repozytorium GitHub**: `https://github.com/eskejtpro/Projekt-mapa-ai-google-v1`  

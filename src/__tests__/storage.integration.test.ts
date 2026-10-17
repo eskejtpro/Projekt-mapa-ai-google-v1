@@ -28,4 +28,26 @@ describe('biblioteka → kopia → przywrócenie', () => {
     expect(backup.photos.every((p: { location: { lat: number; lng: number } }) => p.location.lat === 0 && p.location.lng === 0)).toBe(true);
     expect(StorageService.getPhotos()).toEqual(photos);
   });
+  it('błędne współrzędne i zduplikowane ID nie zmieniają biblioteki', () => {
+    const original = StorageService.getPhotos();
+    const backup = JSON.parse(StorageService.exportPrezentBackup());
+    backup.photos[0].location.lat = 100;
+    expect(StorageService.importPrezentBackup(JSON.stringify(backup))).toBe(false);
+    expect(StorageService.getPhotos()).toEqual(original);
+    backup.photos[0].location.lat = 0;
+    backup.photos.push(backup.photos[0]);
+    expect(StorageService.importPrezentBackup(JSON.stringify(backup))).toBe(false);
+    expect(StorageService.getPhotos()).toEqual(original);
+  });
+  it('brak miejsca nie zgłasza sukcesu i zachowuje poprzednią bibliotekę', () => {
+    const original = StorageService.getPhotos();
+    const backup = JSON.parse(StorageService.exportPrezentBackup());
+    backup.photos = [];
+    const setItem = localStorage.setItem;
+    localStorage.setItem = () => { throw new Error('QuotaExceededError'); };
+    try {
+      expect(StorageService.importPrezentBackup(JSON.stringify(backup))).toBe(false);
+      expect(StorageService.getPhotos()).toEqual(original);
+    } finally { localStorage.setItem = setItem; }
+  });
 });

@@ -89,6 +89,8 @@ Aplikacja **„Prezent Mapy”** jest zaprojektowana według wzorca **Separacji 
 2. **Obsługa limitu pamięci przeglądarki**: `StorageService.savePhotos()` i metody pokrewne zwracają status `boolean`. Przy wystąpieniu `QuotaExceededError` aplikacja nie ulega awarii, a użytkownik otrzymuje czytelne powiadomienie z propozycją pobrania kopii `.prezent`.
 3. **Izolacja IPC w Electronie**: W kolejnym etapie OpenAI Codex zaimplementuje `preload.ts` z `contextIsolation: true` i `nodeIntegration: false`, udostępniając bezpieczne API `window.electronAPI`.
 # Aktualizacja powłoki Windows — 2026-10-17
+- MediaStore zamienia osadzone obrazy na referencje SHA-256 w SQLite i zapisuje pliki w userData/photos. Odczyt weryfikuje hash i odtwarza data URL; kopie JSON pozostają przenośne dla obrazów osadzonych. Referencje HTTPS pozostają sieciowe. Nie usuwamy plików po rollbacku, aby nie ryzykować utraty współdzielonych zdjęć; sprzątanie osieroconych plików jest otwarte.
+- Import .prezent używa jednego batch SQLite; Vite zapisuje jeden atomowy snapshot kolekcji w localStorage. Walidacja rekordów poprzedza zapis. Duże obrazy nadal są odtwarzane w pamięci renderera; pomiary pozostają otwarte.
 
 Warstwa persistence wybiera SQLite w Electron i localStorage w Vite. Baza `userData/library.sqlite` używa wbudowanego `node:sqlite`, WAL i FULL; pięć dozwolonych kluczy przechowuje kolekcje JSON. Preload wystawia ograniczone get/set/batch; IPC jest synchroniczne dla zgodności istniejącego StorageService, co wymaga dalszych pomiarów przy dużych zbiorach. batch stosuje BEGIN/COMMIT/ROLLBACK. Migracja najpierw zapisuje kopię w starej pamięci i nie usuwa źródła. Brak dowolnego SQL i ścieżek w rendererze.
 

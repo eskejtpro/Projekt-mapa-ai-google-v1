@@ -1,6 +1,7 @@
 # PROGRESS.md - Rzeczywisty Stan Postępów Projektu „Prezent Mapy”
 
 ## SESSION HANDOFF — Codex 2026-10-17
+- Najnowsza iteracja: zdjęcia data:image PNG/JPEG/GIF/WebP zapisują się w userData/photos pod SHA-256; odczyt weryfikuje hash i odtwarza data URL dla UI/eksportu. Import .prezent waliduje rekordy przed atomowym zapisem (SQLite batch / jeden snapshot localStorage). Testy: 14 Vitest + 10 tooling + 5 baza/pliki PASS; build PASS. Otwarte: zdjęcia źródłowe wskazane URL wymagają sieci, wydajność dużych zbiorów, pełne walidowanie enumów ustawień i relacji, pełny test restartu procesu, mapy offline/TV/instalator. Model TV zapytany asynchronicznie.
 - Cel: środowisko istniejącej aplikacji przed implementacją Windows; zachowanie UI.
 - Wersja: 1.3.1 Desktop Preview; źródło wersji package.json.
 - Etap: 0, środowisko i audyt; PARTIAL.

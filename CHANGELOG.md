@@ -1,6 +1,7 @@
 # CHANGELOG.md - Historia Zmian Projektu „Prezent Mapy”
 
 ## Unreleased — środowisko Codex
+- Zdjęcia osadzane w kopii mogą być przechowywane w osobnych plikach z SHA-256; import .prezent waliduje rekordy i zapisuje atomowo. Eksport bez GPS usuwa również punkty tras.
 - Dodano SQLite w procesie głównym, ograniczony mostek danych, transakcyjny zapis wsadu i migrację z kopią źródła; podgląd Vite nadal używa localStorage.
 - Rozpoczęto powłokę Electron: izolowany preload, walidacja nadawcy IPC, natywne kontrolki okna, blokada nowych okien i nawigacji. Dodano tryb testu uruchomienia ze zrzutem renderera.
 - Dopasowano esbuild do Vite 8 po błędzie instalacji, dodano npm lockfile i kanoniczną wersję 1.3.1 w package.json.

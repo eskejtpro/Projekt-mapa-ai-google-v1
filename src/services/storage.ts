@@ -2,6 +2,7 @@ import { TravelPhoto, TravelAlbum, TravelTrip, OfflineMapPackage, AppSettings, T
 import { DEMO_PHOTOS, DEMO_ALBUMS, DEMO_TRIPS, DEMO_OFFLINE_PACKAGES } from '../data/demoMemories';
 import { APP_VERSION } from '../version';
 import { persistence } from './persistence';
+import { validateBackup } from './backup-validation';
 
 const STORAGE_KEYS = {
   PHOTOS: 'prezent_travel_photos_v2',
@@ -199,14 +200,12 @@ export const StorageService = {
   getStorageStats(): { usedKb: number; isNearLimit: boolean } {
     try {
       let total = 0;
-      for (const key in localStorage) {
-        if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
-          total += (localStorage[key]?.length || 0) * 2; // UTF-16
-        }
+      for (const key of Object.values(STORAGE_KEYS)) {
+        total += (persistence.getItem(key)?.length || 0) * 2;
       }
       const usedKb = Math.round(total / 1024);
       // Większość przeglądarek ma limit ~5MB (5120 KB)
-      const isNearLimit = usedKb > 4000;
+      const isNearLimit = !(typeof window !== 'undefined' && window.electronAPI) && usedKb > 4000;
       return { usedKb, isNearLimit };
     } catch {
       return { usedKb: 0, isNearLimit: false };
@@ -296,7 +295,7 @@ export const StorageService = {
       exportDate: new Date().toISOString(),
       photos: photosToExport,
       albums: this.getAlbums(),
-      trips: this.getTrips(),
+      trips: stripGps ? this.getTrips().map(trip => ({ ...trip, routePoints: [] })) : this.getTrips(),
       settings: this.getSettings(),
     };
     return JSON.stringify(backup, null, 2);
@@ -306,13 +305,17 @@ export const StorageService = {
   importPrezentBackup(jsonString: string): boolean {
     try {
       const data = JSON.parse(jsonString);
-      if ((data.app !== 'Prezent' && data.app !== 'Prezent Mapy') || !Array.isArray(data.photos)) {
-        throw new Error('Nieprawidłowy format pliku .prezent');
+      validateBackup(data);
+      if (data.settings) {
+        for (const [key, value] of Object.entries(data.settings)) {
+          if (!(key in DEFAULT_SETTINGS) || typeof value !== typeof DEFAULT_SETTINGS[key as keyof AppSettings]) throw new Error('Nieprawidłowe ustawienie');
+        }
       }
-      if (data.photos) this.savePhotos(data.photos);
-      if (data.albums) this.saveAlbums(data.albums);
-      if (data.trips) this.saveTrips(data.trips);
-      if (data.settings) this.saveSettings(data.settings);
+      const entries: [string, string][] = [[STORAGE_KEYS.PHOTOS, JSON.stringify(data.photos)]];
+      if (data.albums) entries.push([STORAGE_KEYS.ALBUMS, JSON.stringify(data.albums)]);
+      if (data.trips) entries.push([STORAGE_KEYS.TRIPS, JSON.stringify(data.trips)]);
+      if (data.settings) entries.push([STORAGE_KEYS.SETTINGS, JSON.stringify(data.settings)]);
+      persistence.batch(entries);
       return true;
     } catch (e) {
       console.error('Błąd importu kopii zapasowej:', e);

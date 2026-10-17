@@ -23,3 +23,14 @@ test('SQLite odrzuca klucze, JSON i wycofuje cały nieprawidłowy wsad', () => {
   assert.equal(db.get(photos), '[]');
   db.close();
 });
+test('kopie zdjęć pozostają samowystarczalne po ponownym otwarciu biblioteki', () => {
+  const file = path.join(mkdtempSync(path.join(tmpdir(), 'prezent-photo-db-test-')), 'library.sqlite');
+  const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
+  let db = new LibraryDatabase(file);
+  db.set(photos, JSON.stringify([{ id: 'test', url: image, thumbnailUrl: image }]));
+  assert.ok(!db.db.prepare('SELECT value FROM library WHERE key=?').get(photos).value.includes('base64'));
+  db.close();
+  db = new LibraryDatabase(file);
+  assert.equal(JSON.parse(db.get(photos))[0].url, image);
+  db.close();
+});
