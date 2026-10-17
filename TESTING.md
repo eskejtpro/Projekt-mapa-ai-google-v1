@@ -84,6 +84,8 @@ Status: **6/6 ZDANYCH (100% SUKCES)**
 - [x] Pilot zdalnego sterowania QR Smart Remote oznaczony jako prototyp UI wymagający lokalnego serwera WebSocket w Electronie.
 # Iteracja powłoki Windows — 2026-10-17
 
+Kontynuacja SQLite: verify PASS (12 Vitest + 10 tooling + 2 SQLite). Testy bazy obejmują zamknięcie i ponowne otwarcie pliku, odrzucanie nieznanych kluczy/uszkodzonego JSON i rollback wsadu. Testy migracji obejmują kopię, pierwszeństwo istniejącej bazy i błąd przed zapisem. Smoke Electron potwierdza sqliteReadable i invalidKeyRejected. Pełny restart procesu z tą samą biblioteką i testy dużych zbiorów pozostają NOT RUN.
+
 - `npm run verify`: PASS (9 testów aplikacji, 10 tooling, typecheck/build).
 - Electron 44.9.0 `--smoke-test`: PASS, raport `reports/desktop-smoke.json`; dostępny izolowany mostek, brak `window.require`.
 - Screenshot: `reports/desktop-smoke.png`. Kontrola wyglądu, interakcji okna, złego nadawcy IPC i instalatora pozostaje UNVERIFIED.

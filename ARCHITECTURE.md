@@ -90,4 +90,6 @@ Aplikacja **„Prezent Mapy”** jest zaprojektowana według wzorca **Separacji 
 3. **Izolacja IPC w Electronie**: W kolejnym etapie OpenAI Codex zaimplementuje `preload.ts` z `contextIsolation: true` i `nodeIntegration: false`, udostępniając bezpieczne API `window.electronAPI`.
 # Aktualizacja powłoki Windows — 2026-10-17
 
+Warstwa persistence wybiera SQLite w Electron i localStorage w Vite. Baza `userData/library.sqlite` używa wbudowanego `node:sqlite`, WAL i FULL; pięć dozwolonych kluczy przechowuje kolekcje JSON. Preload wystawia ograniczone get/set/batch; IPC jest synchroniczne dla zgodności istniejącego StorageService, co wymaga dalszych pomiarów przy dużych zbiorach. batch stosuje BEGIN/COMMIT/ROLLBACK. Migracja najpierw zapisuje kopię w starej pamięci i nie usuwa źródła. Brak dowolnego SQL i ścieżek w rendererze.
+
 `electron/main.cjs` otwiera lokalny build Vite z izolacją kontekstu i sandboxem; `electron/preload.cjs` wystawia wyłącznie trzy akcje okna. Main sprawdza nadawcę, ramkę oraz argument akcji. Renderer nie otrzymuje Node.js. SQLite i obsługa plików pozostają do implementacji. `npm run desktop` buduje i uruchamia aplikację.

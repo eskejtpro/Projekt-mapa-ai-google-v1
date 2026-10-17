@@ -4,6 +4,7 @@
 
 **Projekt**: Prezent Mapy  
 Aktualna iteracja: rozpoczęta implementacja `electron/main.cjs` i `electron/preload.cjs`, polecenie `npm run desktop`; stan testów w PROGRESS.md.
+Kontynuacja: `electron/database.cjs` i `src/services/persistence.ts` realizują SQLite oraz migrację. 24 testy i smoke SQLite w Electron PASS. Pliki zdjęć i pełny import .prezent do dokończenia.
 **Repozytorium GitHub**: `https://github.com/eskejtpro/Projekt-mapa-ai-google-v1`  
 **Wersja przekazania**: 1.3.1 (Desktop Preview & Architecture Frozen)  
 **Platforma docelowa**: Windows 10 / Windows 11 Desktop (x64)  

@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
-const steps = process.argv.includes('--quick') ? ['project:check', 'typecheck', 'test'] : ['project:check', 'lint', 'typecheck', 'test', 'test:tooling', 'build'];
+const steps = process.argv.includes('--quick') ? ['project:check', 'typecheck', 'test'] : ['project:check', 'lint', 'typecheck', 'test', 'test:tooling', 'test:database', 'build'];
 const results = [];
 for (const step of steps) {
   const start = performance.now();

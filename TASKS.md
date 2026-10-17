@@ -2,6 +2,7 @@
 
 ## Iteracja środowiska E0 (2026-10-17)
 Aktywna implementacja: PREZ-019 / REQ-13 — dodano proces main, izolowany preload oraz sterowanie oknem. Status IN_PROGRESS: test uruchomienia Electron i odrzucania nieprawidłowego IPC wymagany przed DONE.
+PREZ-020 / REQ-13 — IN_PROGRESS: SQLite podłączone do StorageService; test plikowy trwałości/rollback oraz migracji PASS. Przechowywanie obrazów w osobnych plikach i pełny test restartu całej aplikacji pozostają otwarte.
 
 | ID | Waga | Priorytet | Wymaganie | Warunek zakończenia | Status |
 |---|---|---|---|---|---|

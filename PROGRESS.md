@@ -5,9 +5,9 @@
 - Wersja: 1.3.1 Desktop Preview; źródło wersji package.json.
 - Etap: 0, środowisko i audyt; PARTIAL.
 - Branch: work/windows-desktop-foundation; baseline commit 1be0136.
-- Aktualne zadanie: ukończenie Windows na zlecenie użytkownika; rozpoczęto PREZ-019: powłoka Electron, preload i natywne kontrolki okna. Instalacja runtime i weryfikacja trwają; SQLite, pliki, mapy offline i TV pozostają otwarte.
+- Aktualne zadanie: ukończenie Windows; powłoka Electron i początkowa integracja SQLite wdrożone. SQLite przechowuje pięć kolekcji JSON w userData/library.sqlite. Migracja zachowuje kopię starej pamięci, zapis wsadu jest transakcyjny. Następny zakres: pliki zdjęć, pełna walidacja .prezent, mapy offline, TV i instalator.
 - Ostatni zakończony krok: commit środowiska 57b1587 wysłany na origin/work/windows-desktop-foundation; zdalny Quality run 39005537274 PASS. Następnie commit dokumentacji a4ff5ac wysłany z `[skip ci]`.
-- Zweryfikowane rezultaty: npm run verify PASS po dodaniu Electron (9 testów aplikacji, 10 tooling, typecheck i build). Smoke Electron 44.9.0 PASS: renderer działa, izolowany mostek dostępny, window.require niedostępne; reports/desktop-smoke.json. Screenshot zapisany w reports/desktop-smoke.png; pełny audyt interakcji i nieprawidłowego IPC nadal otwarty.
+- Zweryfikowane rezultaty: npm run verify PASS: 12 testów aplikacji/migracji, 10 tooling, 2 SQLite, typecheck i build. Smoke Electron 44.9.0 PASS: renderer odczytuje SQLite, nieznany klucz odrzucony, window.require niedostępne; reports/desktop-smoke.json. Test SQLite na pliku potwierdził ponowny odczyt po zamknięciu bazy oraz rollback. Pełny audyt interakcji i nadawców IPC pozostaje otwarty.
 - Zmiany bieżącej iteracji: skrypty jakości, CI, hooki Git/Codex, skille, rejestr funkcji, testy integracyjne/tooling.
 - Plik użytkownika moje instrukcje do projektu.txt pozostaje osobny, nieśledzony.
 - Wyniki: 9/9 testów Vitest, 10/10 tooling, build/typecheck, czyste npm ci i npm audit PASS; pokrycie niezmierzone. E0 zamknięte w 80% wag, pozostał dowód hooków klienta.

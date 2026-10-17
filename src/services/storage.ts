@@ -1,6 +1,7 @@
 import { TravelPhoto, TravelAlbum, TravelTrip, OfflineMapPackage, AppSettings, TravelStats } from '../types/travel';
 import { DEMO_PHOTOS, DEMO_ALBUMS, DEMO_TRIPS, DEMO_OFFLINE_PACKAGES } from '../data/demoMemories';
 import { APP_VERSION } from '../version';
+import { persistence } from './persistence';
 
 const STORAGE_KEYS = {
   PHOTOS: 'prezent_travel_photos_v2',
@@ -80,7 +81,7 @@ export const StorageService = {
   // Zdjęcia
   getPhotos(): TravelPhoto[] {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.PHOTOS);
+      const data = persistence.getItem(STORAGE_KEYS.PHOTOS);
       if (!data) {
         this.savePhotos(DEMO_PHOTOS);
         return DEMO_PHOTOS;
@@ -93,7 +94,7 @@ export const StorageService = {
 
   savePhotos(photos: TravelPhoto[]): boolean {
     try {
-      localStorage.setItem(STORAGE_KEYS.PHOTOS, JSON.stringify(photos));
+      persistence.setItem(STORAGE_KEYS.PHOTOS, JSON.stringify(photos));
       return true;
     } catch (e: any) {
       console.error('Błąd zapisu fotografii w localStorage (możliwe przekroczenie limitu pamięci):', e);
@@ -104,7 +105,7 @@ export const StorageService = {
   // Albumy
   getAlbums(): TravelAlbum[] {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.ALBUMS);
+      const data = persistence.getItem(STORAGE_KEYS.ALBUMS);
       if (!data) {
         this.saveAlbums(DEMO_ALBUMS);
         return DEMO_ALBUMS;
@@ -117,7 +118,7 @@ export const StorageService = {
 
   saveAlbums(albums: TravelAlbum[]): boolean {
     try {
-      localStorage.setItem(STORAGE_KEYS.ALBUMS, JSON.stringify(albums));
+      persistence.setItem(STORAGE_KEYS.ALBUMS, JSON.stringify(albums));
       return true;
     } catch (e) {
       console.error('Błąd zapisu albumów w localStorage:', e);
@@ -128,7 +129,7 @@ export const StorageService = {
   // Trasy
   getTrips(): TravelTrip[] {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.TRIPS);
+      const data = persistence.getItem(STORAGE_KEYS.TRIPS);
       if (!data) {
         this.saveTrips(DEMO_TRIPS);
         return DEMO_TRIPS;
@@ -141,7 +142,7 @@ export const StorageService = {
 
   saveTrips(trips: TravelTrip[]): boolean {
     try {
-      localStorage.setItem(STORAGE_KEYS.TRIPS, JSON.stringify(trips));
+      persistence.setItem(STORAGE_KEYS.TRIPS, JSON.stringify(trips));
       return true;
     } catch (e) {
       console.error('Błąd zapisu tras w localStorage:', e);
@@ -152,7 +153,7 @@ export const StorageService = {
   // Pakiety map offline
   getOfflinePackages(): OfflineMapPackage[] {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.OFFLINE_PACKAGES);
+      const data = persistence.getItem(STORAGE_KEYS.OFFLINE_PACKAGES);
       if (!data) {
         this.saveOfflinePackages(DEMO_OFFLINE_PACKAGES);
         return DEMO_OFFLINE_PACKAGES;
@@ -165,7 +166,7 @@ export const StorageService = {
 
   saveOfflinePackages(packages: OfflineMapPackage[]): boolean {
     try {
-      localStorage.setItem(STORAGE_KEYS.OFFLINE_PACKAGES, JSON.stringify(packages));
+      persistence.setItem(STORAGE_KEYS.OFFLINE_PACKAGES, JSON.stringify(packages));
       return true;
     } catch (e) {
       console.error('Błąd zapisu pakietów map w localStorage:', e);
@@ -176,7 +177,7 @@ export const StorageService = {
   // Ustawienia (12 kategorii)
   getSettings(): AppSettings {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+      const data = persistence.getItem(STORAGE_KEYS.SETTINGS);
       if (!data) return DEFAULT_SETTINGS;
       return { ...DEFAULT_SETTINGS, ...JSON.parse(data), appVersion: DEFAULT_SETTINGS.appVersion };
     } catch {
@@ -186,7 +187,7 @@ export const StorageService = {
 
   saveSettings(settings: AppSettings): boolean {
     try {
-      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+      persistence.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
       return true;
     } catch (e) {
       console.error('Błąd zapisu ustawień w localStorage:', e);
