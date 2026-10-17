@@ -6,11 +6,13 @@
 - Etap: 0, środowisko i audyt; PARTIAL.
 - Branch: work/windows-desktop-foundation; baseline commit 1be0136.
 - Aktualne zadanie: weryfikacja środowiska i zapis dowodów.
-- Ostatni zakończony krok: backup Git bundle, naprawa konfliktu esbuild/Vite, pierwszy PASS 6 testów + typecheck + build.
+- Ostatni zakończony krok: commit środowiska 57b1587 wysłany na origin/work/windows-desktop-foundation; zdalny Quality run 39005537274 PASS. Finalny commit dokumentacji odczytaj przez git log -1.
 - Zweryfikowane rezultaty końcowe: TESTING.md; maszynowy raport reports/verification.json.
 - Zmiany bieżącej iteracji: skrypty jakości, CI, hooki Git/Codex, skille, rejestr funkcji, testy integracyjne/tooling.
 - Plik użytkownika moje instrukcje do projektu.txt pozostaje osobny, nieśledzony.
-- Problemy i blokery: docs/KNOWN_ISSUES.md; brak przeglądarki iab i screenshotu; brak dowodu automatycznego uruchomienia hooków oraz CI na GitHub.
+- Wyniki: 9/9 testów Vitest, 10/10 tooling, build/typecheck, czyste npm ci i npm audit PASS; pokrycie niezmierzone. E0 zamknięte w 80% wag, pozostał dowód hooków klienta.
+- Problemy i blokery: docs/KNOWN_ISSUES.md; brak przeglądarki iab i screenshotu; brak dowodu automatycznego uruchomienia hooków. W CLI użyj /hooks do przeglądu zaufania i sprawdź nowe runtime logs po wznowieniu.
+- Katalog próby instalacji pozostał w TEMP/prezent-mapy-install-45bb5908c39e4420817df920dc14de3a; jego usunięcie zablokowała automatyczna kontrola, bez szczegółowego powodu. Nie ponawiano kasowania.
 - Backup: A:\Prezent Mapy backups\2026-10-17-initialization\google-ai-studio.bundle (bundle verify PASS) i kopia pliku użytkownika.
 - Następny krok: bezpieczna powłoka Electron i podpięcie kontrolek okna. Kryteria: okno Windows, izolowany preload, odrzucone nieprawidłowe IPC, zachowany podgląd Vite i npm run verify. Numer kolejnej wersji rozwojowej ustalić przy implementacji.
 - Przy utracie kontekstu: zaktualizuj ten handoff, stan Git i dowody, zaproponuj nowy czat i polecenie odczytu PROGRESS/TASKS/FEATURE_MATRIX.

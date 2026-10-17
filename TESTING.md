@@ -15,7 +15,7 @@ Baseline źródeł: 1be0136 + zmiany gałęzi work/windows-desktop-foundation. S
 | Podgląd HTTP | PASS | Vite 127.0.0.1:3000, GET / → 200; to nie dowód renderowania UI |
 | release:check | BLOCKED | Oczekiwany exit 1 i ready=false, brak Electron/instalatora; test tooling potwierdza blokadę |
 | Hooki automatyczne Codex | UNVERIFIED | Skrypty i launcher PASS; logi manual-test nie stanowią dowodu zdarzenia klienta; wymagany przegląd /hooks |
-| GitHub Actions | UNVERIFIED | Workflow przygotowany; status zdalnego wykonania wymaga osobnego dowodu |
+| GitHub Actions | PASS | Quality run 39005537274, commit 57b1587, Windows runner/Node 24: npm ci, verify, audit oraz upload raportu zakończone sukcesem w 46 s |
 | UI, screenshots, E2E | BLOCKED | Wbudowana przeglądarka: Browser is not available: iab; nie wykonano zrzutów ani oceny wizualnej |
 | Electron / SQLite / EXE / dodatkowy ekran | NOT RUN | Funkcje jeszcze niezaimplementowane |
 | Pokrycie kodu | NOT RUN | Nie mierzono; nie podajemy procentu |
@@ -23,6 +23,8 @@ Baseline źródeł: 1be0136 + zmiany gałęzi work/windows-desktop-foundation. S
 W trakcie tworzenia środowiska Vitest błędnie zebrał plik node:test; odtworzono FAIL i ograniczono npm test do src/__tests__. Oddzielne test:tooling uruchamia Node test runner. Końcowy pakiet przechodzi.
 
 Czyste npm ci w izolowanym katalogu tymczasowym: PASS, 204 pakiety. npm 11 zgłosiło niezatwierdzone skrypty instalacyjne trzech zależności; nie zmieniano polityki globalnej. Build i testy sprawdzono z aktualną lokalną instalacją.
+
+Dowód zdalny: https://github.com/eskejtpro/Projekt-mapa-ai-google-v1/actions/runs/39005537274 . Rzeczywiste hooki pre-commit i pre-push uruchomiły odpowiednio szybkie i pełne bramki. Codex features list potwierdza hooks stable true; brak dowodu zdarzeń klienta dla nowych skryptów nadal oznacza UNVERIFIED. CI ostrzegło o actions/*@v4 używających Node 20 i wymuszonym runtime Node 24; workflow przeszedł, aktualizacja actions pozostaje zadaniem utrzymaniowym.
 
 Poniżej zachowany historyczny raport AI Studio. Dawne checklisty UI nie są świeżym dowodem Codexa:
 

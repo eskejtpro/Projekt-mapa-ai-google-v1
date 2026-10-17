@@ -5,11 +5,11 @@
 |---|---|---|---|---|---|
 | E0-01 | 2 | P0 | REQ-ENV | Backup historii i pliku użytkownika, branch, bundle verify | DONE |
 | E0-02 | 3 | P0 | REQ-ENV | Powtarzalna instalacja, typecheck, testy, build | DONE |
-| E0-03 | 2 | P0 | REQ-ENV | Kontrole Git i wykonanie GitHub Actions | IN_REVIEW |
+| E0-03 | 2 | P0 | REQ-ENV | Kontrole Git i wykonanie GitHub Actions | DONE |
 | E0-04 | 2 | P0 | REQ-ENV | Testy skryptów hooków oraz dowód uruchomienia przez klienta | IN_REVIEW |
 | E0-05 | 1 | P0 | REQ-ENV | Dokumenty, walidacja skilli, rejestr braków i handoff | DONE |
 
-Postęp zamknięcia tej iteracji = suma wag DONE / 10 (aktualnie 60%). Całość Windows nie ma zatwierdzonych wag i zamrożonego zakresu; nie podajemy procentu.
+Postęp zamknięcia tej iteracji = suma wag DONE / 10 (aktualnie 80%). Otwarte 20% to potwierdzenie automatycznych hooków klienta. Całość Windows nie ma zatwierdzonych wag i zamrożonego zakresu; nie podajemy procentu.
 
 Tabela PREZ poniżej zachowuje historyczne statusy AI Studio. Aktualny audyt: docs/FEATURE_MATRIX.md. Dowody bieżącej iteracji: TESTING.md.
 
