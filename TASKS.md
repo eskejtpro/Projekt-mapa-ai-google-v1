@@ -64,3 +64,9 @@ Tabela PREZ poniżej zachowuje historyczne statusy AI Studio. Aktualny audyt: do
 | PREZ-025 | P0 | Katalogi | Układanie kolejności zdjęć w katalogach (Drag & Drop, przyciski, numeracja, szablony, odtwarzanie w kolejności) | **UKOŃCZONE** | Działa w podglądzie & testy Vitest |
 | PREZ-026 | P0 | Mapa | Matematyczna blokada pionowa mapy eliminująca czarną pustkę poza krawędziami | **UKOŃCZONE** | Działa w podglądzie (Vite) |
 | PREZ-027 | P0 | Katalogi | Bezpośrednie przeciąganie zdjęć z Eksploratora Windows na katalog (Drag & Drop) | **UKOŃCZONE** | Działa w podglądzie (Vite) |
+## PR #6 — Video GPS & Map Integration
+- [DONE] VGM-01 — wspólny model lokalizacji filmu, walidacja i migracja SQLite (`location_source`); testy lokalne PASS.
+- [DONE] VGM-02 — markery filmów w istniejącym klastrze Leaflet, filtr Wszystkie/Zdjęcia/Filmy i popup z playerem; E2E marker/popup PASS.
+- [DONE] VGM-03 — ręczne GPS, relacja album→podróż oraz trwałość po restarcie; testy PASS.
+- [DONE] VGM-04 — marker/popup z MBTiles i blokadą HTTP(S), 1512 mediów/klastry/zoom; E2E PASS.
+- [DONE] VGM-05 — GPS MP4 loci/MOV ©xyz względem ffprobe, pełna kopia SQLite/photos/videos z SHA-256, restore addytywny i natywne IPC/E2E PASS. Odsłuch pozostaje UNVERIFIED.

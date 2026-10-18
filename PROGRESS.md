@@ -1,5 +1,14 @@
 # PROGRESS.md - Rzeczywisty Stan Postępów Projektu „Prezent Mapy”
 
+## SESSION HANDOFF — domknięcie PR #6 i UX, 2026-10-18
+- Wersja: 1.6.0, branch `feature/video-gps-map-integration`, baza prac `d0f7f59`. Ten handoff zastępuje wcześniejsze statusy PR #6 poniżej.
+- Wdrożono ograniczony parser atomów GPS MP4/MOV, pełne kopie folderowe SQLite/mediów, walidowane IPC i panel ustawień, dopracowany edytor GPS, poprawki CSP/CORS miniaturek, HTTP Range i zwalnianie wideo.
+- Potwierdzono GPS MP4/MOV względem ffprobe, natywne odtwarzanie MP4/WebM, miniaturę, marker/popup offline, większą mapę 1512 mediów, backup/restore IPC oraz samodzielny restart SQLite.
+- Przyczyna niestabilnego E2E: równoległy wbudowany smoke szukał kafelków, gdy Playwright przechodził do galerii. Tryb interaktywny E2E wyłącza konkurujący scenariusz; osobny desktop-restart zachowuje pełny smoke.
+- Lokalne kontrole końcowe: `npm ci --prefer-offline`, `npm run verify`, `npm run test:video-playback-real`, `npm run test:desktop-restart` i `git diff --check` — PASS. GitHub Actions dla nowego commita pozostają do sprawdzenia po pushu.
+- Otwarte ograniczenia: odsłuch głośników, GPS innych producentów/tagów, wielogigabajtowe biblioteki i awaria zasilania podczas restore. `.prezent` nadal nie obejmuje filmów — pełna kopia folderowa obejmuje.
+- Plik `moje instrukcje do projektu.txt` zachowany jako nieśledzony. Pokaz mieszany PR #7 i TV PR #8 pozostają następnymi etapami.
+
 ## SESSION HANDOFF — automatyzacja Codex, 2026-10-18
 - Gałąź `chore/codex-automation-quality-gates` utworzona z `chore/codex-instructions-video-foundation` (bazowa gałąź istniejącego PR do main).
 - Dodano `automation:check`, trzy testy regresyjne walidatora, bramkę w quick/full verify, dokumentację `docs/CODEX_AUTOMATION.md`, szablon PR i zabezpieczenia workflow CI.
@@ -103,3 +112,9 @@ Stan ogólny: **Kompletny, stabilny i sprawdzony prototyp gotowy do przejęcia p
 - Nie zmieniano: mapy, pokazu slajdów i trybu TV.
 - Status: IN_REVIEW; wymagany jeszcze pełny Electron UI/E2E i osobny PR do `main`.
 - Nie zmieniano logiki `SlideshowModal` ani `TvModeModal`.
+## SESSION HANDOFF — PR #6 Video GPS & Map Integration, 2026-10-18
+- Utworzono gałąź `feature/video-gps-map-integration` z aktualnego `main` po scaleniu PR #5.
+- Dodano markery filmów do istniejącego klastra MapView, filtr mediów mapy, popup i otwarcie playera; dodano ręczne współrzędne GPS w galerii i IPC `video:set-location`.
+- Dodano migrację SQLite `location_source`, walidację zakresów GPS, ręczne GPS bez zachowywania starych nazw miejsca oraz relację album→podróż dla filtrów mapy. Parser GPS kontenerów wideo nie jest deklarowany bez potwierdzonego narzędzia.
+- Zweryfikowano: testy SQLite/media 13/13 PASS, E2E galerii/mapy z markerem i popupem PASS, typecheck i build PASS. `ffmpeg`/`ffprobe` NOT FOUND; backup/restore filmów NOT SUPPORTED.
+- Blokada PR #6: brak rzeczywistego testu GPS MP4/MOV oraz brak integralności backup/restore filmów. Nie scalać i nie rozpoczynać PR #7 do czasu rozwiązania.

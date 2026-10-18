@@ -1,7 +1,7 @@
 # ARCHITECTURE.md - Architektura Aplikacji „Prezent Mapy”
 
 ## Stan po inicjalizacji środowiska Codex
-Runtime nadal web/Vite/localStorage; brak procesu main/preload, SQLite i NSIS. src/version.ts czyta wersję package.json. scripts/verify.mjs uruchamia kontrole i zapisuje reports/verification.json. Hooki Codex wykonują lekkie kontrole i snapshoty w reports/; skrypty Git wykonują quality gates. Rejestr aktualnych ograniczeń: docs/KNOWN_ISSUES.md. Diagram desktop poniżej przedstawia projekt docelowy, nie istniejącą implementację.
+Aktualny runtime Windows: React/Vite → izolowany preload → walidowane IPC → `node:sqlite` i lokalne katalogi `photos/videos`. Film jest udostępniany przez `prezent-video://local/<id>` z kontrolą ścieżki i HTTP Range; renderer nie otrzymuje systemu plików. `video-gps.cjs` odczytuje ograniczony zestaw tagów GPS, a `library-backup.cjs` zapewnia pełną kopię SQLite/mediów i addytywne przywracanie. Kontrakty i ograniczenia: `docs/VIDEO_GPS_AND_BACKUP.md`. Wersja pochodzi z package.json; dalsze diagramy i plany AI Studio poniżej są historyczne.
 
 Aplikacja **„Prezent Mapy”** jest zaprojektowana według wzorca **Separacji Odpowiedzialności (SoC)**, **Offline-First** oraz czystego odseparowania warstwy prezentacji (React) od środowiska uruchomieniowego (Browser Preview vs Docelowy Electron dla Windows 10/11).
 

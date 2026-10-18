@@ -2,6 +2,7 @@ const { createHash, randomUUID } = require('node:crypto');
 const { createReadStream, existsSync, mkdirSync, copyFileSync, renameSync, unlinkSync, realpathSync, statSync } = require('node:fs');
 const path = require('node:path');
 const { DatabaseSync } = require('node:sqlite');
+const { readVideoGps } = require('./video-gps.cjs');
 
 const VIDEO_TYPES = new Map([
   ['.mp4', { mimeType: 'video/mp4', container: 'mp4' }],
@@ -45,6 +46,16 @@ function validateVideoFile(file) {
   return { ...type, sizeBytes: stat.size };
 }
 
+function validLocation(location) {
+  return location && Number.isFinite(Number(location.lat)) && Number.isFinite(Number(location.lng)) && Number(location.lat) >= -90 && Number(location.lat) <= 90 && Number(location.lng) >= -180 && Number(location.lng) <= 180;
+}
+
+async function extractVideoMetadata(file) {
+  if (!['.mp4', '.mov'].includes(path.extname(file).toLowerCase())) return {};
+  try { const location = await readVideoGps(file); return location ? { location } : {}; }
+  catch { return {}; }
+}
+
 class VideoLibrary {
   constructor(databaseFile, mediaDirectory) {
     this.db = new DatabaseSync(databaseFile);
@@ -59,10 +70,13 @@ class VideoLibrary {
       thumbnail_status TEXT NOT NULL DEFAULT 'placeholder', album_id TEXT, trip_id TEXT,
       location_json TEXT
     );`);
+    const columns = this.db.prepare('PRAGMA table_info(media_items)').all().map(column => column.name);
+    if (!columns.includes('location_source')) this.db.exec("ALTER TABLE media_items ADD COLUMN location_source TEXT NOT NULL DEFAULT 'unknown'");
   }
   async importVideo(sourceFile, metadata = {}) {
     const info = validateVideoFile(sourceFile);
     const hash = await hashFile(sourceFile);
+    const detected = await extractVideoMetadata(sourceFile);
     const duplicate = this.db.prepare('SELECT * FROM media_items WHERE content_hash = ?').get(hash);
     if (duplicate) return { duplicate: true, item: this.#row(duplicate) };
     const id = `video-${randomUUID()}`;
@@ -74,22 +88,32 @@ class VideoLibrary {
     const item = {
       id, kind: 'video', title: metadata.title || path.basename(sourceFile, path.extname(sourceFile)),
       fileName: path.basename(sourceFile), relativePath: fileName, mimeType: info.mimeType,
-      sizeBytes: info.sizeBytes, contentHash: hash, date: metadata.date || new Date().toISOString().slice(0, 10),
+      sizeBytes: info.sizeBytes, contentHash: hash, date: metadata.date || detected.date || new Date().toISOString().slice(0, 10),
       durationMs: metadata.durationMs ?? null, width: metadata.width ?? null, height: metadata.height ?? null,
       codec: metadata.codec ?? null, codecStatus: metadata.codecStatus || 'runtime-required',
       thumbnailPath: null, thumbnailStatus: 'placeholder', albumId: metadata.albumId ?? null,
-      tripId: metadata.tripId ?? null, locationJson: metadata.location ? JSON.stringify(metadata.location) : null,
+      tripId: metadata.tripId ?? null, locationJson: (metadata.location || detected.location) ? JSON.stringify(metadata.location || detected.location) : null,
+      locationSource: metadata.location ? (metadata.locationSource || 'user') : detected.location ? 'metadata' : 'unknown',
     };
     try {
       this.db.prepare(`INSERT INTO media_items
-        (id,kind,title,file_name,relative_path,mime_type,size_bytes,content_hash,date,duration_ms,width,height,codec,codec_status,thumbnail_path,thumbnail_status,album_id,trip_id,location_json)
-        VALUES (@id,@kind,@title,@fileName,@relativePath,@mimeType,@sizeBytes,@contentHash,@date,@durationMs,@width,@height,@codec,@codecStatus,@thumbnailPath,@thumbnailStatus,@albumId,@tripId,@locationJson)`).run(item);
+        (id,kind,title,file_name,relative_path,mime_type,size_bytes,content_hash,date,duration_ms,width,height,codec,codec_status,thumbnail_path,thumbnail_status,album_id,trip_id,location_json,location_source)
+        VALUES (@id,@kind,@title,@fileName,@relativePath,@mimeType,@sizeBytes,@contentHash,@date,@durationMs,@width,@height,@codec,@codecStatus,@thumbnailPath,@thumbnailStatus,@albumId,@tripId,@locationJson,@locationSource)`).run(item);
     } catch (error) { if (existsSync(destination)) unlinkSync(destination); throw error; }
     return { duplicate: false, item: this.#row(item) };
   }
   list() { return this.db.prepare('SELECT * FROM media_items ORDER BY date DESC, id DESC').all().map(row => this.#row(row)); }
   setAlbum(id, albumId) {
     const result = this.db.prepare('UPDATE media_items SET album_id = ? WHERE id = ?').run(albumId || null, id);
+    if (!result.changes) throw new Error('Nieznane medium');
+    return this.db.prepare('SELECT * FROM media_items WHERE id = ?').get(id);
+  }
+  setLocation(id, location, source = 'user') {
+    if (location !== null) {
+      if (!location || !Number.isFinite(location.lat) || !Number.isFinite(location.lng) || location.lat < -90 || location.lat > 90 || location.lng < -180 || location.lng > 180) throw new Error('Nieprawidłowe współrzędne GPS');
+      if (!['cityName', 'countryName', 'countryCode'].every(key => typeof location[key] === 'string' && location[key].length <= 200) || !['user', 'place'].includes(source)) throw new Error('Nieprawidłowe dane lokalizacji GPS');
+    }
+    const result = this.db.prepare('UPDATE media_items SET location_json = ?, location_source = ? WHERE id = ?').run(location ? JSON.stringify(location) : null, location ? source : 'unknown', id);
     if (!result.changes) throw new Error('Nieznane medium');
     return this.db.prepare('SELECT * FROM media_items WHERE id = ?').get(id);
   }
@@ -104,7 +128,7 @@ class VideoLibrary {
     return resolved;
   }
   close() { this.db.close(); }
-  #row(row) { return { id: row.id, kind: row.kind, title: row.title, fileName: row.file_name ?? row.fileName, localPath: row.relative_path, mimeType: row.mime_type ?? row.mimeType, sizeBytes: row.size_bytes ?? row.sizeBytes, contentHash: row.content_hash ?? row.contentHash, date: row.date, durationMs: row.duration_ms ?? row.durationMs, width: row.width, height: row.height, codec: row.codec, codecStatus: row.codec_status ?? row.codecStatus, thumbnailPath: row.thumbnail_path ?? row.thumbnailPath, thumbnailStatus: row.thumbnail_status ?? row.thumbnailStatus, albumId: row.album_id ?? row.albumId, tripId: row.trip_id ?? row.tripId, location: row.location_json ? JSON.parse(row.location_json) : undefined }; }
+  #row(row) { return { id: row.id, kind: row.kind, title: row.title, fileName: row.file_name ?? row.fileName, localPath: row.relative_path, mimeType: row.mime_type ?? row.mimeType, sizeBytes: row.size_bytes ?? row.sizeBytes, contentHash: row.content_hash ?? row.contentHash, date: row.date, durationMs: row.duration_ms ?? row.durationMs, width: row.width, height: row.height, codec: row.codec, codecStatus: row.codec_status ?? row.codecStatus, thumbnailPath: row.thumbnail_path ?? row.thumbnailPath, thumbnailStatus: row.thumbnail_status ?? row.thumbnailStatus, albumId: row.album_id ?? row.albumId, tripId: row.trip_id ?? row.tripId, location: row.location_json ? JSON.parse(row.location_json) : undefined, locationSource: row.location_source ?? 'unknown' }; }
 }
 
-module.exports = { VideoLibrary, validateVideoFile, hashFile, MAX_VIDEO_BYTES };
+module.exports = { VideoLibrary, validateVideoFile, extractVideoMetadata, hashFile, MAX_VIDEO_BYTES };

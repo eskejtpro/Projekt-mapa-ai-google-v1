@@ -22,6 +22,7 @@ export interface MediaItem {
   thumbnailPath?: string;
   thumbnailStatus: 'generated' | 'placeholder' | 'not-applicable';
   location?: GeoLocation;
+  locationSource?: 'metadata' | 'user' | 'place' | 'unknown';
   albumId?: string;
   tripId?: string;
 }

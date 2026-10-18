@@ -5,7 +5,7 @@
 - Dodano `scripts/automation-check.mjs` do `npm run verify` (tryb quick i full); sprawdza strukturę konfiguracji, skilli, hooków i CI.
 - Dodano `tests/automation.test.mjs`: kontrola pozytywna oraz dwa przypadki negatywne (brak plików/skryptów i niepoprawny JSON hooków). Skrypt `test:tooling` uruchamia oba pliki testowe.
 - Workflow Quality: concurrency, timeout 30 minut, raporty z retencją 14 dni. Zachowano audyt zależności.
-- Status nowej iteracji: **NOT RUN / oczekiwanie na CI** — zmiany wykonano przez API GitHub, bez lokalnego Node/Electron. Nie przypisuj PASS przed sprawdzeniem workflow dla konkretnego SHA.
+- Status tej iteracji: lokalne kontrole końcowe **PASS**; wynik GitHub Actions dla nowego SHA zostanie zapisany po pushu.
 - Testy automatycznych zdarzeń hooków Codex: **UNVERIFIED**. Test uruchomienia skryptu z przykładowym JSON nie potwierdza zaufania ani uruchomienia przez klienta.
 - Windows 10/11 instalator, portable, realny TV i testy danych użytkownika: **NOT RUN** w tej iteracji. `release:check` pozostaje blokadą.
 
@@ -20,7 +20,17 @@
 
 - `npm run test:e2e:electron`: **PASS** — izolowany profil Windows, import syntetycznego kontenera WebM przez UI, filtr filmów, karta placeholdera, otwarcie/zamknięcie playera, przypisanie do albumu i trwałość po restarcie.
 - Test E2E nie potwierdza dekodowania H.264/VP8/VP9 ani dźwięku; rzeczywiste pliki/kodeki i odsłuch: **UNVERIFIED**.
-- Backup filmów: **NOT SUPPORTED** — obecny `.prezent`/`BackupManager` obejmuje zdjęcia, albumy, trasy i ustawienia, ale nie katalog `videos` ani rekordy `media_items`.
+- Starszy `.prezent`/harmonogram obejmuje zdjęcia, albumy, trasy i ustawienia. Pełne kopie SQLite/zdjęć/filmów z SHA-256 i przywracaniem są dostępne osobno w ustawieniach; opis w `docs/VIDEO_GPS_AND_BACKUP.md`.
+
+## PR #6 — GPS filmów i mapa
+
+- `npm run test:desktop-restart`: **PASS**.
+- `npm run test:database`: **PASS**, 12/12, w tym migracja `location_source`, walidacja ręcznego GPS oraz usuwanie lokalizacji.
+- `npm run test:e2e:electron`: **PASS** dla galerii, playera, albumu, restartu oraz markera filmu/popupa mapy; test działa na izolowanym profilu.
+- GPS z MP4 `loci` i MOV QuickTime `©xyz`: **PASS** na rzeczywistych plikach FFmpeg z porównaniem ffprobe, obu półkulach i trwałości MP4 po ponownym otwarciu SQLite. Pozostałe warianty GPS są nieobsługiwane; MOV nie jest deklarowanym formatem importu.
+- Pełna kopia folderowa: testy SHA-256, dodawanie do nowego profilu, relacje album/GPS i testy uszkodzeń/ścieżek; natywne IPC backup/restore w Electron E2E **PASS**.
+- Mapa offline: lokalne MBTiles przy blokadzie HTTP(S), widoczny marker i otwarcie filmu **PASS**. Większy zbiór: 1512 mediów syntetycznych, klastry i zoom **PASS**; nie jest to dowód 60 FPS dla biblioteki 4K.
+- Prawdziwe pliki: H.264/AAC, VP8/Opus i VP9/Opus w `npm run test:video-playback-real`; odrębny raport `reports/video-playback-real.json`. Automatyczna ocena głośników pozostaje **UNVERIFIED**; procedura odsłuchu w `docs/VIDEO_GPS_AND_BACKUP.md`.
 
 
 ## Codex — świeża weryfikacja 2026-10-17

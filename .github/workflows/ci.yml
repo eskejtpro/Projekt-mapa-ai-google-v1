@@ -24,6 +24,15 @@ jobs:
         run: npm run verify
       - name: Electron gallery E2E
         run: npm run test:e2e:electron
+      - name: Prepare checksum-verified portable video test tools
+        shell: pwsh
+        run: ./scripts/setup-video-test-tools.ps1
+      - name: Real video GPS metadata
+        run: npm run test:video-gps-real
+      - name: Real Electron codecs, offline map and library backup
+        run: npm run test:video-playback-real
+      - name: Electron desktop restart
+        run: npm run test:desktop-restart
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
       - name: Upload verification evidence

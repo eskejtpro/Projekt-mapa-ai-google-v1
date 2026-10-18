@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { LibraryBackupActions } from './LibraryBackupActions';
 import { AppSettings } from '../types/travel';
 import { 
   Settings, 
@@ -654,9 +655,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {activeCategory === 'backup' && (
           <div className="space-y-6">
             <div>
-              <h3 className="text-xl font-bold text-white tracking-tight">Kopie zapasowe (.prezent)</h3>
-              <p className="text-xs text-slate-400 mt-1">Automatyczne archiwum biblioteki i eksport na pendrive.</p>
+              <h3 className="text-xl font-bold text-white tracking-tight">Kopie biblioteki</h3>
+              <p className="text-xs text-slate-400 mt-1">Pełna kopia mediów oraz zgodne ze starszymi wersjami archiwum .prezent.</p>
             </div>
+
+            <LibraryBackupActions />
 
             <div className="bg-[#121829] border border-slate-800 rounded-2xl p-5 space-y-4">
               <div className="space-y-1.5">
@@ -671,7 +674,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <option value={30}>Co miesiąc</option>
                   <option value={0}>Wyłączone</option>
                 </select>
-                <p className="text-slate-400 text-[11px]">Kopie lokalne są sprawdzane przy starcie i podczas pracy aplikacji Windows. Zawierają pełne dane biblioteki. Podgląd przeglądarkowy obsługuje ręczny eksport.</p>
+                <p className="text-slate-400 text-[11px]">Automatyczne pliki .prezent zawierają zdjęcia, albumy i ustawienia. Filmy wymagają pełnej kopii folderowej powyżej. Podgląd przeglądarkowy obsługuje ręczny eksport zdjęć.</p>
                 {window.electronAPI && <button onClick={() => void window.electronAPI!.openBackups().catch(() => setFolderStatusMsg('Nie udało się otworzyć katalogu kopii.'))} className="px-3 py-2 rounded-xl bg-slate-800 text-amber-300">Otwórz katalog kopii</button>}
               </div>
 

@@ -201,6 +201,10 @@ export default function App() {
     try { await window.electronAPI?.video.setAlbum(video.id, albumId); await loadVideos(); showToast('Zapisano przypisanie filmu do albumu.', 'success'); }
     catch { showToast('Nie udało się przypisać filmu do albumu.', 'warning'); }
   };
+  const handleSetVideoLocation = async (video: MediaItem, location: import('./types/travel').GeoLocation | null) => {
+    try { await window.electronAPI?.video.setLocation(video.id, location, 'user'); await loadVideos(); showToast(location ? 'Zapisano lokalizację filmu.' : 'Usunięto lokalizację filmu.', 'success'); }
+    catch (error) { showToast(error instanceof Error ? error.message : 'Nie udało się zapisać lokalizacji filmu.', 'warning'); throw error; }
+  };
 
   // Statystyki
   const stats: TravelStats = useMemo(() => {
@@ -525,10 +529,12 @@ export default function App() {
                 <div className="flex-1 flex flex-col space-y-2.5 h-full min-h-0">
                   <MapView
                     photos={photos}
+                    videos={videos}
                     albums={albums}
                     trips={trips}
                     selectedTripId={selectedTripId}
                     onSelectPhoto={(photo) => setSelectedPhotoForDetail(photo)}
+                    onSelectVideo={(video) => setSelectedVideo(video)}
                     onStartSlideshow={(customList) => handleStartSlideshow(customList)}
                     tileProvider={settings.defaultMapLayer}
                     onChangeTileProvider={(p) => handleUpdateSettings({ ...settings, defaultMapLayer: p })}
@@ -606,6 +612,7 @@ export default function App() {
                   onImportVideos={handleImportVideos}
                   onOpenVideo={setSelectedVideo}
                   onAssignVideo={handleAssignVideo}
+                  onSetVideoLocation={handleSetVideoLocation}
                   density={settings.galleryDensity}
                   showExifBadges={settings.showExifBadges}
                   defaultSortBy={settings.defaultSortBy}

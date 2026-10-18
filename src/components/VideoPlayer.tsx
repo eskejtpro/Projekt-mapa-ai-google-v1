@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 interface VideoPlayerProps {
   src: string;
@@ -8,9 +8,16 @@ interface VideoPlayerProps {
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, title = 'Film', poster }) => {
   const [error, setError] = useState(false);
+  const player = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    setError(false);
+    const video = player.current;
+    return () => { if (video) { video.pause(); video.removeAttribute('src'); video.load(); } };
+  }, [src]);
   return (
     <section aria-label={title} className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-950">
       <video
+        ref={player}
         controls
         preload="metadata"
         poster={poster}

@@ -1,5 +1,12 @@
 # CHANGELOG.md - Historia Zmian Projektu „Prezent Mapy”
 
+## 1.6.0 — integracja GPS filmów i pełna kopia biblioteki
+- GPS z MP4 `loci` i MOV QuickTime `©xyz`, odczyt lokalny z ograniczeniem ilości metadanych; pozostałe warianty GPS pozostają nieobsługiwane. Import MOV nadal nie jest deklarowany.
+- Markery filmów, filtrowanie i otwieranie odtwarzacza z mapy; testy offline z rzeczywistymi plikami i większą biblioteką.
+- Poprawiona polityka CSP dla protokołu wideo, generowanie miniatur i zwalnianie zasobów playera.
+- Pełna kopia folderowa bazy, zdjęć i filmów z SHA-256 oraz addytywnym przywracaniem; starsze pliki `.prezent` zachowują zakres zdjęć.
+- Czytelniejszy formularz GPS i panel kopii; dokument zasad wyglądu `DESIGN.md`.
+
 ## Unreleased — środowisko Codex
 - Dodano walidator struktury automatyzacji Codex/CI, testy przypadków negatywnych, bramkę w szybkim i pełnym verify, dokumentację przepływu, szablon PR oraz limit czasu i retencję raportów CI. Weryfikacja nowego commita i działanie hooków klienta wymagają oddzielnych dowodów; nie jest to gotowe wydanie Windows.
 - Zaznaczanie i usuwanie zbiorcze zdjęć, usuwanie albumu z zachowaniem albo usunięciem zdjęć z biblioteki; pliki na dysku pozostają zachowane. Skan SSDP na wielu interfejsach, wybór TV i ręczne odświeżanie. Warstwy OSM dzień/noc i Esri Topographic zastępują dotychczasowe warstwy CARTO.

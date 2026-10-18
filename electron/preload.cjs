@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('electronAPI', Object.freeze({
   systemInfo: () => ipcRenderer.invoke('system:action', 'info'),
   openPhotos: () => ipcRenderer.invoke('system:action', 'open-photos'),
   openBackups: () => ipcRenderer.invoke('system:action', 'open-backups'),
+  libraryBackup: operation => ipcRenderer.invoke('backup:library', operation),
   setAutoStart: enabled => ipcRenderer.invoke('system:action', 'autostart', enabled),
   importOfflineMap: () => ipcRenderer.invoke('maps:import'),
   removeOfflineMap: () => ipcRenderer.invoke('system:action', 'remove-offline-map'),
@@ -36,5 +37,6 @@ contextBridge.exposeInMainWorld('electronAPI', Object.freeze({
     import: () => ipcRenderer.invoke('video:import'),
     list: () => ipcRenderer.invoke('video:list'),
     setAlbum: (id, albumId) => ipcRenderer.invoke('video:set-album', id, albumId),
+    setLocation: (id, location, source = 'user') => ipcRenderer.invoke('video:set-location', id, location, source),
   }),
 }));

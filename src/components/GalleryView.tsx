@@ -18,6 +18,7 @@ import {
   Upload
 } from 'lucide-react';
 import { VideoThumbnail } from './VideoThumbnail';
+import { VideoLocationEditor } from './VideoLocationEditor';
 
 interface GalleryViewProps {
   photos: TravelPhoto[];
@@ -37,6 +38,7 @@ interface GalleryViewProps {
   onImportVideos?: () => void;
   onOpenVideo?: (video: MediaItem) => void;
   onAssignVideo?: (video: MediaItem, albumId: string | null) => void;
+  onSetVideoLocation?: (video: MediaItem, location: import('../types/travel').GeoLocation | null) => void;
   density?: 'default' | 'compact' | 'large';
   showExifBadges?: boolean;
   defaultSortBy?: 'date-desc' | 'date-asc' | 'title' | 'location';
@@ -61,6 +63,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   onImportVideos,
   onOpenVideo,
   onAssignVideo,
+  onSetVideoLocation,
   density = 'default',
   showExifBadges = true,
   defaultSortBy = 'date-desc',
@@ -419,7 +422,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
       )}
 
       {/* SEKCJE ZDJĘĆ */}
-      {filteredPhotos.length === 0 ? (
+      {filteredPhotos.length === 0 && filteredVideos.length === 0 ? (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center space-y-3">
           <Compass className="w-12 h-12 text-slate-600 mx-auto" />
           <h3 className="text-base font-bold text-white">Brak zdjęć w tym katalogu</h3>
@@ -630,7 +633,9 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                 <span className="absolute left-2 top-2 rounded-lg bg-indigo-500/90 px-2 py-1 text-[10px] font-bold text-white">FILM</span>
                 <span className="absolute right-2 top-2 rounded-lg bg-slate-950/80 px-2 py-1 text-[10px] text-white">{video.durationMs ? `${Math.round(video.durationMs / 1000)} s` : 'czas nieznany'}</span>
               </button>
-              <div className="p-3 space-y-2"><h4 className="font-bold text-sm text-white truncate">{video.title}</h4><select value={video.albumId || ''} onChange={event => onAssignVideo?.(video, event.target.value || null)} className="w-full rounded-lg bg-slate-950 border border-slate-700 px-2 py-1.5 text-xs text-slate-200"><option value="">Bez albumu</option>{albums.map(album => <option key={album.id} value={album.id}>{album.name}</option>)}</select></div>
+              <div className="p-3 space-y-2"><h4 className="font-bold text-sm text-white truncate">{video.title}</h4><select value={video.albumId || ''} onChange={event => onAssignVideo?.(video, event.target.value || null)} className="w-full rounded-lg bg-slate-950 border border-slate-700 px-2 py-1.5 text-xs text-slate-200"><option value="">Bez albumu</option>{albums.map(album => <option key={album.id} value={album.id}>{album.name}</option>)}</select>
+                {onSetVideoLocation && <VideoLocationEditor video={video} onSave={onSetVideoLocation} />}
+              </div>
             </article>)}
           </div>
         </section>

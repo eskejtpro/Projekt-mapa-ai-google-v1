@@ -52,3 +52,33 @@ test('waliduje WebM, odrzuca uszkodzony kontener i nie ładuje pliku do pamięci
     assert.throws(() => validateVideoFile(unsupported), /MP4 i WebM/);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+test('migruje źródło lokalizacji i trwale zapisuje/usuwa ręczny GPS', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'prezent-video-gps-'));
+  try {
+    const library = new VideoLibrary(join(root, 'library.sqlite'), join(root, 'videos'));
+    const item = await library.importVideo(fixture(root, 'gps.webm', [0x1a, 0x45, 0xdf, 0xa3]));
+    library.setLocation(item.item.id, { lat: 52.2297, lng: 21.0122, cityName: 'Warszawa', countryName: 'Polska', countryCode: 'PL' });
+    assert.equal(library.list()[0].location.lat, 52.2297);
+    assert.equal(library.list()[0].locationSource, 'user');
+    assert.throws(() => library.setLocation(item.item.id, { lat: 91, lng: 0 }), /współrzędne/);
+    library.close();
+    const reopened = new VideoLibrary(join(root, 'library.sqlite'), join(root, 'videos'));
+    assert.equal(reopened.list()[0].location.lng, 21.0122);
+    reopened.setLocation(item.item.id, null);
+    assert.equal(reopened.list()[0].location, undefined);
+    assert.equal(reopened.list()[0].locationSource, 'unknown');
+    reopened.close();
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('nie zachowuje starych nazw miejsca po ręcznej zmianie współrzędnych', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'prezent-video-place-'));
+  try {
+    const library = new VideoLibrary(join(root, 'library.sqlite'), join(root, 'videos'));
+    const item = await library.importVideo(fixture(root, 'place.webm', [0x1a, 0x45, 0xdf, 0xa3]), { location: { lat: 52.2297, lng: 21.0122, cityName: 'Warszawa', countryName: 'Polska', countryCode: 'PL' }, locationSource: 'metadata' });
+    library.setLocation(item.item.id, { lat: 35.6762, lng: 139.6503, cityName: '', countryName: '', countryCode: '' });
+    assert.deepEqual(library.list()[0].location, { lat: 35.6762, lng: 139.6503, cityName: '', countryName: '', countryCode: '' });
+    library.close();
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
