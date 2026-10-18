@@ -143,3 +143,6 @@ Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.0.0/).
 - Integracja mapy świata Leaflet i biblioteki `exifr` do odczytu metadanych EXIF GPS.
 - Galeria wspomnień z filtrami i importem plików.
 - Obsługa formatu archiwalnego `.prezent`.
+# 1.5.0 — fundament biblioteki filmów
+- Dodano typowany model `MediaItem`, lokalny import MP4/WebM, deduplikację SHA-256, metadane SQLite i bezpieczne odtwarzanie przez protokół Electron.
+- Nie dodano jeszcze obsługi filmów w galerii, mapie, slideshow ani TV.

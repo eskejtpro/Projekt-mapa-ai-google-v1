@@ -32,4 +32,8 @@ contextBridge.exposeInMainWorld('electronAPI', Object.freeze({
     set: (key, value) => storageCall('set', key, value),
     batch: entries => storageCall('batch', entries),
   }),
+  video: Object.freeze({
+    import: () => ipcRenderer.invoke('video:import'),
+    list: () => ipcRenderer.invoke('video:list'),
+  }),
 }));
