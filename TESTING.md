@@ -6,7 +6,8 @@
 - `npm run typecheck`: **PASS**.
 - `npm run build`: **PASS**.
 - `npm run test:e2e:electron`: **PASS** — izolowany Electron sprawdza pokaz zawierający zdjęcie i film, pauzę/wznowienie, zakończenie filmu, mapę, backup/restore i restart.
-- Pełne `npm run verify`: **BLOCKED/UNVERIFIED** w tej sesji — proces zatrzymał się podczas łączenia wielu plików testów backupu; pojedyncze testy backupu oraz wcześniejszy pełny przebieg 21/21 PASS. Przed scaleniem wymagana jest ponowna kontrola na CI.
+- `npm run test:database`: **PASS**, 21/21. Scenariusze backupu SQLite/plików są uruchamiane w odrębnych procesach Node, aby nie współdzielić uchwytów `node:sqlite`; zachowano wszystkie przypadki, w tym dwa pliki 64 MiB.
+- Pełne `npm run verify`: **PASS**. Przed scaleniem nadal wymagana jest niezależna kontrola CI Windows.
 
 ## Automatyzacja Codex — nowa iteracja (2026-10-18)
 
