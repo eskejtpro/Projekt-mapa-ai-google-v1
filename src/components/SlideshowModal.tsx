@@ -148,7 +148,7 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
     }, intervalSec * 1000);
 
     return () => clearInterval(timer);
-  }, [isOpen, isPlaying, intervalSec, activePhotos.length, isLooping]);
+  }, [isOpen, isPlaying, intervalSec, activePhotos, currentIndex, isLooping]);
 
   useEffect(() => {
     const video = videoRef.current;

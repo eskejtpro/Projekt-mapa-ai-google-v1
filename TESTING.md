@@ -1,5 +1,17 @@
 # TESTING.md - Procedury Testowe i Raport Weryfikacji
 
+## PR #10 — 1.8.1, audyt DoD (2026-10-18)
+
+- Integracja: PR #8/#9 scalone po dwóch PASS Windows quality gate każdego aktualnego HEAD; main `f55c972e6c98b2bf5dc14850b809b135239e971d`.
+- Regresja początkowej mapy offline: najpierw FAIL timeout 5000 ms, po uwzględnieniu `offlineMode` PASS w prawdziwym Electron. Benchmark potwierdził `tilesLoaded=true`, oczekiwanie kafelka 32 ms; to odrębny pomiar od czasu kontenera Leaflet.
+- DIDL z tytułem `A & <B>`: FAIL przed poprawką, PASS po zakodowaniu obu warstw XML. Testy DLNA/SSRF/root/IP/brak pliku/Range/Stop/rozłączenie są automatyczne na symulatorze, nie na fizycznym TV.
+- E2E Electron: PASS — start MBTiles bez nawigacji, import/player/filtry/album, ustawienie eager po reload i restarcie, pokaz mieszany, backup/restore, 1513 mediów i zoom (1256 ms w tym przebiegu).
+- Rozszerzono real-codec E2E o film spowolniony ponad sześć sekund, aby wykrywał stary timer zdjęcia. Scenariusz wymaga plików FFmpeg z Windows CI; lokalny syntetyczny kontener nie potwierdza dekodowania.
+- `npm run verify`: PASS (Vitest 22/22, tooling 14/14, backend 19/19 + sześć izolowanych scenariuszy backupu, build). Ostateczny HEAD dodatkowo sprawdzany przez pre-push i CI.
+- `npm run test:desktop-restart`: PASS, wynik w `reports/desktop-restart.json`; test izolowany dwóch procesów.
+- `npm run release:check`: BLOCKED, exit 1/ready=false; nie zmieniono bramki. Instalacja/aktualizacja/deinstalacja kandydata 1.8.1, Windows 11, sprzęt TV i odsłuch: NOT RUN/UNVERIFIED.
+- Pełna macierz DoD i zadania #11: `docs/FINAL_QUALITY_AUDIT.md`; wynik bieżącego CI jest dostępny w checks PR #10, nie należy zastępować go starym raportem.
+
 ## PR #8 — native DLNA casting
 
 - Test `tests/tv-casting.test.cjs`: symulator urządzenia, opis XML, SOAP, ograniczony plik, MIME, HTTP Range, odrzucenie ścieżki i zamknięcie serwera.

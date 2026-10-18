@@ -1,5 +1,7 @@
 # HANDOFF_CODEX.md - Dokument Przekazania Projektu „Prezent Mapy” do OpenAI Codex
 
+Aktualizacja 2026-10-18: PR #8/#9 scalone do main `f55c972`; trwa PR #10 na `feature/final-quality-audit` (1.8.1). Najnowszy SESSION HANDOFF w `PROGRESS.md` oraz `docs/FINAL_QUALITY_AUDIT.md` zastępuje historyczne deklaracje poniżej. TV sprzętowy i wydanie Windows pozostają niepotwierdzone.
+
 Aktualizacja PR #6 (1.6.0): bieżące wyniki i zakres wyłącznie w najnowszym SESSION HANDOFF w PROGRESS.md oraz docs/VIDEO_GPS_AND_BACKUP.md. Poprzednie blokery braku FFmpeg/GPS/backupu są zastępowane dowodami nowej weryfikacji; merge wymaga zielonego CI aktualnego SHA.
 
 > Aktualny handoff sesji: PROGRESS.md / SESSION HANDOFF. Aktualne funkcje: docs/FEATURE_MATRIX.md; testy: TESTING.md. Poniższy dokument to historyczne przekazanie i projekt architektury AI Studio; jego deklaracje 100%, 4K, offline i bezpłatnych kafelków nie są świeżymi dowodami. Nie pobieraj masowo kafelków bez sprawdzenia licencji dostawcy.

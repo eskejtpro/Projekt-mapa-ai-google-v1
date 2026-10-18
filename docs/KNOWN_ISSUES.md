@@ -1,5 +1,7 @@
 # Znane problemy
 
+Aktualny audyt PR #10 (1.8.1): `FINAL_QUALITY_AUDIT.md`. Początkowa mapa offline, eager/lazy, XML DIDL i zależność timera pokazu zostały naprawione z regresjami. Test fizycznego TV/odsłuch, wszystkie preferencje pokazu, pauza zegara zdjęć w pokazie DLNA, instalacja/aktualizacja 1.8.1 i Windows 11 pozostają otwarte; bramka wydania jest BLOCKED.
+
 - P1: pozostałe operacje wielokolekcyjne wymagają przeglądu atomowości. Reset demo, usuwanie demo, czyszczenie map, import zdjęć+albumu i .prezent zapisują już stan kontrolowanie; pojedyncze edycje/usuwanie uwzględniają błąd zapisu.
 - P1: starszy `.prezent` i automatyczny harmonogram nie obejmują filmów. Dla SQLite/zdjęć/filmów dodano osobną pełną kopię folderową z przywracaniem i SHA-256; zakres: docs/VIDEO_GPS_AND_BACKUP.md. Obsługa utraty zasilania w trakcie przywracania wymaga dalszego testu awaryjnego.
 - P1: stan odzyskiwania po błędzie odczytu jest wdrożony i testowany na uszkodzonym rekordzie. Pozostaje pełna procedura odtwarzania po uszkodzeniu fizycznego SQLite lub braku wielu plików zdjęć.

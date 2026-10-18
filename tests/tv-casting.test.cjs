@@ -4,7 +4,13 @@ const http = require('node:http');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { parseDeviceDescription, MediaShareServer, DlnaCasting } = require('../electron/tv-casting.cjs');
+const { parseDeviceDescription, MediaShareServer, DlnaCasting, didl, hydrateRenderer, isPrivateAddress } = require('../electron/tv-casting.cjs');
+
+test('DIDL preserves escaped title inside SOAP and declares the media class', () => {
+  const soapValue = didl('A & <B>', 'http://192.168.1.2/media/token', 'video/mp4');
+  assert.ok(soapValue.includes('A &amp;amp; &amp;lt;B&amp;gt;'));
+  assert.ok(soapValue.includes('object.item.videoItem'));
+});
 
 const description = name => `<?xml version="1.0"?><root><device><friendlyName>${name}</friendlyName><manufacturer>Test TV</manufacturer><serviceList><service><serviceType>urn:schemas-upnp-org:service:AVTransport:1</serviceType><controlURL>/upnp/control</controlURL></service></serviceList></device></root>`;
 
@@ -13,6 +19,30 @@ test('opis DLNA wymaga AVTransport i rozwiązuje względny controlURL', () => {
   assert.equal(parsed.friendlyName, 'TV testowy');
   assert.equal(parsed.avTransport.controlURL, 'http://127.0.0.1:1234/upnp/control');
   assert.throws(() => parseDeviceDescription('<root><device><friendlyName>No AV</friendlyName></device></root>', 'http://127.0.0.1:1/x'), /AVTransport/);
+});
+
+test('SSRF rejects public, invalid and mismatched receiver addresses before fetching', async () => {
+  assert.equal(isPrivateAddress('192.168.invalid'), false);
+  assert.equal(isPrivateAddress('8.8.8.8'), false);
+  await assert.rejects(hydrateRenderer({ address: '192.168.1.4', location: 'http://8.8.8.8/device.xml' }), /LAN/);
+  await assert.rejects(hydrateRenderer({ address: '192.168.1.4', location: 'http://127.0.0.1/device.xml' }), /Adres opisu/);
+});
+
+test('media server denies files outside roots, other receivers and missing files', async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'prezent-tv-security-'));
+  const allowed = path.join(root, 'allowed'); fs.mkdirSync(allowed);
+  const file = path.join(allowed, 'image.png'); fs.writeFileSync(file, 'image');
+  const outside = path.join(root, 'private.txt'); fs.writeFileSync(outside, 'private');
+  const share = new MediaShareServer([allowed]);
+  try {
+    await share.start();
+    assert.throws(() => share.publish(outside, 'text/plain', 'private', '127.0.0.1'), /katalogu mediów/);
+    const onlyReceiver = share.publish(file, 'image/png', 'image', '192.168.1.99').replace(/^http:\/\/[^:]+/, 'http://127.0.0.1');
+    assert.equal((await fetch(onlyReceiver)).status, 404);
+    const url = share.publish(file, 'image/png', 'image', '127.0.0.1').replace(/^http:\/\/[^:]+/, 'http://127.0.0.1');
+    fs.unlinkSync(file);
+    assert.equal((await fetch(url)).status, 404);
+  } finally { await share.close(); fs.rmSync(root, { recursive: true, force: true }); }
 });
 
 test('casting symulatora wykonuje opis, SOAP, ograniczony plik i HTTP Range', async () => {

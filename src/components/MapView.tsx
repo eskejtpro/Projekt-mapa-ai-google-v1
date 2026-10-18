@@ -438,7 +438,7 @@ export const MapView: React.FC<MapViewProps> = ({
     setTimeout(() => {
       mapInstanceRef.current?.invalidateSize({ animate: false });
     }, 50);
-  }, [tileProvider, showMapLabels]);
+  }, [tileProvider, showMapLabels, offlineMode]);
 
   // Filtrowanie zdjęć
   const visiblePhotos = useMemo(() => photos.filter(photo => {

@@ -1,5 +1,11 @@
 # CHANGELOG.md - Historia Zmian Projektu „Prezent Mapy”
 
+## 1.8.1 — audyt jakości (PR #10, kandydat)
+- Naprawiono zastosowanie ustawienia offline przy pierwszym starcie mapy i eager/lazy w galerii.
+- Poprawiono kodowanie metadanych DIDL w SOAP DLNA i dodano negatywne testy dostępu do mediów/SSRF.
+- Timer zdjęcia jest zwalniany przy zmianie medium w pokazie; regresja CI sprawdza film dłuższy od interwału zdjęcia.
+- Wynik audytu i otwarte kryteria Windows: `docs/FINAL_QUALITY_AUDIT.md`; wydanie produkcyjne nadal BLOCKED.
+
 ## Unreleased — PR #9 performance fast track
 - Dodano powtarzalny benchmark Electron (`npm run benchmark:electron`) dla startu, kontenera mapy, galerii, odczytu SQLite i RSS; ciężki test 1513 mediów pozostaje w pełnym E2E.
 - Zmemoizowano filtrowanie, sortowanie i grupowanie galerii oraz dostępne kraje; miniatury filmów nie renderują ponownie bez zmiany źródła.

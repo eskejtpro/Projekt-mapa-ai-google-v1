@@ -69,7 +69,7 @@ app.whenReady().then(async () => {
   backupTimer.unref();
   app.once('will-quit', () => clearInterval(backupTimer));
   if (process.argv.includes('--smoke-test') && process.argv.includes('--recovery-smoke-test')) database.set('prezent_travel_photos_v2', JSON.stringify([{ id: 'synthetic-invalid-record' }]));
-  if (offlineSmoke) database.set('prezent_app_settings_v2', JSON.stringify({ offlineSimulationMode: true }));
+  if (offlineSmoke) database.set('prezent_app_settings_v2', JSON.stringify({ ...JSON.parse(database.get('prezent_app_settings_v2') || '{}'), offlineSimulationMode: true }));
   if (process.argv.includes('--smoke-test') && process.argv.includes('--preferences-smoke-test')) {
     database.set('prezent_app_settings_v2', JSON.stringify({ ...JSON.parse(database.get('prezent_app_settings_v2') || '{}'), slideshowInterval: 12, kenBurnsEnabled: false, ambientSoundEnabled: false, showMiniMapPip: false, defaultSortBy: 'title', lazyLoadImages: false }));
   }

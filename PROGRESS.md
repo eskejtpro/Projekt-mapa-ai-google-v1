@@ -1,5 +1,14 @@
 # PROGRESS.md - Rzeczywisty Stan Postępów Projektu „Prezent Mapy”
 
+## SESSION HANDOFF — PR #10, 2026-10-18 (aktualny)
+- Cel: końcowy audyt DoD i celowane regresje; branch `feature/final-quality-audit`, kandydat 1.8.1.
+- Main po merge #8/#9: `f55c972e6c98b2bf5dc14850b809b135239e971d`; oba PR scalone po dwóch zielonych CI. Wcześniejsze handoffy poniżej są historyczne.
+- Naprawy: początkowa warstwa offline, XML DIDL, eager/lazy galerii i cleanup timera pokazu po zmianie medium; testy negatywne DLNA.
+- Odtworzono FAIL E2E początkowego offline i FAIL DIDL; po zmianach PASS. Benchmark po poprawce: lokalne kafelki załadowane, tilesLoaded=true (32 ms oczekiwania); to nie pomiar całego renderowania dużej biblioteki.
+- Pełny audyt i pozostałe kryteria: `docs/FINAL_QUALITY_AUDIT.md`; szczegółowe wyniki sesji w `TESTING.md`.
+- Plik `moje instrukcje do projektu.txt` pozostaje nieśledzony i nietknięty. Nie zmieniano oryginalnych mediów ani prywatnej bazy.
+- Następny krok: zakończyć verify/E2E/restart i kontrolę CI PR #10. Nie scalać #10 automatycznie. Fizyczny TV, odsłuch i gotowe wydanie Windows nadal UNVERIFIED/BLOCKED zgodnie z zakresem.
+
 ## SESSION HANDOFF — PR #9 performance fast track, 2026-10-18
 - Cel: zmniejszyć koszt renderowania galerii i mapy bez zmiany funkcji, danych ani wyglądu.
 - Branch: `feature/performance-optimization`, baza `origin/main` `566e081`; commit `025e939`; PR #9: https://github.com/eskejtpro/Projekt-mapa-ai-google-v1/pull/9.

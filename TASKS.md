@@ -1,5 +1,10 @@
 # TASKS.md - Rejestr Zadań i Implementacji Projektu „Prezent Mapy”
 
+## PR #10 — final-quality-audit
+- QA10-01/02/03/04/05: IN_REVIEW — kryteria, priorytety i dowody w `docs/FINAL_QUALITY_AUDIT.md`; start offline, DIDL, preferencje galerii, timer zdjęć/filmów i testy serwera.
+- Integracja PR #8/#9: DONE — przegląd, zielone kontrole aktualnych HEAD, merge obu PR i lokalny main `f55c972`.
+- Kandydat Windows 1.8.1: PARTIAL — verify/E2E/restart/CI oceniane oddzielnie od instalacji, aktualizacji danych i sprzętu; release gate pozostaje BLOCKED.
+
 ## PR #9 — Performance Fast Track — 2026-10-18
 - PERF-01: IN_REVIEW — benchmark Electron dla startu, mapy, galerii, SQLite i RSS; porównanie BEFORE/AFTER zapisane w `docs/PERFORMANCE.md`.
 - PERF-02: IN_REVIEW — memoizacja galerii, `React.memo` miniaturek filmów i stabilizacja callbacków markerów Leaflet; bez zmiany modelu danych ani UX.

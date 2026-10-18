@@ -23,6 +23,9 @@ try {
   page.setDefaultTimeout(15000);
   page.on('pageerror', error => console.error('Renderer error:', error.message));
   await page.waitForLoadState('domcontentloaded');
+  // Saved offline settings arrive after the initial React render. The first map
+  // must switch to MBTiles without navigation or selecting a trip.
+  await page.waitForFunction(() => Array.from(document.querySelectorAll('.leaflet-tile-loaded')).some(image => image.src.startsWith('prezent-tiles:') && image.naturalWidth > 0), undefined, { timeout: 5000 });
   // Minimal container fixture exercises the real import/SQLite/UI path.
   // Codec decoding is covered separately by the real Windows media test.
   if (process.env.PREZENT_REAL_VIDEO) copyFileSync(process.env.PREZENT_REAL_VIDEO, fixture);
@@ -95,6 +98,9 @@ try {
   // PR #7: the existing slideshow must expose a mixed photo/video sequence.
   await page.evaluate(() => {
     const key = 'prezent_travel_photos_v2';
+    const settingsKey = 'prezent_app_settings_v2';
+    const settings = JSON.parse(window.electronAPI.storage.get(settingsKey) || '{}');
+    window.electronAPI.storage.set(settingsKey, JSON.stringify({ ...settings, lazyLoadImages: false }));
     const current = JSON.parse(window.electronAPI.storage.get(key) || '[]');
     if (!current.some(photo => photo.id === 'slideshow-fixture-photo')) {
       const base = current[0] || { location: { lat: 52.2297, lng: 21.0122, cityName: 'Warszawa', countryName: 'Polska', countryCode: 'PL' }, albumId: '', participants: [], tags: [] };
@@ -104,6 +110,7 @@ try {
   });
   await page.reload();
   await page.locator('button[title="Wszystkie Zdjęcia & Galeria"]').click();
+  assert.ok(await page.locator('img[loading="eager"]').count() > 0, 'Saved eager loading setting ignored');
   const slideshowButton = page.getByRole('button', { name: /^Pokaz slajdów/ });
   await slideshowButton.click();
   const slideshow = page.locator('div.fixed.inset-0.z-50');
@@ -111,6 +118,19 @@ try {
   assert.ok(await slideshow.locator('img').count() > 0, 'Pokaz nie wyświetlił zdjęcia');
   await page.keyboard.press('End');
   await slideshow.getByTestId('slideshow-video').waitFor({ state: 'visible' });
+  if (process.env.PREZENT_REAL_VIDEO) {
+    // Slow the real sample beyond the six-second photo interval. A timer left
+    // over from the preceding photo must not advance an unfinished video.
+    const player = slideshow.getByTestId('slideshow-video');
+    await player.evaluate(async video => { video.playbackRate = 0.1; video.muted = true; await video.play(); });
+    await player.evaluate(video => new Promise((resolve, reject) => {
+      const timer = setTimeout(() => { video.removeEventListener('ended', earlyEnd); resolve(); }, 6500);
+      function earlyEnd() { clearTimeout(timer); reject(new Error('Slowed sample ended unexpectedly')); }
+      video.addEventListener('ended', earlyEnd, { once: true });
+    }));
+    assert.equal(await player.count(), 1, 'Photo timer advanced an unfinished film');
+    await player.evaluate(video => { video.playbackRate = 1; });
+  }
   assert.match(await slideshow.locator('text=/\\d+ \/ \\d+/').first().innerText(), /\d+ \/ \d+/);
   if (process.env.PREZENT_REAL_VIDEO) await page.waitForFunction(() => document.querySelector('div.fixed.inset-0.z-50 video')?.paused === false, { timeout: 5000 });
   await page.keyboard.press('Space');
@@ -146,6 +166,7 @@ try {
   const restarted = await app.firstWindow();
   restarted.setDefaultTimeout(15000);
   await restarted.locator('button[title*="Wszystkie Zdjęcia"]').click();
+  assert.ok(await restarted.locator('img[loading="eager"]').count() > 0, 'Image preference did not survive restart');
   await restarted.getByRole('button', { name: /^Filmy/ }).click();
   const persistedCard = restarted.locator('article').filter({ hasText: 'e2e-fixture' });
   assert.equal(await persistedCard.locator('select').inputValue(), 'album-italy');

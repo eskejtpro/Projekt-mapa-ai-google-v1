@@ -66,7 +66,11 @@ function soapEnvelope(action, body) {
   return `<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:${action} xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">${body}</u:${action}></s:Body></s:Envelope>`;
 }
 function escapeXml(value) { return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;'); }
-function didl(title, url, mimeType) { return `&lt;DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"&gt;&lt;item id="1" parentID="0" restricted="1"&gt;&lt;dc:title&gt;${escapeXml(title)}&lt;/dc:title&gt;&lt;res protocolInfo="http-get:*:${escapeXml(mimeType)}:*"&gt;${escapeXml(url)}&lt;/res&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;`; }
+function didl(title, url, mimeType) {
+  const mediaClass = mimeType.startsWith('image/') ? 'object.item.imageItem.photo' : 'object.item.videoItem';
+  const metadata = `<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"><item id="1" parentID="0" restricted="1"><dc:title>${escapeXml(title)}</dc:title><upnp:class>${mediaClass}</upnp:class><res protocolInfo="http-get:*:${escapeXml(mimeType)}:*">${escapeXml(url)}</res></item></DIDL-Lite>`;
+  return escapeXml(metadata);
+}
 
 class MediaShareServer {
   constructor(allowedRoots = []) { this.allowedRoots = allowedRoots.map(root => realpathSync(root)); this.entries = new Map(); this.server = null; }

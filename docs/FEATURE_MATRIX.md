@@ -1,5 +1,7 @@
 # Rejestr funkcji — audyt Codex 2026-10-17
 
+Aktualizacja audytu 2026-10-18 (PR #10): bieżące dowody i ograniczenia dla wszystkich obszarów DoD są w `FINAL_QUALITY_AUDIT.md` oraz `TESTING.md`. PR #8/#9 scalone (main `f55c972`), fizyczny TV nadal UNVERIFIED; PARTIAL poniżej nie jest zamieniane w DONE na podstawie samego CI.
+
 Stan odniesienia: 1be0136. PARTIAL oznacza kod bez pełnego dowodu docelowego runtime. Historyczne UKOŃCZONE w dokumentach AI Studio nie są potwierdzeniem Windows.
 
 | ID / wymaganie | Funkcja / pliki | Status | Brak / ryzyko / zależności | Test i kryterium ukończenia | Priorytet |
