@@ -30,7 +30,7 @@ interface GalleryViewProps {
   onDeletePhoto: (id: string) => void;
   onDeletePhotos?: (ids: string[]) => void;
   onDeleteAlbum?: (id: string, deletePhotos: boolean) => void;
-  onStartSlideshow: (photos: TravelPhoto[]) => void;
+  onStartSlideshow: (media: Array<TravelPhoto | MediaItem>) => void;
   onSelectAlbum: (albumId: string | null) => void;
   selectedAlbumId: string | null;
   onOpenOrganizer?: (album: TravelAlbum) => void;
@@ -318,13 +318,13 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
 
           {/* Start Pokazu Slajdów */}
           <button
-            onClick={() => onStartSlideshow(filteredPhotos)}
-            disabled={filteredPhotos.length === 0}
+            onClick={() => onStartSlideshow([...filteredPhotos, ...filteredVideos])}
+            disabled={filteredPhotos.length + filteredVideos.length === 0}
             className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-emerald-500 text-slate-950 font-bold text-xs hover:brightness-110 shadow-lg flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
             title="Uruchom kinowy pokaz slajdów w wybranej kolejności"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
-            Pokaz slajdów ({filteredPhotos.length})
+            Pokaz slajdów ({filteredPhotos.length + filteredVideos.length})
           </button>
           {onImportVideos && <button onClick={onImportVideos} className="px-3.5 py-1.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-xs flex items-center gap-1.5"><Upload className="w-3.5 h-3.5" /> Dodaj filmy</button>}
         </div>

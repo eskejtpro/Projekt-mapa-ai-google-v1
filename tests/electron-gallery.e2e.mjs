@@ -92,6 +92,48 @@ try {
   } else await page.getByRole('dialog').getByRole('alert').waitFor({ state: 'visible' });
   await page.getByRole('button', { name: 'Zamknij', exact: true }).click();
   assert.equal(await page.getByRole('dialog').count(), 0);
+  // PR #7: the existing slideshow must expose a mixed photo/video sequence.
+  await page.evaluate(() => {
+    const key = 'prezent_travel_photos_v2';
+    const current = JSON.parse(window.electronAPI.storage.get(key) || '[]');
+    if (!current.some(photo => photo.id === 'slideshow-fixture-photo')) {
+      const base = current[0] || { location: { lat: 52.2297, lng: 21.0122, cityName: 'Warszawa', countryName: 'Polska', countryCode: 'PL' }, albumId: '', participants: [], tags: [] };
+      const photo = { ...base, id: 'slideshow-fixture-photo', title: 'Slideshow fixture photo', date: '2026-01-01', url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', thumbnailUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', notes: '', isFavorite: false, isDemo: false };
+      window.electronAPI.storage.set(key, JSON.stringify([...current, photo]));
+    }
+  });
+  await page.reload();
+  await page.locator('button[title="Wszystkie Zdjęcia & Galeria"]').click();
+  const slideshowButton = page.getByRole('button', { name: /^Pokaz slajdów/ });
+  await slideshowButton.click();
+  const slideshow = page.locator('div.fixed.inset-0.z-50');
+  await slideshow.waitFor({ state: 'visible' });
+  assert.ok(await slideshow.locator('img').count() > 0, 'Pokaz nie wyświetlił zdjęcia');
+  await page.keyboard.press('End');
+  await slideshow.getByTestId('slideshow-video').waitFor({ state: 'visible' });
+  assert.match(await slideshow.locator('text=/\\d+ \/ \\d+/').first().innerText(), /\d+ \/ \d+/);
+  await page.keyboard.press('Space');
+  assert.equal(await slideshow.locator('video').first().evaluate(video => video.paused), true);
+  await page.keyboard.press('Space');
+  if (process.env.PREZENT_REAL_VIDEO) {
+    await slideshow.locator('video').first().evaluate(async video => {
+      video.muted = true;
+      await video.play();
+    });
+    await page.waitForFunction(() => document.querySelector('div.fixed.inset-0.z-50 video')?.currentTime > 0.2);
+    await slideshow.locator('video').first().evaluate(video => { video.currentTime = Math.max(0, video.duration - 0.1); });
+    // onEnded advances the React slideshow immediately, so the old <video>
+    // is unmounted before its `ended` property can be observed. Verify the
+    // user-visible contract instead: playback completion advances to media
+    // that is not the completed video.
+    await slideshow.locator('[data-testid="slideshow-video"]').waitFor({ state: 'detached', timeout: 15000 });
+    await slideshow.locator('img').first().waitFor({ state: 'visible' });
+  }
+  await page.keyboard.press('Escape');
+  await slideshow.waitFor({ state: 'hidden' });
+  console.log(process.env.PREZENT_REAL_VIDEO
+    ? 'PASS: mixed slideshow controls and real video completion advance'
+    : 'PASS: mixed slideshow controls (real video completion is covered by test:video-playback-real)');
   await app.close();
   await new Promise(resolve => setTimeout(resolve, 1000));
   app = await electron.launch(launchOptions);

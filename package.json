@@ -3,7 +3,7 @@
   "private": true,
   "description": "Rodzinne zdjęcia i podróże na mapie — aplikacja Windows",
   "author": "eskejtpro",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "engines": {
     "node": ">=24 <27"
   },
@@ -22,7 +22,7 @@
     "clean": "node scripts/clean.mjs",
     "typecheck": "tsc --noEmit",
     "test:tooling": "node --test tests/tooling.test.mjs tests/automation.test.mjs",
-    "test:database": "node --import ./scripts/test-environment.mjs --test tests/database.test.cjs tests/media-store.test.cjs tests/offline-map.test.cjs tests/tv-discovery.test.cjs tests/remote-control.test.cjs tests/backup-manager.test.cjs tests/video-library.test.cjs tests/video-gps.test.cjs tests/video-response.test.cjs tests/library-backup.test.cjs",
+    "test:database": "node scripts/test-database.mjs",
     "test:video-gps-real": "node scripts/test-video-gps-real.mjs",
     "test:video-playback-real": "npm run build && node scripts/test-video-playback-real.mjs",
     "test:integration": "vitest run src/__tests__/storage.integration.test.ts",

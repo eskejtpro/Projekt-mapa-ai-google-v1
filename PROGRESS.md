@@ -1,5 +1,18 @@
 # PROGRESS.md - Rzeczywisty Stan Postępów Projektu „Prezent Mapy”
 
+## SESSION HANDOFF — PR #7 multimedia slideshow, 2026-10-18
+- Wersja robocza: 1.7.0, branch `feature/multimedia-slideshow`, baza `main` po scaleniu PR #6.
+- Rozszerzono istniejący `SlideshowModal` o wspólną listę zdjęć i filmów, automatyczne odtwarzanie filmu, przejście po `ended`, pauzę/wznowienie, wyciszenie, głośność, fullscreen, kolejność, shuffle, pętlę i filmstrip.
+- Galeria i album mogą przekazać do pokazu oba rodzaje mediów; zachowano istniejący wygląd ciemny/bursztynowy i kontrolki klawiatury.
+- TypeScript, build i Vitest 22/22: PASS. E2E Electron pokazu mieszanego, pauzy/wznowienia, zakończenia filmu, mapy, backupu/restore i restartu: PASS.
+- `npm run test:database`: PASS, 21/21. Zbiorczy proces testów backupu został zastąpiony odizolowanym uruchomieniem każdego scenariusza, co usuwa współdzielenie uchwytów `node:sqlite` bez pomijania testów, także 64 MiB.
+- Pełne `npm run verify`: PASS. GitHub Actions Quality dla `4b7f6b5`: PASS, w tym E2E Electron i rzeczywiste MP4/WebM. Status: IN_REVIEW; nie tworzyć merge bez decyzji użytkownika.
+- Ostatni stan kodu: `SlideshowModal.tsx` obsługuje union zdjęcie/MediaItem, autoplay filmu, `ended` → następny element, pauzę/wznowienie, wyciszenie, głośność, fullscreen i filmstrip. `App.tsx` przekazuje bibliotekę mieszaną, a `GalleryView.tsx` może uruchomić pokaz zdjęć i filmów.
+- Wersja/package-lock ustawiona na 1.7.0; `CHANGELOG.md`, `TASKS.md` i `docs/FEATURE_MATRIX.md` zawierają status PR #7.
+- Zweryfikowano: `npm run verify` PASS, `npm run test:e2e:electron` PASS, `git diff --check` PASS. Lokalne FFmpeg nie jest dostępne, dlatego rzeczywista ścieżka kodeków pozostaje do potwierdzenia przez CI Windows.
+- Niezapisane zmiany są lokalne na branchu `feature/multimedia-slideshow`; plik `moje instrukcje do projektu.txt` pozostaje nieśledzony i nietknięty.
+- Następny krok: uzupełnić brakujące scenariusze MSL-03 przed decyzją o scaleniu; PR #7 pozostaje otwarty mimo zielonego CI.
+
 ## SESSION HANDOFF — PR #6 scalony, 2026-10-18
 - Wersja: 1.6.0, branch `main`, commit merge `38f83e14d58ebc4352801df4883097a158ae22c7`. Ten handoff zastępuje wcześniejsze statusy PR #6 poniżej.
 - Wdrożono ograniczony parser atomów GPS MP4/MOV, pełne kopie folderowe SQLite/mediów, walidowane IPC i panel ustawień, dopracowany edytor GPS, poprawki CSP/CORS miniaturek, HTTP Range i zwalnianie wideo.

@@ -125,7 +125,7 @@ export default function App() {
   const [importInitialAlbumId, setImportInitialAlbumId] = useState<string | null>(null);
   const [dragOverAlbumId, setDragOverAlbumId] = useState<string | null>(null);
   const [isSlideshowOpen, setIsSlideshowOpen] = useState<boolean>(false);
-  const [slideshowPhotos, setSlideshowPhotos] = useState<TravelPhoto[]>([]);
+  const [slideshowPhotos, setSlideshowPhotos] = useState<Array<TravelPhoto | MediaItem>>([]);
   const [slideshowStartIndex, setSlideshowStartIndex] = useState<number>(0);
   const [isTvModeOpen, setIsTvModeOpen] = useState<boolean>(false);
   const [isOfflineModalOpen, setIsOfflineModalOpen] = useState<boolean>(false);
@@ -355,8 +355,8 @@ export default function App() {
   };
 
   // Start pokazu slajdów
-  const handleStartSlideshow = (customList?: TravelPhoto[], startIndex: number = 0) => {
-    const list = customList && customList.length > 0 ? customList : photos;
+  const handleStartSlideshow = (customList?: Array<TravelPhoto | MediaItem>, startIndex: number = 0) => {
+    const list = customList && customList.length > 0 ? customList : [...photos, ...videos];
     setSlideshowPhotos(list);
     setSlideshowStartIndex(startIndex);
     setIsSlideshowOpen(true);
@@ -380,10 +380,12 @@ export default function App() {
   // Uruchomienie pokazu slajdów z wybranego albumu według jego własnej kolejności
   const handleStartAlbumSlideshow = (album: TravelAlbum) => {
     const albumPhotos = photos.filter(p => p.albumId === album.id);
+    const albumVideos = videos.filter(v => v.albumId === album.id);
+    const albumMedia: Array<TravelPhoto | MediaItem> = [...albumPhotos, ...albumVideos];
     if (album.customPhotoOrder && album.customPhotoOrder.length > 0) {
       const orderMap = new Map<string, number>();
       album.customPhotoOrder.forEach((id, idx) => orderMap.set(id, idx));
-      const sorted = [...albumPhotos].sort((a, b) => {
+      const sorted = [...albumMedia].sort((a, b) => {
         const orderA = orderMap.has(a.id) ? orderMap.get(a.id)! : 99999;
         const orderB = orderMap.has(b.id) ? orderMap.get(b.id)! : 99999;
         if (orderA !== orderB) return orderA - orderB;
@@ -391,7 +393,7 @@ export default function App() {
       });
       handleStartSlideshow(sorted);
     } else {
-      handleStartSlideshow(albumPhotos);
+      handleStartSlideshow(albumMedia);
     }
   };
 
