@@ -1,5 +1,7 @@
 # Rejestr funkcji — audyt Codex 2026-10-17
 
+**Aktualna, pełna macierz PR #10 (2026-10-18): [SYSTEM_AUDIT_2026-10-18.md](SYSTEM_AUDIT_2026-10-18.md).** Poniższy rejestr jest historyczny; aktualne DONE/PARTIAL/BROKEN/UNVERIFIED i blokery wydania określa wskazany raport. Kandydat 1.8.1 nie jest gotowym wydaniem 2.0.
+
 Aktualizacja audytu 2026-10-18 (PR #10): bieżące dowody i ograniczenia dla wszystkich obszarów DoD są w `FINAL_QUALITY_AUDIT.md` oraz `TESTING.md`. PR #8/#9 scalone (main `f55c972`), fizyczny TV nadal UNVERIFIED; PARTIAL poniżej nie jest zamieniane w DONE na podstawie samego CI.
 
 Stan odniesienia: 1be0136. PARTIAL oznacza kod bez pełnego dowodu docelowego runtime. Historyczne UKOŃCZONE w dokumentach AI Studio nie są potwierdzeniem Windows.

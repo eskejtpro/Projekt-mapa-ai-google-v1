@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TravelPhoto } from '../types/travel';
 import { 
   X, 
@@ -38,6 +38,15 @@ export const PhotoDetailModal: React.FC<PhotoDetailModalProps> = ({
   const [participantsStr, setParticipantsStr] = useState<string>(photo?.participants.join(', ') || '');
   const [tagsStr, setTagsStr] = useState<string>(photo?.tags.join(', ') || '');
   const [savedSuccess, setSavedSuccess] = useState<boolean>(false);
+
+  useEffect(() => {
+    setTitle(photo?.title || '');
+    setNotes(photo?.notes || '');
+    setParticipantsStr(photo?.participants.join(', ') || '');
+    setTagsStr(photo?.tags.join(', ') || '');
+    setIsEditing(false);
+    setSavedSuccess(false);
+  }, [photo]);
 
   if (!photo) return null;
 

@@ -13,6 +13,8 @@
     "desktop": "npm run build && electron .",
     "test:desktop-restart": "npm run build && node scripts/desktop-restart-test.mjs",
     "test:e2e:electron": "npm run build && node --test --test-timeout=60000 tests/electron-gallery.e2e.mjs",
+    "test:e2e:system": "npm run build && node --test --test-timeout=60000 tests/electron-system.e2e.mjs",
+    "test:packaged": "node scripts/packaged-audit.mjs",
     "benchmark:library": "node scripts/benchmark-library.cjs",
     "benchmark:electron": "npm run build && node scripts/performance-e2e.mjs",
     "package:windows": "npm run build && electron-builder --win nsis portable --x64 --publish never",

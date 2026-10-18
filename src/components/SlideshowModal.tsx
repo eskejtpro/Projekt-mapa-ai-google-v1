@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { TravelPhoto } from '../types/travel';
+import { TravelPhoto, AppSettings } from '../types/travel';
 import { MediaItem } from '../types/media';
 import { ambientSound, AmbientSoundTrack } from '../services/audioAmbient';
 import {
@@ -43,6 +43,7 @@ interface SlideshowModalProps {
   photos: Array<TravelPhoto | MediaItem>;
   initialIndex?: number;
   albumName?: string;
+  settings?: AppSettings;
 }
 
 type SlideshowMedia = TravelPhoto | MediaItem;
@@ -54,6 +55,7 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
   photos: inputPhotos,
   initialIndex = 0,
   albumName,
+  settings,
 }) => {
   // Ustawienia odtwarzania
   const [intervalSec, setIntervalSec] = useState<number>(6);
@@ -103,9 +105,13 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
   // Inicjalizacja pokazu i dźwięku
   useEffect(() => {
     if (isOpen) {
+      setIntervalSec(settings?.slideshowInterval ?? 6);
+      setShowMiniMap(settings?.showMiniMapPip ?? true);
+      setAmbientTrack(settings?.ambientSoundEnabled === false ? 'none' : 'ocean');
+      setTransition(settings?.kenBurnsEnabled === false ? 'crossfade' : 'ken-burns');
       setCurrentIndex(Math.min(initialIndex, Math.max(0, activePhotos.length - 1)));
       setIsPlaying(true);
-      if (!isMuted && ambientTrack !== 'none') {
+      if (settings?.ambientSoundEnabled !== false && !isMuted && ambientTrack !== 'none') {
         ambientSound.setVolume(volume / 100);
         ambientSound.playTrack(ambientTrack);
       }
@@ -121,13 +127,13 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
   // Synchronizacja głośności i ścieżki dźwiękowej
   useEffect(() => {
     if (!isOpen) return;
-    if (isMuted || ambientTrack === 'none') {
+    if (settings?.ambientSoundEnabled === false || isMuted || ambientTrack === 'none') {
       ambientSound.stop();
     } else {
       ambientSound.setVolume(volume / 100);
       ambientSound.playTrack(ambientTrack);
     }
-  }, [ambientTrack, isMuted, volume, isOpen]);
+  }, [ambientTrack, isMuted, volume, isOpen, settings?.ambientSoundEnabled]);
 
   // Timer automatycznej zmiany slajdów
   useEffect(() => {
@@ -251,14 +257,12 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
   const mediaLocation = (media: SlideshowMedia) => media.location;
   const mediaNotes = (media: SlideshowMedia) => isVideoMedia(media) ? '' : media.notes;
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      containerRef.current?.requestFullscreen?.();
-      setIsFullscreen(true);
-    } else {
-      document.exitFullscreen?.();
-      setIsFullscreen(false);
-    }
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) await containerRef.current?.requestFullscreen?.();
+      else await document.exitFullscreen?.();
+      setIsFullscreen(!!document.fullscreenElement);
+    } catch { setIsFullscreen(false); }
   };
 
   const nextSlide = () => setCurrentIndex(prev => {

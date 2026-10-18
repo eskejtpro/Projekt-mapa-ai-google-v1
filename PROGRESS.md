@@ -1,5 +1,14 @@
 # PROGRESS.md - Rzeczywisty Stan Postępów Projektu „Prezent Mapy”
 
+## SESSION HANDOFF — rozszerzony audyt systemowy PR #10, 2026-10-18
+
+- Cel: pełny audyt aplikacji i przygotowanie do Windows 2.0; bieżąca wersja 1.8.1, branch `feature/final-quality-audit`, main `f55c972e6c98b2bf5dc14850b809b135239e971d`.
+- Naprawiono: walidację/dekodowanie importu zdjęć, GPS i anulowanie kolejki; inicjalizację edytora; pętlę renderów organizera i fałszywy sukces zapisu; fullscreen; filtr podróży; odczyt ustawień pokazu; SOAP Fault i anulowanie DLNA.
+- Zweryfikowano lokalnie: verify PASS (24 Vitest, 14 tooling, 23 integracyjne + 6 izolowanych backup), system E2E PASS, pakowanie NSIS/portable 1.8.1 PASS. Dalsze wyniki E2E, restartu i CI: TESTING.md.
+- Macierz wszystkich funkcji, granice bezpieczeństwa, braki ustawień i kryteria DoD: `docs/SYSTEM_AUDIT_2026-10-18.md`. Decyzja wydania: NOT READY. Fizyczny TV i odsłuch UNVERIFIED.
+- Profile testowe są odizolowane. Oryginalne media i nieśledzony `moje instrukcje do projektu.txt` nietknięte.
+- Następny krok: zakończyć regresje i Windows CI, zapisać commit w PR #10; nie scalać automatycznie. Braki wydania przekazać do małych prac naprawczych, nie oznaczać DONE.
+
 ## SESSION HANDOFF — PR #10, 2026-10-18 (aktualny)
 - Cel: końcowy audyt DoD i celowane regresje; branch `feature/final-quality-audit`, kandydat 1.8.1.
 - Main po merge #8/#9: `f55c972e6c98b2bf5dc14850b809b135239e971d`; oba PR scalone po dwóch zielonych CI. Wcześniejsze handoffy poniżej są historyczne.

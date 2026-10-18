@@ -468,7 +468,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                     <img
                       src={photo.thumbnailUrl || photo.url}
                       alt={photo.title}
-                      loading="lazy"
+                      loading={lazyLoadImages ? 'lazy' : 'eager'}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
 

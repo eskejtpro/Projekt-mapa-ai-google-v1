@@ -50,6 +50,7 @@ import { AndroidSyncModal } from './components/AndroidSyncModal';
 import { PhotoDetailModal } from './components/PhotoDetailModal';
 import { CatalogOrganizerModal } from './components/CatalogOrganizerModal';
 import { VideoPlayer } from './components/VideoPlayer';
+import { photosForTrip } from './services/trip-media';
 import type { MediaItem } from './types/media';
 
 export default function App() {
@@ -356,7 +357,7 @@ export default function App() {
 
   // Start pokazu slajdów
   const handleStartSlideshow = (customList?: Array<TravelPhoto | MediaItem>, startIndex: number = 0) => {
-    const list = customList && customList.length > 0 ? customList : [...photos, ...videos];
+    const list = customList ?? [...photos, ...videos];
     setSlideshowPhotos(list);
     setSlideshowStartIndex(startIndex);
     setIsSlideshowOpen(true);
@@ -364,17 +365,16 @@ export default function App() {
 
   // Zapis własnej kolejności slajdów w katalogu / albumie
   const handleSaveAlbumOrder = (albumId: string, orderedPhotoIds: string[]) => {
-    setAlbums(prevAlbums => {
-      const updated = prevAlbums.map(a => {
+      const updated = albums.map(a => {
         if (a.id === albumId) {
           return { ...a, customPhotoOrder: orderedPhotoIds };
         }
         return a;
       });
-      StorageService.saveAlbums(updated);
-      return updated;
-    });
+      if (!StorageService.saveAlbums(updated)) { showToast('Nie zapisano kolejności zdjęć. Sprawdź miejsce i uprawnienia folderu danych.', 'warning'); return false; }
+      setAlbums(updated);
     showToast('Zapisano własną kolejność zdjęć w katalogu!', 'success');
+    return true;
   };
 
   // Uruchomienie pokazu slajdów z wybranego albumu według jego własnej kolejności
@@ -782,16 +782,10 @@ export default function App() {
                     </p>
                   </div>
 
+                  {trips.length === 0 && <p role="status" className="p-4 text-sm text-slate-400">Brak zapisanych podróży. Zdjęcia i albumy są dostępne w galerii.</p>}
                   <div className="space-y-6 pl-4 border-l-2 border-slate-800">
                     {trips.map(trip => {
-                      const tripPhotos = photos.filter(p => {
-                        if (trip.id === 'trip-italy-2024') return p.location.countryCode === 'IT';
-                        if (trip.id === 'trip-greece-2023') return p.location.countryCode === 'GR';
-                        if (trip.id === 'trip-poland-tatry') return p.location.countryCode === 'PL';
-                        if (trip.id === 'trip-japan-spring') return p.location.countryCode === 'JP';
-                        if (trip.id === 'trip-norway-fjords') return p.location.countryCode === 'NO';
-                        return false;
-                      });
+                      const tripPhotos = photosForTrip(photos, albums, trip.id);
 
                       return (
                         <div key={trip.id} className="relative bg-[#0f172a] border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
@@ -858,6 +852,7 @@ export default function App() {
                     </button>
                   </div>
 
+                  {trips.length === 0 && <p role="status" className="p-4 text-sm text-slate-400">Brak zapisanych tras podróży.</p>}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {trips.map(trip => (
                       <div
@@ -1110,6 +1105,7 @@ export default function App() {
         isOpen={isSlideshowOpen}
         onClose={() => setIsSlideshowOpen(false)}
         photos={slideshowPhotos}
+        settings={settings}
         initialIndex={slideshowStartIndex}
         albumName={selectedAlbumId ? albums.find(a => a.id === selectedAlbumId)?.name : undefined}
       />

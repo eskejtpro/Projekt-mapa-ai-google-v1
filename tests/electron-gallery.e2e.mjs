@@ -25,7 +25,14 @@ try {
   await page.waitForLoadState('domcontentloaded');
   // Saved offline settings arrive after the initial React render. The first map
   // must switch to MBTiles without navigation or selecting a trip.
-  await page.waitForFunction(() => Array.from(document.querySelectorAll('.leaflet-tile-loaded')).some(image => image.src.startsWith('prezent-tiles:') && image.naturalWidth > 0), undefined, { timeout: 5000 });
+  try {
+    await page.waitForFunction(() => Array.from(document.querySelectorAll('.leaflet-tile-loaded')).some(image => image.src.startsWith('prezent-tiles:') && image.naturalWidth > 0), undefined, { timeout: 5000 });
+  } catch (error) {
+    mkdirSync('reports', { recursive: true });
+    await page.screenshot({ path: 'reports/gallery-start-failure.png' });
+    console.error('Initial map diagnostics:', await page.evaluate(() => ({ text: document.body.innerText.slice(0, 1600), tiles: Array.from(document.querySelectorAll('.leaflet-tile')).map(image => ({ src: image.src, width: image.naturalWidth, complete: image.complete })) })));
+    throw error;
+  }
   // Minimal container fixture exercises the real import/SQLite/UI path.
   // Codec decoding is covered separately by the real Windows media test.
   if (process.env.PREZENT_REAL_VIDEO) copyFileSync(process.env.PREZENT_REAL_VIDEO, fixture);

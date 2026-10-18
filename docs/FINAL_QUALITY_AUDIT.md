@@ -1,5 +1,7 @@
 # Końcowy audyt jakości — PR #10
 
+**Rozszerzenie całego audytu, aktualna macierz i decyzja NOT READY dla Windows 2.0: [SYSTEM_AUDIT_2026-10-18.md](SYSTEM_AUDIT_2026-10-18.md).** Poniżej zachowano wcześniejszy zakres regresji; nowsze wyniki znajdują się w TESTING.md.
+
 Data: 2026-10-18. Zakres: DoD funkcji i przygotowania Windows, bez deklaracji gotowego wydania. Baza: `f55c972e6c98b2bf5dc14850b809b135239e971d` (main po PR #8/#9).
 
 ## Integracja i dowody bazowe

@@ -1,5 +1,10 @@
 # TASKS.md - Rejestr Zadań i Implementacji Projektu „Prezent Mapy”
 
+## Rozszerzony audyt PR #10 — 2026-10-18
+
+- QA10-SYSTEM / P1 / IN_REVIEW: pełna macierz funkcji i DoD, naprawy importu/albumów/GPS/fullscreen/DLNA. Kryterium: regresje, izolowany restart, verify, Windows CI oraz jawne ograniczenia. Dowody: `docs/SYSTEM_AUDIT_2026-10-18.md`, `TESTING.md`.
+- QA10-RELEASE / P1 / BLOCKED: finalne wydanie 2.0. Brakuje zamknięcia niedziałających ustawień, kompletnej trwałości pokazu i dowodów instalacji/upgrade/Windows 11; TV/odsłuch UNVERIFIED. Nie uznawać zielonego CI za RELEASE READY.
+
 ## PR #10 — final-quality-audit
 - QA10-01/02/03/04/05: IN_REVIEW — kryteria, priorytety i dowody w `docs/FINAL_QUALITY_AUDIT.md`; start offline, DIDL, preferencje galerii, timer zdjęć/filmów i testy serwera.
 - Integracja PR #8/#9: DONE — przegląd, zielone kontrole aktualnych HEAD, merge obu PR i lokalny main `f55c972`.

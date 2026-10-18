@@ -82,6 +82,8 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   const [activeTab, setActiveTab] = useState<ImportTabMode>(initialMode);
   const [queuedItems, setQueuedItems] = useState<QueuedItem[]>([]);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const generationRef = useRef(0);
   const [progress, setProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
 
   // Album
@@ -159,6 +161,10 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   useEffect(() => {
     if (!isOpen) {
       processedFilesKeyRef.current.clear();
+      generationRef.current++;
+      setQueuedItems([]);
+      setIsProcessing(false);
+      setImportError(null);
       return;
     }
 
@@ -208,7 +214,9 @@ export const ImportModal: React.FC<ImportModalProps> = ({
 
   // Przetwarzanie plików i wyciąganie metadanych EXIF
   const processIncomingFiles = async (files: File[]) => {
+    const generation = generationRef.current;
     setIsProcessing(true);
+    setImportError(null);
     setProgress({ current: 0, total: files.length });
 
     const newQueued: QueuedItem[] = [];
@@ -218,6 +226,10 @@ export const ImportModal: React.FC<ImportModalProps> = ({
       setProgress({ current: i + 1, total: files.length });
 
       try {
+        if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type) || file.size === 0 || file.size > 64 * 1024 * 1024) throw new Error('Wybierz niepusty obraz JPEG, PNG, WebP lub GIF do 64 MB.');
+        const bitmap = await createImageBitmap(file);
+        bitmap.close();
+        if (generation !== generationRef.current) return;
         let exifData: Record<string, unknown> | null = null;
         try {
           exifData = readExif ? await exifr.parse(file, {
@@ -229,7 +241,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
           // Brak lub uszkodzony EXIF w pliku
         }
 
-        const hasGps = Boolean(exifData && typeof exifData.latitude === 'number' && typeof exifData.longitude === 'number');
+        const hasGps = Boolean(exifData && typeof exifData.latitude === 'number' && Number.isFinite(exifData.latitude) && Math.abs(exifData.latitude) <= 90 && typeof exifData.longitude === 'number' && Number.isFinite(exifData.longitude) && Math.abs(exifData.longitude) <= 180);
         const lat = hasGps ? (exifData?.latitude as number) : undefined;
         const lng = hasGps ? (exifData?.longitude as number) : undefined;
 
@@ -264,10 +276,11 @@ export const ImportModal: React.FC<ImportModalProps> = ({
           },
         });
       } catch (err) {
-        console.error('Błąd odczytu pliku:', file.name, err);
+        if (generation === generationRef.current) setImportError(`Nie można wczytać zdjęcia ${file.name}. Plik jest uszkodzony, nieobsługiwany lub zbyt duży.`);
       }
     }
 
+    if (generation !== generationRef.current) return;
     setQueuedItems(prev => {
       // Zapobieganie powielaniu w kolejce
       const existingSignatures = new Set(prev.map(p => p.contentHash || p.dataUrl));
@@ -367,6 +380,10 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   // Finalny zapis zaimportowanych elementów
   const handleFinalSave = () => {
     if (queuedItems.length === 0) return;
+    if (queuedItems.some(item => !item.hasExifGps) && (!Number.isFinite(fallbackLat) || Math.abs(fallbackLat) > 90 || !Number.isFinite(fallbackLng) || Math.abs(fallbackLng) > 180)) {
+      setImportError('Nieprawidłowe współrzędne GPS. Szerokość: −90 do 90, długość: −180 do 180.');
+      return;
+    }
 
     let targetAlbumId = selectedAlbumId;
     let createdAlbum: TravelAlbum | undefined;
@@ -403,7 +420,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
           lng,
           cityName: hasGps ? 'Współrzędne EXIF (GPS)' : fallbackCity,
           countryName: hasGps ? 'Lokalizacja ze zdjęcia' : fallbackCountry,
-          countryCode: fallbackCountryCode,
+          countryCode: hasGps ? '' : fallbackCountryCode,
           placeName: item.name,
         },
         albumId: targetAlbumId,
@@ -430,7 +447,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4" role="dialog" aria-modal="true" aria-label="Import zdjęć">
       <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-4xl max-h-[92vh] overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in-95">
         
         {/* Nagłówek okna */}
@@ -645,11 +662,13 @@ export const ImportModal: React.FC<ImportModalProps> = ({
 
                   <button
                     type="button"
-                    onClick={() => {
-                      const path = 'C:\\Users\\Rodzina\\Obrazy\\Prezent-Wspomnienia';
-                      if (navigator.clipboard) navigator.clipboard.writeText(path).catch(() => {});
-                      setFolderStatusMsg('Skopiowano ścieżkę do schowka: ' + path);
-                      setTimeout(() => setFolderStatusMsg(null), 3500);
+                    onClick={async () => {
+                      try {
+                        if (!window.electronAPI) throw new Error('Folder Windows wymaga aplikacji desktopowej.');
+                        const { photosPath } = await window.electronAPI.systemInfo();
+                        await navigator.clipboard.writeText(photosPath);
+                        setFolderStatusMsg('Skopiowano ścieżkę do schowka: ' + photosPath);
+                      } catch { setImportError('Nie skopiowano ścieżki folderu Windows. Sprawdź uprawnienia schowka i aplikację desktopową.'); }
                     }}
                     className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs flex items-center gap-2 cursor-pointer"
                   >
@@ -971,6 +990,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                   type="number"
                   step="0.0001"
                   value={fallbackLat}
+                  aria-label="Szerokość GPS importu"
                   onChange={e => setFallbackLat(parseFloat(e.target.value) || 0)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-200 font-mono text-xs"
                 />
@@ -981,6 +1001,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                   type="number"
                   step="0.0001"
                   value={fallbackLng}
+                  aria-label="Długość GPS importu"
                   onChange={e => setFallbackLng(parseFloat(e.target.value) || 0)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-200 font-mono text-xs"
                 />
@@ -994,7 +1015,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
           ref={fileInputRef}
           type="file"
           multiple
-          accept="image/*"
+          accept="image/jpeg,image/png,image/webp,image/gif"
           className="hidden"
           onChange={handleFileChange}
         />
@@ -1009,6 +1030,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
           onChange={handleFileChange}
         />
 
+        {importError && <p role="alert" className="px-6 py-2 text-sm text-red-300 bg-red-950/40">{importError}</p>}
         {/* Pasek postępu importu */}
         {isProcessing && (
           <div className="px-6 py-2 bg-slate-950 border-t border-slate-800 shrink-0">

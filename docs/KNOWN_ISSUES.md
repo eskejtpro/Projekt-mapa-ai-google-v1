@@ -14,3 +14,6 @@ Aktualny audyt PR #10 (1.8.1): `FINAL_QUALITY_AUDIT.md`. Początkowa mapa offlin
 - P2: wymagane dalsze pomiary rzeczywistych zdjęć, wydajności galerii/mapy i szczytowej pamięci. Pomiar syntetycznych metadanych nie dowodzi 60 FPS ani kosztu pełnowymiarowych obrazów.
 
 Aktualne dowody: TESTING.md i reports/. Stan funkcji: docs/FEATURE_MATRIX.md. Historia wcześniejszych usterek pozostaje w Git.
+# Aktualne blokery wydania 2.0 — audyt PR #10
+
+Kanoniczna lista: [SYSTEM_AUDIT_2026-10-18.md](SYSTEM_AUDIT_2026-10-18.md). Niepełne powiązanie ustawień i trwałość opcji pokazu, negocjacja formatów/pauza zdjęć DLNA oraz brak testów instalacji/upgrade/Windows 11 blokują pełną deklarację gotowości. Fizyczny TV i odsłuch pozostają UNVERIFIED. Starsze wpisy należy interpretować według aktualnej macierzy.

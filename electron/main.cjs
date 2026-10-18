@@ -76,7 +76,9 @@ app.whenReady().then(async () => {
   let offlineNetworkBlocked = JSON.parse(database.get('prezent_app_settings_v2') || '{}').offlineSimulationMode === true;
   session.defaultSession.webRequest.onBeforeRequest({ urls: ['http://*/*', 'https://*/*'] }, (_details, callback) => callback({ cancel: offlineNetworkBlocked }));
   app.once('will-quit', () => { videoLibrary.close(); database.close(); });
-  session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
+  session.defaultSession.setPermissionRequestHandler((contents, permission, callback, details) => {
+    callback(permission === 'fullscreen' && contents === window?.webContents && details.isMainFrame === true && details.requestingUrl === page);
+  });
   window = new BrowserWindow({
     width: 1440, height: 900, minWidth: 960, minHeight: 640,
     frame: false, backgroundColor: '#080d17', show: false,

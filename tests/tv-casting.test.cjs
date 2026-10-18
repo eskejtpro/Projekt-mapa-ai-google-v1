@@ -4,7 +4,33 @@ const http = require('node:http');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { parseDeviceDescription, MediaShareServer, DlnaCasting, didl, hydrateRenderer, isPrivateAddress } = require('../electron/tv-casting.cjs');
+const { parseDeviceDescription, MediaShareServer, DlnaCasting, didl, hydrateRenderer, isPrivateAddress, soapFault } = require('../electron/tv-casting.cjs');
+
+test('SOAP Fault zwraca kod i opis zamiast fałszywego sukcesu', () => {
+  const fault = soapFault('<s:Fault><faultcode>s:Client</faultcode><faultstring>Invalid URI</faultstring><detail><UPnPError><errorCode>714</errorCode><errorDescription>Illegal MIME-Type</errorDescription></UPnPError></detail></s:Fault>');
+  assert.deepEqual(fault, { code: '714', description: 'Illegal MIME-Type' });
+  assert.equal(soapFault('<s:Envelope><s:Body><u:PlayResponse/></s:Body></s:Envelope>'), null);
+});
+
+test('DlnaCasting propaguje SOAP Fault zarówno przy HTTP 200, jak i 500', async () => {
+  const deviceServer = http.createServer((req, res) => {
+    if (req.url === '/device-200.xml') return res.end(description('TV fault 200').replace('/upnp/control', '/upnp/control-200'));
+    if (req.url === '/device-500.xml') return res.end(description('TV fault 500').replace('/upnp/control', '/upnp/control-500'));
+    res.writeHead(req.url === '/upnp/control-500' ? 500 : 200, { 'Content-Type': 'text/xml' });
+    res.end('<s:Envelope><s:Body><s:Fault><detail><UPnPError><errorCode>714</errorCode><errorDescription>Illegal MIME-Type</errorDescription></UPnPError></detail></s:Fault></s:Body></s:Envelope>');
+  });
+  await new Promise(resolve => deviceServer.listen(0, '127.0.0.1', resolve));
+  const port = deviceServer.address().port;
+  try {
+    for (const status of [200, 500]) {
+      const casting = new DlnaCasting(async () => ({ file: __filename, mimeType: 'video/mp4', title: 'Fault' }), []);
+      casting.setDevices([{ id: `fault-${status}`, address: '127.0.0.1', location: `http://127.0.0.1:${port}/device-${status}.xml` }]);
+      await casting.connect(`fault-${status}`);
+      await assert.rejects(() => casting.control('stop'), /SOAP Fault 714: Illegal MIME-Type/);
+      await casting.disconnect();
+    }
+  } finally { await new Promise(resolve => deviceServer.close(resolve)); }
+});
 
 test('DIDL preserves escaped title inside SOAP and declares the media class', () => {
   const soapValue = didl('A & <B>', 'http://192.168.1.2/media/token', 'video/mp4');
@@ -79,5 +105,41 @@ test('casting symulatora wykonuje opis, SOAP, ograniczony plik i HTTP Range', as
     await show;
     assert.equal(soapActions.filter(action => action.includes('#SetAVTransportURI')).length, 2, 'Stop prevents advancing to second photo');
     await casting.disconnect(); await assert.rejects(() => fetch(localUrl), /fetch failed|ECONNREFUSED/);
+  } finally { await casting.disconnect(); await new Promise(resolve => deviceServer.close(resolve)); fs.rmSync(root, { recursive: true, force: true }); }
+});
+
+test('Stop anuluje opóźnione SetAVTransportURI i nie wysyła Play', async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'prezent-tv-cancel-'));
+  const file = path.join(root, 'sample.mp4'); fs.writeFileSync(file, 'video');
+  const actions = [];
+  const deviceServer = http.createServer((req, res) => {
+    if (req.url === '/device.xml') return res.end(description('TV cancel'));
+    if (req.url === '/upnp/control') {
+      let body = ''; req.on('data', chunk => { body += chunk; }); req.on('end', () => {
+        const action = req.headers.soapaction; actions.push(action);
+        if (action.includes('#SetAVTransportURI')) return setTimeout(() => res.end('<s:Envelope><s:Body><u:OK/></s:Body></s:Envelope>'), 300);
+        res.end('<s:Envelope><s:Body><u:OK/></s:Body></s:Envelope>');
+      });
+      return;
+    }
+    res.writeHead(404); res.end();
+  });
+  await new Promise(resolve => deviceServer.listen(0, '127.0.0.1', resolve));
+  const port = deviceServer.address().port;
+  const casting = new DlnaCasting(async () => ({ file, mimeType: 'video/mp4', title: 'Próbka' }), [root]);
+  try {
+    casting.setDevices([{ id: 'uuid:cancel', address: '127.0.0.1', location: `http://127.0.0.1:${port}/device.xml` }]);
+    await casting.connect('uuid:cancel');
+    const show = casting.slideshow([{ kind: 'video', id: 'video-cancel' }]);
+    await new Promise(resolve => setTimeout(resolve, 40));
+    await casting.control('stop');
+    await show;
+    assert.equal(actions.filter(action => action.includes('#Play')).length, 0);
+    const pending = casting.play({ kind: 'video', id: 'standalone-cancel' });
+    const rejected = assert.rejects(pending, { name: 'AbortError' });
+    await new Promise(resolve => setTimeout(resolve, 40));
+    await casting.control('stop');
+    await rejected;
+    assert.equal(actions.filter(action => action.includes('#Play')).length, 0, 'Standalone Play must also respect Stop');
   } finally { await casting.disconnect(); await new Promise(resolve => deviceServer.close(resolve)); fs.rmSync(root, { recursive: true, force: true }); }
 });

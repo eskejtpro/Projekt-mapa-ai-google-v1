@@ -24,6 +24,8 @@ jobs:
         run: npm run verify
       - name: Electron gallery E2E
         run: npm run test:e2e:electron
+      - name: Electron system audit E2E
+        run: npm run test:e2e:system
       - name: Prepare checksum-verified portable video test tools
         shell: pwsh
         run: ./scripts/setup-video-test-tools.ps1

@@ -1,5 +1,9 @@
 # ARCHITECTURE.md - Architektura Aplikacji „Prezent Mapy”
 
+## Kontrakty zweryfikowane w PR #10
+
+Import zdjęć dekoduje plik przed kolejką, waliduje GPS i unieważnia asynchroniczne wyniki po zamknięciu. Relacja podróży: `photo.albumId → album.tripId`; wspólny helper `trip-media.ts` obsługuje mapę i oś czasu. Zapis kolejności albumu zwraca wynik rzeczywistej persistencji, nie pozorny sukces UI. Istniejący silnik pokazu otrzymuje konfigurację z App; nie utworzono drugiego silnika. DLNA używa ograniczonego MediaShareServer oraz AbortSignal dla żądań SOAP/odtwarzania; Stop/disconnect natychmiast odwołują tokeny. Granice i niezaimplementowane ustawienia: `docs/SYSTEM_AUDIT_2026-10-18.md`.
+
 ## Stan po inicjalizacji środowiska Codex
 Aktualny runtime Windows: React/Vite → izolowany preload → walidowane IPC → `node:sqlite` i lokalne katalogi `photos/videos`. Film jest udostępniany przez `prezent-video://local/<id>` z kontrolą ścieżki i HTTP Range; renderer nie otrzymuje systemu plików. `video-gps.cjs` odczytuje ograniczony zestaw tagów GPS, a `library-backup.cjs` zapewnia pełną kopię SQLite/mediów i addytywne przywracanie. Kontrakty i ograniczenia: `docs/VIDEO_GPS_AND_BACKUP.md`. Wersja pochodzi z package.json; dalsze diagramy i plany AI Studio poniżej są historyczne.
 

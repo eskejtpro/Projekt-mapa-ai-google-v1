@@ -1,5 +1,20 @@
 # TESTING.md - Procedury Testowe i Raport Weryfikacji
 
+## Rozszerzony audyt systemowy PR #10 — 2026-10-18
+
+- `npm run verify`: PASS — 24 Vitest, 14 tooling, 23 integracyjne oraz 6 osobno izolowanych scenariuszy backupu; typecheck, kontrola struktury/automatyzacji i build PASS.
+- `npm run test:e2e:system`: PASS, 13,4 s; rzeczywisty Electron, JPEG/EXIF/folder, uszkodzony obraz, nieprawidłowy GPS, album, edytor, wyszukiwanie, błąd zapisu IPC, 9 ekranów, 12 kategorii ustawień, fullscreen, restart i pusty album. Raport `reports/system-audit.json` i zrzuty `reports/system-audit/`.
+- `npm run package:windows:isolated`: PASS; NSIS i portable 1.8.1 w `release-current/`. Brak dowodu instalacji/upgrade/deinstalacji tej wersji; nie instalowano na bibliotece użytkownika.
+- `npm audit --omit=dev --audit-level=high`: PASS, 0 podatności w zakresie zależności produkcyjnych.
+- `npm run test:e2e:electron`: PASS — mapa 1513 mediów (1295 ms), popup, player, albumy i backup/restore. Pierwszy przebieg FAIL na oczekiwaniu 5 s na początkowy kafelek; powtórzenie PASS. Dodano diagnostykę stanu mapy i zrzut przy błędzie, bez zwiększania timeoutu; przyczyna pojedynczego przekroczenia niepotwierdzona.
+- `npm run test:video-playback-real`: PASS — H.264/AAC, VP8/Opus, VP9/Opus, klatki/postęp/pauza/seek, miniatury i zakończenie filmu w pokazie; ciężki przebieg tylko raz (1513 mediów, 1238 ms), backup/restore i restart PASS. Odsłuch UNVERIFIED.
+- `npm run test:video-gps-real`: PASS — MP4/loci i MOV/QuickTime, ffprobe, import MP4 i ponowne otwarcie SQLite. Nie oznacza obsługi importu wszystkich MOV.
+- `npm run test:packaged`: PASS — dwa uruchomienia spakowanego Electron, zapis/odczyt po restarcie, CSP, odmowa obcego IPC/okna; `reports/windows-audit.json` zawiera SHA-256 NSIS/portable. Nie jest to test instalacji ani uruchomienia samego samorozpakowującego portable.
+- `npm run test:desktop-restart`: PASS — dane zdjęcia i opis zachowane między dwoma procesami Electron.
+- `npm run release:check`: BLOCKED (exit 1, ready=false), zgodnie z niezakończonym DoD. Skrypt historycznie raportuje `release/`; bieżące artefakty izolowanego pakowania są w `release-current/` i `reports/windows-audit.json`.
+- Test handlera hooka nie dowodzi automatycznego wywołania przez klienta Codex. Wyniki nowego Windows CI raportować dopiero dla wypchniętego HEAD.
+- Vite ostrzega o głównym chunku 793 kB. Fizyczny TV, odsłuch, Windows 11, 4K i odporność na awarię zasilania UNVERIFIED. Bramka wydania pozostaje BLOCKED.
+
 ## PR #10 — 1.8.1, audyt DoD (2026-10-18)
 
 - Integracja: PR #8/#9 scalone po dwóch PASS Windows quality gate każdego aktualnego HEAD; main `f55c972e6c98b2bf5dc14850b809b135239e971d`.
