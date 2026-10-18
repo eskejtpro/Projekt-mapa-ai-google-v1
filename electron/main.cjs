@@ -307,11 +307,14 @@ app.whenReady().then(async () => {
         }
         await remoteControl.stop();
       }
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      const screenshot = await window.webContents.capturePage();
-      writeFileSync(path.join(reportsDirectory, 'desktop-smoke.png'), screenshot.toPNG());
-      writeFileSync(path.join(reportsDirectory, 'desktop-smoke.json'), JSON.stringify({ ...state, passed: true, electron: process.versions.electron, packaged: app.isPackaged }, null, 2));
-      app.exit(0);
+      const keepOpenForE2E = process.argv.includes('--e2e-interactive');
+      if (!keepOpenForE2E) {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        const screenshot = await window.webContents.capturePage();
+        writeFileSync(path.join(reportsDirectory, 'desktop-smoke.png'), screenshot.toPNG());
+        writeFileSync(path.join(reportsDirectory, 'desktop-smoke.json'), JSON.stringify({ ...state, passed: true, electron: process.versions.electron, packaged: app.isPackaged }, null, 2));
+        app.exit(0);
+      }
     } catch (error) { writeFileSync(path.join(reportsDirectory, 'desktop-smoke.json'), JSON.stringify({ passed: false, error: error.message, date: new Date().toISOString() })); console.error(error); app.exit(1); }
   }
 }).catch(() => {

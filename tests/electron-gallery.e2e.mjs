@@ -12,7 +12,7 @@ const profile = mkdtempSync(join(tmpdir(), 'prezent-restart-test-e2e-'));
 const fixture = join(profile, 'e2e-fixture.webm');
 const launchOptions = {
   executablePath: electronPath,
-  args: ['.', `--smoke-test`, `--smoke-profile=${profile}`],
+  args: ['.', `--smoke-test`, '--e2e-interactive', `--smoke-profile=${profile}`],
   env: { ...process.env, PREZENT_E2E_VIDEO_FIXTURE: fixture, PREZENT_E2E_VIDEO_LOCATION: JSON.stringify({ lat: 52.2297, lng: 21.0122, cityName: 'Warszawa', countryName: 'Polska', countryCode: 'PL' }) },
 };
 let app = await electron.launch(launchOptions);
@@ -29,6 +29,16 @@ try {
   const card = page.locator('article').filter({ hasText: 'e2e-fixture' });
   await card.locator('select').selectOption('album-italy');
   await page.getByText('Zapisano przypisanie filmu do albumu.').waitFor({ state: 'visible' });
+  await page.locator('button[title="Interaktywna Mapa Świata"]').click();
+  await page.getByRole('button', { name: 'Filmy', exact: true }).click();
+  const videoMarker = page.locator('.custom-video-pin').first();
+  await videoMarker.waitFor({ state: 'visible', timeout: 15000 });
+  await videoMarker.click();
+  await page.getByRole('button', { name: 'Otwórz film', exact: true }).click();
+  await page.getByRole('dialog', { name: 'e2e-fixture' }).waitFor({ state: 'visible' });
+  await page.getByRole('button', { name: 'Zamknij', exact: true }).click();
+  await page.locator('button[title="Wszystkie Zdjęcia & Galeria"]').click();
+  await page.getByRole('button', { name: /^Filmy/ }).click();
   await card.locator('button').first().click();
   await assert.doesNotReject(() => page.getByRole('dialog', { name: 'e2e-fixture' }).waitFor({ state: 'visible' }));
   const video = page.getByRole('dialog').locator('video');
@@ -43,7 +53,7 @@ try {
   await restarted.getByRole('button', { name: /^Filmy/ }).click();
   const persistedCard = restarted.locator('article').filter({ hasText: 'e2e-fixture' });
   assert.equal(await persistedCard.locator('select').inputValue(), 'album-italy');
-  console.log('PASS: Electron gallery import, filter, player dialog, album assignment and restart persistence');
+  console.log('PASS: Electron gallery/map video marker, popup player, filter, album assignment and restart persistence');
 } finally {
   await app.close();
 }

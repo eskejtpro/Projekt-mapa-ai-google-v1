@@ -52,16 +52,11 @@ function validLocation(location) {
 }
 
 async function extractVideoMetadata(file) {
-  if (!exifr?.parse) return {};
-  try {
-    const metadata = await Promise.race([
-      exifr.parse(file, { gps: true, tiff: true, xmp: true, iptc: false, icc: false, jfif: false }),
-      new Promise(resolve => setTimeout(() => resolve(null), 500)),
-    ]);
-    const candidate = { lat: metadata?.latitude ?? metadata?.lat, lng: metadata?.longitude ?? metadata?.lng };
-    const location = validLocation(candidate) ? { lat: Number(candidate.lat), lng: Number(candidate.lng), cityName: '', countryName: '', countryCode: '' } : undefined;
-    return { date: typeof metadata?.CreateDate === 'string' ? metadata.CreateDate.slice(0, 10) : undefined, location };
-  } catch { return {}; }
+  // exifr obsługuje metadane obrazów, ale nie jest parserem kontenerów
+  // MP4/WebM. Nie otwieramy więc pliku wideo przez exifr: zapobiega to
+  // wyciekom FileHandle i nie udaje obsługi GPS, której nie potwierdzono.
+  void file;
+  return {};
 }
 
 class VideoLibrary {

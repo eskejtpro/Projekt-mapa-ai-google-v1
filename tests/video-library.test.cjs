@@ -71,3 +71,14 @@ test('migruje źródło lokalizacji i trwale zapisuje/usuwa ręczny GPS', async 
     reopened.close();
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+test('nie zachowuje starych nazw miejsca po ręcznej zmianie współrzędnych', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'prezent-video-place-'));
+  try {
+    const library = new VideoLibrary(join(root, 'library.sqlite'), join(root, 'videos'));
+    const item = await library.importVideo(fixture(root, 'place.webm', [0x1a, 0x45, 0xdf, 0xa3]), { location: { lat: 52.2297, lng: 21.0122, cityName: 'Warszawa', countryName: 'Polska', countryCode: 'PL' }, locationSource: 'metadata' });
+    library.setLocation(item.item.id, { lat: 35.6762, lng: 139.6503, cityName: '', countryName: '', countryCode: '' });
+    assert.deepEqual(library.list()[0].location, { lat: 35.6762, lng: 139.6503, cityName: '', countryName: '', countryCode: '' });
+    library.close();
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});

@@ -106,6 +106,6 @@ Stan ogólny: **Kompletny, stabilny i sprawdzony prototyp gotowy do przejęcia p
 ## SESSION HANDOFF — PR #6 Video GPS & Map Integration, 2026-10-18
 - Utworzono gałąź `feature/video-gps-map-integration` z aktualnego `main` po scaleniu PR #5.
 - Dodano markery filmów do istniejącego klastra MapView, filtr mediów mapy, popup i otwarcie playera; dodano ręczne współrzędne GPS w galerii i IPC `video:set-location`.
-- Dodano migrację SQLite `location_source`, walidację zakresów GPS oraz opcjonalny, ograniczony czasowo odczyt metadanych przez `exifr` (brak danych oznacza `unknown`).
-- Zweryfikowano: TypeScript PASS, testy SQLite/media 12/12 PASS, E2E galerii z restartem PASS, desktop restart PASS, pełne verify PASS. Mapowe E2E, realne MP4/MOV GPS, backup filmów i duża biblioteka są UNVERIFIED/OPEN.
-- Następny krok: naprawić/uruchomić izolowany test markerów mapy, dodać test offline i przeprowadzić pełne `npm run verify` przed PR #6.
+- Dodano migrację SQLite `location_source`, walidację zakresów GPS, ręczne GPS bez zachowywania starych nazw miejsca oraz relację album→podróż dla filtrów mapy. Parser GPS kontenerów wideo nie jest deklarowany bez potwierdzonego narzędzia.
+- Zweryfikowano: testy SQLite/media 13/13 PASS, E2E galerii/mapy z markerem i popupem PASS, typecheck i build PASS. `ffmpeg`/`ffprobe` NOT FOUND; backup/restore filmów NOT SUPPORTED.
+- Blokada PR #6: brak rzeczywistego testu GPS MP4/MOV oraz brak integralności backup/restore filmów. Nie scalać i nie rozpoczynać PR #7 do czasu rozwiązania.

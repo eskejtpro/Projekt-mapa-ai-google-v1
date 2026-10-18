@@ -3,7 +3,7 @@ import L from 'leaflet';
 import 'leaflet.markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
-import { TravelPhoto, TravelTrip, MapTileProvider } from '../types/travel';
+import { TravelPhoto, TravelTrip, TravelAlbum, MapTileProvider } from '../types/travel';
 import type { MediaItem } from '../types/media';
 import {
   Layers,
@@ -36,7 +36,7 @@ import { formatCoordinates, guessNearestLocation, reverseGeocodeOnline, GeoGuess
 interface MapViewProps {
   photos: TravelPhoto[];
   videos?: MediaItem[];
-  albums?: unknown[];
+  albums?: TravelAlbum[];
   trips: TravelTrip[];
   selectedTripId: string | null;
   onSelectPhoto: (photo: TravelPhoto) => void;
@@ -110,6 +110,7 @@ const MAP_STYLES: { id: MapTileProvider; label: string; sub: string; icon: any }
 export const MapView: React.FC<MapViewProps> = ({
   photos,
   videos = [],
+  albums = [],
   trips,
   selectedTripId,
   onSelectPhoto,
@@ -450,7 +451,8 @@ export const MapView: React.FC<MapViewProps> = ({
   });
   const visibleVideos = videos.filter(video => {
     if (mediaFilter === 'photos' || !video.location) return false;
-    if (selectedTripId && video.tripId !== selectedTripId) return false;
+    const videoTripId = video.tripId ?? albums.find(album => album.id === video.albumId)?.tripId;
+    if (selectedTripId && videoTripId !== selectedTripId) return false;
     return activeCountryFilter === 'ALL' || video.location.countryCode === activeCountryFilter;
   });
 
@@ -604,10 +606,10 @@ export const MapView: React.FC<MapViewProps> = ({
       });
     }
 
-    if (bounds.isValid() && visiblePhotos.length > 0 && selectedTripId) {
+    if (bounds.isValid() && visiblePhotos.length + visibleVideos.length > 0 && selectedTripId) {
       mapInstanceRef.current.fitBounds(bounds, { padding: [60, 60], maxZoom: 9 });
     }
-  }, [visiblePhotos, visibleVideos, selectedTripId, showAnimatedRoutes, trips, onSelectVideo]);
+  }, [visiblePhotos, visibleVideos, selectedTripId, showAnimatedRoutes, trips, albums, onSelectVideo]);
 
   // Wyszukiwanie z animowanym flyTo
   const handleMapSearch = (e: React.FormEvent) => {
@@ -615,7 +617,7 @@ export const MapView: React.FC<MapViewProps> = ({
     if (!mapSearchQuery.trim() || !mapInstanceRef.current) return;
     const q = mapSearchQuery.toLowerCase().trim();
 
-    const matchedPhoto = photos.find(p =>
+    const matchedPhoto = visiblePhotos.find(p =>
       p.location.cityName.toLowerCase().includes(q) ||
       p.location.countryName.toLowerCase().includes(q) ||
       p.title.toLowerCase().includes(q)
@@ -629,7 +631,7 @@ export const MapView: React.FC<MapViewProps> = ({
         duration: 1.5,
       });
     } else {
-      setSearchFeedback(`Nie znaleziono w bibliotece zdjęć z: "${mapSearchQuery}".`);
+      setSearchFeedback(`Nie znaleziono w aktywnym filtrze mapy: "${mapSearchQuery}".`);
       setTimeout(() => setSearchFeedback(null), 3500);
     }
   };
@@ -642,7 +644,7 @@ export const MapView: React.FC<MapViewProps> = ({
   };
 
   const centerOnPhotos = () => {
-    if (!mapInstanceRef.current || visiblePhotos.length === 0) return;
+    if (!mapInstanceRef.current || visiblePhotos.length + visibleVideos.length === 0) return;
     const locations = [...visiblePhotos.map(p => [p.location.lat, p.location.lng] as [number, number]), ...visibleVideos.filter(video => video.location).map(video => [video.location!.lat, video.location!.lng] as [number, number])];
     const bounds = L.latLngBounds(locations);
     if (bounds.isValid()) {

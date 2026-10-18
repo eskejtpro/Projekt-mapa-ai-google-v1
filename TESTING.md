@@ -26,8 +26,8 @@
 
 - `npm run test:desktop-restart`: **PASS**.
 - `npm run test:database`: **PASS**, 12/12, w tym migracja `location_source`, walidacja ręcznego GPS oraz usuwanie lokalizacji.
-- `npm run test:e2e:electron`: **PASS** dla galerii, playera, albumu i restartu; marker filmu na mapie: **UNVERIFIED**.
-- Automatyczny odczyt metadanych jest opcjonalny i lokalny przez `exifr`, z limitem czasu; brak rozpoznanych danych pozostaje `locationSource=unknown`.
+- `npm run test:e2e:electron`: **PASS** dla galerii, playera, albumu, restartu oraz markera filmu/popupa mapy; test działa na izolowanym profilu.
+- GPS z kontenerów wideo: **UNVERIFIED/NOT RUN**. `exifr` nie jest używany do MP4/WebM, a środowisko nie ma `ffprobe`; brak danych pozostaje `locationSource=unknown`.
 
 
 ## Codex — świeża weryfikacja 2026-10-17
