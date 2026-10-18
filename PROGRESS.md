@@ -1,5 +1,13 @@
 # PROGRESS.md - Rzeczywisty Stan Postępów Projektu „Prezent Mapy”
 
+## SESSION HANDOFF — automatyzacja Codex, 2026-10-18
+- Gałąź `chore/codex-automation-quality-gates` utworzona z `chore/codex-instructions-video-foundation` (bazowa gałąź istniejącego PR do main).
+- Dodano `automation:check`, trzy testy regresyjne walidatora, bramkę w quick/full verify, dokumentację `docs/CODEX_AUTOMATION.md`, szablon PR i zabezpieczenia workflow CI.
+- Status: **UNVERIFIED** do czasu wykonania CI Windows na aktualnym SHA. Lokalnego `npm ci`, Electron, NSIS/portable i fizycznego TV nie uruchomiono w tej iteracji.
+- Nie zmieniono logiki aplikacji, SQLite ani prywatnych danych. `release:check` nadal blokuje wydanie.
+- Następny krok: sprawdzić workflow Quality na PR; w razie FAIL poprawić testy lub skrypty, następnie scalić PR warstwowy po review. Nie oznaczać Windows DONE.
+
+
 ## SESSION HANDOFF — Codex 2026-10-17
 - Wynik iteracji b5f09d6: pełne verify PASS (21 Vitest + 10 tooling + 9 backend). Nowy `release-current/win-unpacked` smoke PASS z packaged=true, bulkDeletionPersisted=true, albumDeletedPhotosPreserved=true. NSIS i portable w release-current zbudowane PASS. Standardowe pakowanie do release napotkało EPERM od otwartego programu; dodano package:windows:isolated. Wersja 1.3.1; pozostały nieśledzony plik użytkownika. Fizyczny TV/casting nadal otwarte.
 - Nowa iteracja: zaznaczanie wielu zdjęć i usuwanie z potwierdzeniem; usuwanie albumu z zachowaniem zdjęć albo wraz ze zdjęciami, atomowo. Runtime potwierdził SQLite po obu operacjach. OSM dzień/noc i Esri Topographic renderują kafelki (24/24/21). SSDP skanuje aktywne IPv4 i ponawia zapytanie; panel pozwala wybrać odbiornik i odświeżyć skan. LAN: 0 urządzeń, casting niezaimplementowany. Poprawiono kolejność wyboru profilu smoke względem blokady instancji. Computer Use capture ponownie timeout; testy renderera wykonane w izolowanym profilu. Pełne verify: 21 Vitest + 10 tooling + 9 backend, build/typecheck PASS przed ostatnią drobną zmianą UI; powtórka w toku.

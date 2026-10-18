@@ -1,6 +1,7 @@
 # CHANGELOG.md - Historia Zmian Projektu „Prezent Mapy”
 
 ## Unreleased — środowisko Codex
+- Dodano walidator struktury automatyzacji Codex/CI, testy przypadków negatywnych, bramkę w szybkim i pełnym verify, dokumentację przepływu, szablon PR oraz limit czasu i retencję raportów CI. Weryfikacja nowego commita i działanie hooków klienta wymagają oddzielnych dowodów; nie jest to gotowe wydanie Windows.
 - Zaznaczanie i usuwanie zbiorcze zdjęć, usuwanie albumu z zachowaniem albo usunięciem zdjęć z biblioteki; pliki na dysku pozostają zachowane. Skan SSDP na wielu interfejsach, wybór TV i ręczne odświeżanie. Warstwy OSM dzień/noc i Esri Topographic zastępują dotychczasowe warstwy CARTO.
 - Widok mapy w trybie offline nie renderuje już uszkodzonych obrazów zewnętrznych; dla niedostępnych URL-i pokazuje bezpieczny placeholder, a lokalne obrazy data URL pozostają obsługiwane.
 - Operacje resetu demo, usuwania demo i czyszczenia stanu map wykonują zapisy kolekcji atomowo; czyszczenie map przenosi rzeczywisty plik MBTiles do odzyskiwalnego archiwum i raportuje jego rozmiar. Dodano blokadę drugiej instancji aplikacji Electron.
