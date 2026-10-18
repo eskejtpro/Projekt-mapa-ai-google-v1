@@ -6,6 +6,7 @@
 - Wdrożono: SSDP z LOCATION, opis XML AVTransport, SOAP SetAVTransportURI/Play/Pause/Stop, bezpieczny serwer wybranego medium z tokenem/MIME/Range, IPC/preload, panel TvModeModal i pokaz sekwencyjny. Usunięto `remote-control.cjs`, QR, sesje/tokeny pilota i zależność qrcode.
 - Zweryfikowano: typecheck PASS; testy symulatora DLNA i build są uruchamiane w tej iteracji. Fizyczny TV, rzeczywisty start obrazu/dźwięku i kompatybilność konkretnych kodeków — UNVERIFIED.
 - Następny krok: pełne `npm run verify`, test Electron/restart, diff check, commit i PR #8; bez merge.
+- Kontynuacja PR #8: CI wykazało wyścig w `test:video-playback-real`; test rozdzielono na kodeki i pojedynczy przebieg ciężki, a asercję pauzy zsynchronizowano z rendererem. Lokalny Electron E2E PASS; FFmpeg portable nie jest dostępny lokalnie.
 
 ## SESSION HANDOFF — PR #7 multimedia slideshow, 2026-10-18
 - Wersja robocza: 1.7.0, branch `feature/multimedia-slideshow`, baza `main` po scaleniu PR #6.
