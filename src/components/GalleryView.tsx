@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { TravelPhoto, TravelAlbum, TravelTrip } from '../types/travel';
 import type { MediaItem } from '../types/media';
 import {
@@ -95,7 +95,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
     }
   }, [selectedAlbumId]);
 
-  const availableCountries = Array.from(new Set(photos.map(p => p.location.countryName))).sort();
+  const availableCountries = useMemo(() => Array.from(new Set(photos.map(p => p.location.countryName))).sort(), [photos]);
 
   // Obsługa przeciągania plików bezpośrednio na baner albumu
   const handleBannerDragOver = (e: React.DragEvent) => {
@@ -161,8 +161,12 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   };
 
   // Filtrowanie i sortowanie
-  const filteredPhotos = (mediaFilter === 'videos' ? [] : photos)
-    .filter(p => {
+  const filteredPhotos = useMemo(() => {
+    const customOrder = sortBy === 'custom' && currentAlbum?.customPhotoOrder
+      ? new Map(currentAlbum.customPhotoOrder.map((id, index) => [id, index]))
+      : null;
+    return (mediaFilter === 'videos' ? [] : photos)
+      .filter(p => {
       if (selectedAlbumId && p.albumId !== selectedAlbumId) return false;
       if (onlyFavorites && !p.isFavorite) return false;
       if (countryFilter !== 'ALL' && p.location.countryName !== countryFilter) return false;
@@ -180,49 +184,43 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
         }
       }
       return true;
-    })
-    .sort((a, b) => {
-      if (sortBy === 'custom' && currentAlbum?.customPhotoOrder) {
-        const orderMap = new Map<string, number>();
-        currentAlbum.customPhotoOrder.forEach((id, idx) => orderMap.set(id, idx));
-        const orderA = orderMap.has(a.id) ? orderMap.get(a.id)! : 99999;
-        const orderB = orderMap.has(b.id) ? orderMap.get(b.id)! : 99999;
+      })
+      .sort((a, b) => {
+        if (customOrder) {
+        const orderA = customOrder.has(a.id) ? customOrder.get(a.id)! : 99999;
+        const orderB = customOrder.has(b.id) ? customOrder.get(b.id)! : 99999;
         if (orderA !== orderB) return orderA - orderB;
         return a.date.localeCompare(b.date);
-      }
-      if (sortBy === 'date-desc') return b.date.localeCompare(a.date);
-      if (sortBy === 'date-asc') return a.date.localeCompare(b.date);
-      return a.title.localeCompare(b.title);
-    });
+        }
+        if (sortBy === 'date-desc') return b.date.localeCompare(a.date);
+        if (sortBy === 'date-asc') return a.date.localeCompare(b.date);
+        return a.title.localeCompare(b.title);
+      });
+  }, [photos, mediaFilter, selectedAlbumId, onlyFavorites, countryFilter, yearFilter, searchQuery, sortBy, currentAlbum?.id, currentAlbum?.customPhotoOrder]);
 
-  const filteredVideos = (mediaFilter === 'photos' ? [] : videos).filter(video => {
-    if (selectedAlbumId && video.albumId !== selectedAlbumId) return false;
-    if (searchQuery.trim() && !video.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    return true;
-  });
+  const filteredVideos = useMemo(() => (mediaFilter === 'photos' ? [] : videos).filter(video => {
+      if (selectedAlbumId && video.albumId !== selectedAlbumId) return false;
+      if (searchQuery.trim() && !video.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      return true;
+    }), [videos, mediaFilter, selectedAlbumId, searchQuery]);
 
   // Grupowanie według miesięcy/lat dla standardowego widoku chronologicznego
-  const groupedSections: { dateTitle: string; items: TravelPhoto[] }[] = [];
-  const groupsMap = new Map<string, TravelPhoto[]>();
-
-  if (sortBy !== 'custom') {
+  const groupedSections = useMemo(() => {
+    if (sortBy === 'custom') return [] as { dateTitle: string; items: TravelPhoto[] }[];
+    const groupsMap = new Map<string, TravelPhoto[]>();
     filteredPhotos.forEach(p => {
-      const yearMonth = p.date.substring(0, 7); // YYYY-MM
+      const yearMonth = p.date.substring(0, 7);
       const existing = groupsMap.get(yearMonth) || [];
       existing.push(p);
       groupsMap.set(yearMonth, existing);
     });
-
-    groupsMap.forEach((items, yearMonth) => {
+    return Array.from(groupsMap, ([yearMonth, items]) => {
       const [year, month] = yearMonth.split('-');
       const dateObj = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
       const monthName = dateObj.toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' });
-      groupedSections.push({
-        dateTitle: monthName.charAt(0).toUpperCase() + monthName.slice(1),
-        items,
-      });
+      return { dateTitle: monthName.charAt(0).toUpperCase() + monthName.slice(1), items };
     });
-  }
+  }, [filteredPhotos, sortBy]);
 
   return (
     <div

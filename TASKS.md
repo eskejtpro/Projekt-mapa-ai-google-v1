@@ -1,5 +1,10 @@
 # TASKS.md - Rejestr Zadań i Implementacji Projektu „Prezent Mapy”
 
+## PR #9 — Performance Fast Track — 2026-10-18
+- PERF-01: IN_REVIEW — benchmark Electron dla startu, mapy, galerii, SQLite i RSS; porównanie BEFORE/AFTER zapisane w `docs/PERFORMANCE.md`.
+- PERF-02: IN_REVIEW — memoizacja galerii, `React.memo` miniaturek filmów i stabilizacja callbacków markerów Leaflet; bez zmiany modelu danych ani UX.
+- PERF-03: IN_REVIEW — testy Electron 1513 mediów, benchmark SQLite i typecheck PASS; pełne verify/CI wymagają zakończenia PR.
+
 ## Rozszerzenie biblioteki / TV / map — 2026-10-17
 - REQ-DEL-01/02: IN_REVIEW — zaznaczanie i usuwanie zbiorcze, dwa warianty usuwania albumu, potwierdzenie i atomowy zapis. Test jednostkowy i runtime SQLite PASS.
 - REQ-TV-SELECT: IN_PROGRESS — skan na wielu interfejsach, ponowienie, ręczne odświeżanie i radio wyboru. Rzeczywisty skan LAN 0 odpowiedzi; fizyczny TV i casting UNVERIFIED.

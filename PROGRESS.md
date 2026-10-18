@@ -1,5 +1,15 @@
 # PROGRESS.md - Rzeczywisty Stan Postępów Projektu „Prezent Mapy”
 
+## SESSION HANDOFF — PR #9 performance fast track, 2026-10-18
+- Cel: zmniejszyć koszt renderowania galerii i mapy bez zmiany funkcji, danych ani wyglądu.
+- Branch: `feature/performance-optimization`, baza `origin/main` `566e081`; commit `025e939`; PR #9: https://github.com/eskejtpro/Projekt-mapa-ai-google-v1/pull/9.
+- Wdrożono: memoizację filtrów/sortowania/grupowania galerii, `React.memo` dla `VideoThumbnail`, stabilne referencje callbacków MapView oraz szybszy wybór miniatury klastra.
+- Pomiar: start 3568→3580 ms (końcowy powtórzony AFTER 3415 ms), kontener mapy 433→408 ms w pierwszej parze (końcowy AFTER 436 ms), galeria 167→167 ms (końcowy AFTER 161 ms), SQLite 4,82→4,94 ms (końcowy AFTER 3,74 ms), RSS 94→91 MB; 1513 mediów E2E 1199→1170 ms. Rozrzut potwierdza brak podstaw do deklarowania stałej poprawy procentowej.
+- Testy zakończone: `npm ci`, `npm run typecheck`, build, benchmark SQLite, benchmark Electron, E2E galerii/mapy/backupu/restartu — PASS; benchmark kafelków w krótkim skrypcie ma `UNVERIFIED`, osobny E2E offline PASS.
+- Niezapisane: własne zmiany PR9 oraz nietknięty plik `moje instrukcje do projektu.txt`.
+- Następny krok: poczekać na zakończenie obu jobów Windows quality gate PR #9 i przejrzeć ich logi; nie scalać automatycznie.
+- GitHub Actions po utworzeniu PR: oba joby `Windows quality gate` są `pending`; nie traktować jako PASS przed zakończeniem.
+
 ## Integracja PR #8 — przegląd bezpieczeństwa 2026-10-18
 - Poprawiono HTTP suffix Range, zamykanie strumieni i połączeń, ograniczenie odczytu do IP odbiornika oraz powiązanie XML/SOAP z wykrytym IP (SSRF).
 - Stop anuluje sekwencję i unieważnia udostępnienia; filmy w pokazie oczekują na stan AVTransport zamiast sztywnego czasu. Błędy pokazu wracają przez IPC do panelu.

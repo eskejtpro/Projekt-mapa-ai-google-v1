@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Film } from 'lucide-react';
 
-export const VideoThumbnail: React.FC<{ src: string; title: string }> = ({ src, title }) => {
+const VideoThumbnailView: React.FC<{ src: string; title: string }> = ({ src, title }) => {
   const [thumbnail, setThumbnail] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const player = useRef<HTMLVideoElement>(null);
@@ -34,3 +34,5 @@ export const VideoThumbnail: React.FC<{ src: string; title: string }> = ({ src, 
   };
   return <><span ref={holder} className="absolute inset-0 pointer-events-none" />{visible && !thumbnail && !failed && <video ref={player} crossOrigin="anonymous" src={src} muted preload="metadata" onError={() => setFailed(true)} onLoadedMetadata={event => { event.currentTarget.currentTime = Math.min(0.1, event.currentTarget.duration || 0); }} onSeeked={capture} className="absolute w-px h-px opacity-0 pointer-events-none" aria-hidden="true" />}{thumbnail ? <img src={thumbnail} alt={title} className="absolute inset-0 w-full h-full object-cover" /> : <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-400"><Film className="w-12 h-12 text-amber-300" /><span className="text-xs">{failed ? 'Podgląd niedostępny' : 'Miniatura filmu'}</span></div>}</>;
 };
+
+export const VideoThumbnail = React.memo(VideoThumbnailView);
