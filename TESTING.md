@@ -8,6 +8,7 @@
 - `npm run test:e2e:electron`: **PASS** — izolowany Electron sprawdza pokaz zawierający zdjęcie i film, pauzę/wznowienie, zakończenie filmu, mapę, backup/restore i restart.
 - `npm run test:database`: **PASS**, 21/21. Scenariusze backupu SQLite/plików są uruchamiane w odrębnych procesach Node, aby nie współdzielić uchwytów `node:sqlite`; zachowano wszystkie przypadki, w tym dwa pliki 64 MiB.
 - Pełne `npm run verify`: **PASS**. Przed scaleniem nadal wymagana jest niezależna kontrola CI Windows.
+- GitHub Actions Quality dla `4b7f6b5`: **PASS** — Windows quality gate, E2E Electron, rzeczywiste MP4/WebM, GPS, offline mapa, backup/restart i audyt zależności.
 
 ## Automatyzacja Codex — nowa iteracja (2026-10-18)
 

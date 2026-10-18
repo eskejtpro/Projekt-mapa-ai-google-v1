@@ -72,7 +72,7 @@ Tabela PREZ poniżej zachowuje historyczne statusy AI Studio. Aktualny audyt: do
 - [DONE] VGM-05 — GPS MP4 loci/MOV ©xyz względem ffprobe, pełna kopia SQLite/photos/videos z SHA-256, restore addytywny i natywne IPC/E2E PASS. Odsłuch pozostaje UNVERIFIED.
 
 ## PR #7 — Multimedia Slideshow
-- [IN_REVIEW] MSL-01 — wspólny pokaz zdjęć i filmów z galerii, albumu i biblioteki; implementacja lokalna, test UI Electron do dodania.
+- [IN_REVIEW] MSL-01 — wspólny pokaz zdjęć i filmów z galerii, albumu i biblioteki; Electron E2E i CI Windows PASS.
 - [IN_REVIEW] MSL-02 — automatyczne odtwarzanie filmu, przejście po `ended`, pauza/wznowienie, seek, głośność, wyciszenie i fullscreen.
-- [TODO] MSL-03 — testy E2E zdjęcia/film/mixed, pusty album, brakujący film, restart i zachowanie ustawień.
-- [TODO] MSL-04 — CI Windows dla PR #7 i przegląd wydajności dużych albumów.
+- [IN_REVIEW] MSL-03 — E2E zdjęcie/film/mixed, pauza/wznowienie, zakończenie filmu i restart PASS; pozostają pusty album, brakujący film i zachowanie ustawień.
+- [IN_REVIEW] MSL-04 — CI Windows PR #7 PASS; pozostaje przegląd wydajności dużych albumów.
