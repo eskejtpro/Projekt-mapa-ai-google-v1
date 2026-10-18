@@ -35,8 +35,19 @@ test('casting symulatora wykonuje opis, SOAP, ograniczony plik i HTTP Range', as
     const localUrl = played.url.replace(/^http:\/\/[^:]+/, 'http://127.0.0.1');
     const full = await fetch(localUrl); assert.equal(full.status, 200); assert.equal(await full.text(), '0123456789abcdef');
     const partial = await fetch(localUrl, { headers: { Range: 'bytes=2-5' } }); assert.equal(partial.status, 206); assert.equal(await partial.text(), '2345');
+    const suffix = await fetch(localUrl, { headers: { Range: 'bytes=-4' } }); assert.equal(suffix.status, 206); assert.equal(await suffix.text(), 'cdef');
+    assert.equal((await fetch(localUrl, { headers: { Range: 'bytes=-0' } })).status, 416);
+    assert.equal((await fetch(localUrl, { headers: { Range: 'bytes=-' } })).status, 416);
+    const head = await fetch(localUrl, { method: 'HEAD' }); assert.equal(head.headers.get('content-length'), '16');
+    assert.equal((await fetch(localUrl, { method: 'POST' })).status, 405);
     assert.equal((await fetch(`${localUrl}/escape`)).status, 404);
     await casting.control('pause'); await casting.control('stop'); assert.ok(soapActions.some(action => action.includes('#SetAVTransportURI'))); assert.ok(soapActions.some(action => action.includes('#Play'))); assert.ok(soapActions.some(action => action.includes('#Pause')));
+    assert.equal((await fetch(localUrl)).status, 404, 'Stop revokes shared media');
+    const show = casting.slideshow([{ kind: 'photo', id: 'one' }, { kind: 'photo', id: 'two' }], 10000);
+    await new Promise(resolve => setTimeout(resolve, 50));
+    await casting.control('stop');
+    await show;
+    assert.equal(soapActions.filter(action => action.includes('#SetAVTransportURI')).length, 2, 'Stop prevents advancing to second photo');
     await casting.disconnect(); await assert.rejects(() => fetch(localUrl), /fetch failed|ECONNREFUSED/);
   } finally { await casting.disconnect(); await new Promise(resolve => deviceServer.close(resolve)); fs.rmSync(root, { recursive: true, force: true }); }
 });

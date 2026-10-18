@@ -101,7 +101,7 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle('tv:connect', async (event, deviceId) => { assertRenderer(event); if (typeof deviceId !== 'string' || deviceId.length > 300) throw new Error('Nieprawidłowy odbiornik'); return casting.connect(deviceId); });
   ipcMain.handle('tv:play', async (event, media) => { assertRenderer(event); if (!media || !['photo', 'video'].includes(media.kind) || typeof media.id !== 'string') throw new Error('Nieprawidłowe medium'); return casting.play(media); });
-  ipcMain.handle('tv:slideshow', async (event, items) => { assertRenderer(event); if (!Array.isArray(items) || items.length > 500 || items.some(item => !item || !['photo', 'video'].includes(item.kind) || typeof item.id !== 'string')) throw new Error('Nieprawidłowy pokaz'); void casting.slideshow(items); return true; });
+  ipcMain.handle('tv:slideshow', async (event, items) => { assertRenderer(event); if (!Array.isArray(items) || items.length > 500 || items.some(item => !item || !['photo', 'video'].includes(item.kind) || typeof item.id !== 'string')) throw new Error('Nieprawidłowy pokaz'); await casting.slideshow(items); return true; });
   ipcMain.handle('tv:control', async (event, action) => { assertRenderer(event); return casting.control(action); });
   ipcMain.handle('tv:disconnect', async event => { assertRenderer(event); await casting.disconnect(); return true; });
   ipcMain.handle('maps:import', async event => {

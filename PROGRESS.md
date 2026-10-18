@@ -1,5 +1,11 @@
 # PROGRESS.md - Rzeczywisty Stan Postępów Projektu „Prezent Mapy”
 
+## Integracja PR #8 — przegląd bezpieczeństwa 2026-10-18
+- Poprawiono HTTP suffix Range, zamykanie strumieni i połączeń, ograniczenie odczytu do IP odbiornika oraz powiązanie XML/SOAP z wykrytym IP (SSRF).
+- Stop anuluje sekwencję i unieważnia udostępnienia; filmy w pokazie oczekują na stan AVTransport zamiast sztywnego czasu. Błędy pokazu wracają przez IPC do panelu.
+- Skanowanie nie resetuje aktywnego połączenia. Regresje Range/HEAD/metod/Stop przeszły na lokalnym symulatorze.
+- Fizyczny TV oraz odsłuch pozostają UNVERIFIED; brak deklaracji kompatybilności konkretnego odbiornika.
+
 ## SESSION HANDOFF — PR #8 native DLNA casting, 2026-10-18
 - Cel: zastąpić Smart Remote/QR rzeczywistym wykrywaniem i przesyłaniem przez DLNA/UPnP.
 - Branch: `feature/native-tv-casting`; baza `main` po scaleniu PR #7; wersja robocza 1.8.0.
