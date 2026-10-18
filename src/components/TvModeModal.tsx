@@ -1,248 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import QRCode from 'qrcode';
-import { TravelPhoto, TravelTrip, TravelAlbum } from '../types/travel';
-import { 
-  Tv, 
-  Cast, 
-  X, 
-  Play, 
-  QrCode, 
-  Radio, 
-  Sparkles, 
-  MapPin, 
-  Calendar, 
-  Monitor, 
-  Sliders, 
-  Maximize
-} from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Cast, CheckCircle2, CircleAlert, Loader2, Pause, Play, Radio, Square, Tv, X } from 'lucide-react';
+import type { TravelAlbum, TravelPhoto, TravelTrip } from '../types/travel';
+import type { MediaItem } from '../types/media';
 
-interface TvModeModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  photos: TravelPhoto[];
-  trips: TravelTrip[];
-  albums: TravelAlbum[];
-  onStartSlideshow: (photos: TravelPhoto[]) => void;
-  onShowToast?: (message: string, type: 'info' | 'success' | 'warning') => void;
-}
+interface TvModeModalProps { isOpen: boolean; onClose: () => void; photos: TravelPhoto[]; videos?: MediaItem[]; trips: TravelTrip[]; albums: TravelAlbum[]; onStartSlideshow: (photos: TravelPhoto[]) => void; onShowToast?: (message: string, type: 'info' | 'success' | 'warning') => void; }
+type Device = { id: string; address: string; location?: string; name?: string; description: string; protocol: string; capabilities?: string[]; error?: string; };
+type Target = { kind: 'photo' | 'video'; id: string; title: string };
 
-export const TvModeModal: React.FC<TvModeModalProps> = ({
-  isOpen,
-  onClose,
-  photos,
-  trips,
-  albums,
-  onStartSlideshow,
-}) => {
-  const [selectedTripId, setSelectedTripId] = useState<string>(trips[0]?.id || 'ALL');
-  const [devices, setDevices] = useState<{ id: string; address: string; description: string; protocol: string }[]>([]);
-  const [discoveryStatus, setDiscoveryStatus] = useState('');
-  const [selectedDevice, setSelectedDevice] = useState('');
-  const [scanRevision, setScanRevision] = useState(0);
-  const [scanning, setScanning] = useState(false);
-  const [remoteUrls, setRemoteUrls] = useState<string[]>([]);
-  const [remoteUrl, setRemoteUrl] = useState('');
-  const [remoteQr, setRemoteQr] = useState('');
-  const [remoteError, setRemoteError] = useState('');
-  const [remoteBusy, setRemoteBusy] = useState(false);
-  useEffect(() => {
-    let active = true;
-    if (!remoteUrl) { setRemoteQr(''); return; }
-    void QRCode.toDataURL(remoteUrl, { width: 192, margin: 2 }).then(image => { if (active) setRemoteQr(image); }).catch(() => { if (active) setRemoteError('Nie udało się wygenerować kodu QR. Użyj adresu.'); });
-    return () => { active = false; };
-  }, [remoteUrl]);
-  const toggleRemote = async () => {
-    if (!window.electronAPI) { setRemoteError('Pilot jest dostępny w aplikacji Windows.'); return; }
-    setRemoteBusy(true);
-    setRemoteError('');
-    try {
-      if (remoteUrl) { await window.electronAPI.stopRemote(); setRemoteUrl(''); setRemoteUrls([]); }
-      else { const session = await window.electronAPI.startRemote(); setRemoteUrls(session.urls); setRemoteUrl(session.urls[0]); }
-    } catch { setRemoteError('Nie udało się uruchomić pilota. Sprawdź sieć i zaporę Windows.'); }
-    finally { setRemoteBusy(false); }
-  };
-  useEffect(() => {
-    if (!isOpen || !window.electronAPI) return;
-    let cancelled = false;
-    const scan = async () => {
-      setScanning(true);
-      try {
-        const found = await window.electronAPI!.discoverTVs();
-        if (!cancelled) { setDevices(found); setSelectedDevice(current => found.some(device => device.id === current) ? current : ''); setDiscoveryStatus(found.length ? 'Wykryto lokalne odtwarzacze DLNA.' : 'Brak odpowiedzi DLNA. Włącz TV i odbiornik DLNA, sprawdź tę samą sieć LAN oraz izolację klientów Wi-Fi.'); }
-      } catch { if (!cancelled) setDiscoveryStatus('Nie udało się przeskanować sieci lokalnej.'); }
-      finally { if (!cancelled) setScanning(false); }
-    };
-    setDiscoveryStatus('Wyszukiwanie odtwarzaczy w sieci lokalnej…');
-    void scan();
-    const timer = setInterval(() => void scan(), 15000);
-    return () => { cancelled = true; clearInterval(timer); };
-  }, [isOpen, scanRevision]);
-
+export const TvModeModal: React.FC<TvModeModalProps> = ({ isOpen, onClose, photos, videos = [], trips, albums, onShowToast }) => {
+  const [devices, setDevices] = useState<Device[]>([]); const [selectedDevice, setSelectedDevice] = useState(''); const [selectedTripId, setSelectedTripId] = useState('ALL'); const [selectedTarget, setSelectedTarget] = useState(''); const [status, setStatus] = useState(''); const [error, setError] = useState(''); const [scanning, setScanning] = useState(false); const [connected, setConnected] = useState(false); const [busy, setBusy] = useState(false);
+  const targets = useMemo<Target[]>(() => { const filteredPhotos = selectedTripId === 'ALL' ? photos : photos.filter(photo => albums.some(album => album.id === photo.albumId && album.tripId === selectedTripId)); return [...filteredPhotos.map(photo => ({ kind: 'photo' as const, id: photo.id, title: photo.title || 'Zdjęcie' })), ...videos.filter(video => selectedTripId === 'ALL' || albums.some(album => album.id === video.albumId && album.tripId === selectedTripId)).map(video => ({ kind: 'video' as const, id: video.id, title: video.title }))]; }, [albums, photos, selectedTripId, videos]);
+  const scan = async () => { if (!window.electronAPI) { setStatus('Wykrywanie wymaga aplikacji Windows Electron.'); return; } setScanning(true); setError(''); setStatus('Skanowanie DLNA/UPnP w lokalnej sieci…'); try { const found = await window.electronAPI.discoverTVs(); setDevices(found); setSelectedDevice(current => found.some(device => device.id === current) ? current : ''); setConnected(false); setStatus(found.length ? `Wykryto ${found.length} odbiornik(ów).` : 'Nie znaleziono zgodnego odbiornika DLNA.'); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Nie udało się przeskanować sieci lokalnej.'); setStatus('Skanowanie zakończone błędem.'); } finally { setScanning(false); } };
+  useEffect(() => { if (!isOpen) return; void scan(); const timer = setInterval(() => void scan(), 15000); return () => clearInterval(timer); }, [isOpen]);
+  useEffect(() => { if (!isOpen && connected) void window.electronAPI?.tv.disconnect().catch(() => undefined); }, [connected, isOpen]);
   if (!isOpen) return null;
-
-  const targetPhotos = selectedTripId === 'ALL'
-    ? photos
-    : photos.filter(p => albums.some(album => album.id === p.albumId && album.tripId === selectedTripId));
-
-  return (
-    <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
-        {/* Górny pasek TV */}
-        <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950/40">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center">
-              <Tv className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-extrabold text-xl text-white">Prezentacja na Telewizorze (Tryb TV)</h3>
-                <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 text-xs font-bold border border-indigo-500/30">
-                  Salon 4K
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Prezentuj rodzinne wakacje na dużym ekranie TV bez kompresji i z kinowym dźwiękiem.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Ciało */}
-        <div className="p-6 space-y-6 text-xs text-slate-300">
-          <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-2" aria-live="polite">
-            <div className="font-bold text-white">Urządzenia w sieci lokalnej — DLNA/SSDP</div>
-            <p>{window.electronAPI ? discoveryStatus : 'Wyszukiwanie urządzeń jest dostępne w aplikacji Windows.'}</p>
-            <button disabled={scanning || !window.electronAPI} onClick={() => setScanRevision(value => value + 1)} className="px-3 py-2 bg-indigo-600 rounded-xl disabled:opacity-40">{scanning ? 'Wyszukiwanie…' : 'Wyszukaj ponownie'}</button>
-            {devices.map(device => <label key={device.id} className="flex items-center gap-2 text-indigo-300 p-2 border border-slate-700 rounded-xl"><input type="radio" name="tv-device" checked={selectedDevice === device.id} onChange={() => setSelectedDevice(device.id)} />{device.description} · {device.address} · {device.protocol}</label>)}
-            {selectedDevice && <p className="text-amber-300">Wybrany odbiornik: {devices.find(device => device.id === selectedDevice)?.address}. Wybór służy wskazaniu odbiornika; przesyłanie DLNA nie jest jeszcze obsługiwane. Pokaz uruchamia się na ekranie komputera lub podłączonym monitorze.</p>}
-            <p className="text-slate-400">Lista odświeża się co 15 sekund podczas otwarcia panelu. Wykrycie urządzenia nie oznacza jeszcze połączenia ani przesyłania pokazu.</p>
-          </div>
-          {/* Metody połączenia z TV w Windows 10/11 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="bg-slate-950/70 border border-slate-800 p-4 rounded-2xl space-y-2">
-              <div className="flex items-center gap-2 text-indigo-400 font-bold">
-                <Radio className="w-4 h-4" />
-                Bezprzewodowo (Miracast)
-              </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                Naciśnij <kbd className="bg-slate-800 px-1.5 py-0.5 rounded text-white font-mono">Win + K</kbd> w Windows i wybierz swój telewizor (Samsung, LG, Sony, Philips).
-              </p>
-            </div>
-
-            <div className="bg-slate-950/70 border border-slate-800 p-4 rounded-2xl space-y-2">
-              <div className="flex items-center gap-2 text-emerald-400 font-bold">
-                <Monitor className="w-4 h-4" />
-                Kabel HDMI / DisplayPort
-              </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                Podłącz laptop lub PC bezpośrednio do wejścia HDMI w telewizorze i włącz tryb pełnego ekranu.
-              </p>
-            </div>
-
-            <div className="bg-slate-950/70 border border-slate-800 p-4 rounded-2xl space-y-2">
-              <div className="flex items-center gap-2 text-amber-400 font-bold">
-                <Cast className="w-4 h-4" />
-                Google Cast / TV Box
-              </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                Przesyłaj kartę lub całe okno programu bezpośrednio na przystawkę Android TV / Apple TV.
-              </p>
-            </div>
-          </div>
-
-          {/* Wybór podróży do prezentacji */}
-          <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-3">
-            <label className="text-white font-bold block">Wybierz podróż do zaprezentowania gościom i rodzinie:</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setSelectedTripId('ALL')}
-                className={`p-3 rounded-xl border text-left transition-all ${
-                  selectedTripId === 'ALL'
-                    ? 'bg-amber-500/20 border-amber-500 text-white font-bold'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
-                }`}
-              >
-                <div className="font-semibold text-xs">Wszystkie wspomnienia ({photos.length} zdjęć)</div>
-                <div className="text-[10px] text-slate-400">Kompleksowa podróż dookoła świata</div>
-              </button>
-
-              {trips.map(t => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setSelectedTripId(t.id)}
-                  className={`p-3 rounded-xl border text-left transition-all ${
-                    selectedTripId === t.id
-                      ? 'bg-amber-500/20 border-amber-500 text-white font-bold'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <div className="font-semibold text-xs">{t.title} ({t.year})</div>
-                  <div className="text-[10px] text-slate-400">Trasa etapowa • {t.totalDistanceKm ?? 'Brak danych'} km</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Pilot zdalnego sterowania na smartfonie */}
-          <div className="bg-indigo-950/30 border border-indigo-900/50 p-4 rounded-2xl flex items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-white flex items-center gap-2">
-                  <QrCode className="w-4 h-4 text-indigo-400" />
-                  Sterowanie pilotem z telefonu (Smart Remote)
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/30">
-                  {remoteUrl ? 'Sesja aktywna' : 'Uruchamiany na żądanie'}
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-300 leading-relaxed">
-                Włącz pilota i zeskanuj kod telefonem w tej samej zaufanej sieci Wi-Fi. Pilot zmienia slajdy, pauzuje i zamyka pokaz na komputerze. Sesja wygasa po 2 godzinach; adres z kodem daje dostęp do sterowania. Połączenie lokalne HTTP nie jest szyfrowane.
-              </p>
-              <button disabled={remoteBusy} onClick={() => void toggleRemote()} className="px-4 py-2 bg-amber-500 text-slate-950 rounded-xl font-bold disabled:opacity-50">{remoteBusy ? 'Proszę czekać…' : remoteUrl ? 'Wyłącz pilota' : 'Włącz pilota z telefonu'}</button>
-              {remoteUrls.length > 1 && <select aria-label="Adres sieci pilota" value={remoteUrl} onChange={event => setRemoteUrl(event.target.value)} className="block bg-slate-900 border border-slate-700 rounded p-2 max-w-full">{remoteUrls.map(url => <option key={url} value={url}>{new URL(url).host}</option>)}</select>}
-              {remoteUrl && <input aria-label="Adres parowania pilota" readOnly value={remoteUrl} onFocus={event => event.target.select()} className="block w-full bg-slate-950 rounded p-2 text-[10px]" />}
-              {remoteError && <p role="alert" className="text-amber-300">{remoteError}</p>}
-            </div>
-            <div className="w-32 h-32 rounded-xl bg-white p-1 shadow-lg shrink-0 flex items-center justify-center">
-              {remoteQr ? <img src={remoteQr} alt="Kod QR parowania pilota" className="w-full h-full" /> : <QrCode className="w-14 h-14 text-slate-900" />}
-            </div>
-          </div>
-        </div>
-
-        {/* Dolny pasek startu */}
-        <div className="p-5 border-t border-slate-800 bg-slate-950 flex items-center justify-between">
-          <div className="text-slate-400 text-xs">
-            Przygotowano do odtworzenia: <span className="font-bold text-white">{targetPhotos.length} zdjęć</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-            >
-              Zamknij
-            </button>
-            <button
-              onClick={() => {
-                onClose();
-                onStartSlideshow(targetPhotos);
-              }}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 via-amber-500 to-emerald-500 text-slate-950 font-black hover:brightness-110 shadow-xl shadow-indigo-500/20 flex items-center gap-2 cursor-pointer"
-            >
-              <Play className="w-4 h-4 fill-current" />
-              Rozpocznij prezentację na TV
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  const run = async (operation: () => Promise<unknown>, success: string) => { setBusy(true); setError(''); try { await operation(); setStatus(success); onShowToast?.(success, 'success'); } catch (cause) { const message = cause instanceof Error ? cause.message : 'Operacja TV nie powiodła się.'; setError(message); onShowToast?.(message, 'warning'); } finally { setBusy(false); } };
+  const target = targets.find(item => `${item.kind}:${item.id}` === selectedTarget); const mediaPayload = target ? { kind: target.kind, id: target.id } : null;
+  return <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4"><div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
+    <header className="p-6 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-slate-900 to-amber-950/20"><div className="flex items-center gap-3"><div className="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center justify-center"><Tv className="w-6 h-6" /></div><div><h3 className="font-extrabold text-xl text-white">Przesyłanie na telewizor</h3><p className="text-xs text-slate-400">Natywne DLNA/UPnP w tej samej prywatnej sieci LAN</p></div></div><button onClick={onClose} className="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800" aria-label="Zamknij"><X className="w-5 h-5" /></button></header>
+    <div className="p-6 space-y-5 text-xs text-slate-300">
+      <section className="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-3" aria-live="polite"><div className="flex items-center justify-between"><div><h4 className="font-bold text-white flex items-center gap-2"><Radio className="w-4 h-4 text-amber-400" /> Odbiorniki DLNA/UPnP</h4><p>{status}</p></div><button onClick={() => void scan()} disabled={scanning} className="px-3 py-2 bg-amber-500 text-slate-950 rounded-xl font-bold disabled:opacity-50">{scanning ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Odśwież'}</button></div>{devices.map(device => <label key={device.id} className={`flex items-start gap-3 p-3 border rounded-xl cursor-pointer ${selectedDevice === device.id ? 'border-amber-500 bg-amber-500/10' : 'border-slate-700'}`}><input type="radio" name="tv-device" checked={selectedDevice === device.id} onChange={() => setSelectedDevice(device.id)} /><span className="flex-1"><span className="block font-bold text-white">{device.name || device.description}</span><span className="block text-slate-400">{device.address} · {device.protocol}</span>{device.error && <span className="block text-amber-300 mt-1">{device.error}</span>}</span>{selectedDevice === device.id && connected ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : null}</label>)}{!devices.length && !scanning && <p className="text-slate-500">Włącz funkcję DLNA/Media Renderer w telewizorze i sprawdź izolację klientów Wi‑Fi.</p>}{selectedDevice && <button disabled={busy} onClick={() => void run(async () => { await window.electronAPI!.tv.connect(selectedDevice); setConnected(true); }, 'Połączono z odbiornikiem.')} className="px-4 py-2 bg-slate-800 text-white rounded-xl font-bold disabled:opacity-50">{connected ? 'Połączono' : 'Połącz'}</button>}</section>
+      <section className="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-3"><h4 className="font-bold text-white">Medium do przesłania</h4><div className="flex gap-2 flex-wrap"><button onClick={() => setSelectedTripId('ALL')} className={`px-3 py-2 rounded-xl border ${selectedTripId === 'ALL' ? 'border-amber-500 text-amber-300' : 'border-slate-700'}`}>Wszystkie</button>{trips.map(trip => <button key={trip.id} onClick={() => setSelectedTripId(trip.id)} className={`px-3 py-2 rounded-xl border ${selectedTripId === trip.id ? 'border-amber-500 text-amber-300' : 'border-slate-700'}`}>{trip.title}</button>)}</div><select aria-label="Medium do przesłania" value={selectedTarget} onChange={event => setSelectedTarget(event.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white"><option value="">Wybierz zdjęcie lub film…</option>{targets.map(item => <option key={`${item.kind}:${item.id}`} value={`${item.kind}:${item.id}`}>{item.kind === 'video' ? '▶ Film: ' : '▣ Zdjęcie: '}{item.title}</option>)}</select><div className="flex gap-2 flex-wrap"><button disabled={!connected || !mediaPayload || busy} onClick={() => void run(() => window.electronAPI!.tv.play(mediaPayload!), 'Medium wysłane do odbiornika.')} className="px-4 py-2 bg-amber-500 text-slate-950 rounded-xl font-bold disabled:opacity-40"><Cast className="inline w-4 h-4 mr-1" />Wyślij</button><button disabled={!connected || !targets.length || busy} onClick={() => void run(() => window.electronAPI!.tv.slideshow(targets.map(item => ({ kind: item.kind, id: item.id }))), 'Uruchomiono pokaz na odbiorniku.')} className="px-4 py-2 bg-indigo-500 text-white rounded-xl font-bold disabled:opacity-40"><Play className="inline w-4 h-4 mr-1" />Pokaz</button></div></section>
+      <section className="flex gap-2 flex-wrap"><button disabled={!connected || busy} onClick={() => void run(() => window.electronAPI!.tv.control('play'), 'Wysłano Play.')} className="px-3 py-2 bg-slate-800 rounded-xl disabled:opacity-40"><Play className="inline w-4 h-4" /> Play</button><button disabled={!connected || busy} onClick={() => void run(() => window.electronAPI!.tv.control('pause'), 'Wysłano Pauza.')} className="px-3 py-2 bg-slate-800 rounded-xl disabled:opacity-40"><Pause className="inline w-4 h-4" /> Pauza</button><button disabled={!connected || busy} onClick={() => void run(() => window.electronAPI!.tv.control('stop'), 'Zatrzymano odtwarzanie.')} className="px-3 py-2 bg-slate-800 rounded-xl disabled:opacity-40"><Square className="inline w-4 h-4" /> Stop</button><button disabled={!connected || busy} onClick={() => void run(async () => { await window.electronAPI!.tv.disconnect(); setConnected(false); }, 'Rozłączono odbiornik.')} className="px-3 py-2 border border-slate-700 rounded-xl disabled:opacity-40">Rozłącz</button></section>
+      {error && <p role="alert" className="p-3 rounded-xl bg-red-950/40 border border-red-900 text-red-200 flex gap-2"><CircleAlert className="w-4 h-4 shrink-0" />{error}</p>}<p className="text-slate-500">Obsługa zależy od usług AVTransport i kodeków odbiornika. Wykrycie urządzenia ani wysłanie komendy nie jest potwierdzeniem odtworzenia.</p>
+    </div><footer className="p-5 border-t border-slate-800 bg-slate-950 flex justify-end"><button onClick={onClose} className="px-4 py-2 rounded-xl text-slate-400 hover:text-white">Zamknij</button></footer></div></div>;
 };

@@ -1,0 +1,42 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const http = require('node:http');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { parseDeviceDescription, MediaShareServer, DlnaCasting } = require('../electron/tv-casting.cjs');
+
+const description = name => `<?xml version="1.0"?><root><device><friendlyName>${name}</friendlyName><manufacturer>Test TV</manufacturer><serviceList><service><serviceType>urn:schemas-upnp-org:service:AVTransport:1</serviceType><controlURL>/upnp/control</controlURL></service></serviceList></device></root>`;
+
+test('opis DLNA wymaga AVTransport i rozwiązuje względny controlURL', () => {
+  const parsed = parseDeviceDescription(description('TV testowy'), 'http://127.0.0.1:1234/device.xml');
+  assert.equal(parsed.friendlyName, 'TV testowy');
+  assert.equal(parsed.avTransport.controlURL, 'http://127.0.0.1:1234/upnp/control');
+  assert.throws(() => parseDeviceDescription('<root><device><friendlyName>No AV</friendlyName></device></root>', 'http://127.0.0.1:1/x'), /AVTransport/);
+});
+
+test('casting symulatora wykonuje opis, SOAP, ograniczony plik i HTTP Range', async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'prezent-tv-'));
+  const file = path.join(root, 'sample.mp4'); fs.writeFileSync(file, Buffer.from('0123456789abcdef'));
+  const soapActions = [];
+  const deviceServer = http.createServer((req, res) => {
+    if (req.url === '/device.xml') { res.writeHead(200, { 'Content-Type': 'text/xml' }); return res.end(description('TV symulator')); }
+    if (req.url === '/upnp/control') { soapActions.push(req.headers.soapaction); res.writeHead(200, { 'Content-Type': 'text/xml' }); return res.end('<s:Envelope><s:Body><u:OK/></s:Body></s:Envelope>'); }
+    res.writeHead(404); res.end();
+  });
+  await new Promise(resolve => deviceServer.listen(0, '127.0.0.1', resolve));
+  const port = deviceServer.address().port;
+  const casting = new DlnaCasting(async () => ({ file, mimeType: 'video/mp4', title: 'Próbka' }), [root]);
+  try {
+    casting.setDevices([{ id: 'uuid:test', address: '127.0.0.1', location: `http://127.0.0.1:${port}/device.xml`, description: 'Synthetic', protocol: 'DLNA/SSDP' }]);
+    const connected = await casting.connect('uuid:test'); assert.equal(connected.status, 'connected');
+    const played = await casting.play({ kind: 'video', id: 'video-test' });
+    assert.match(played.url, /^http:\/\/[^:]+:\d+\/media\/[A-Za-z0-9_-]{32}$/);
+    const localUrl = played.url.replace(/^http:\/\/[^:]+/, 'http://127.0.0.1');
+    const full = await fetch(localUrl); assert.equal(full.status, 200); assert.equal(await full.text(), '0123456789abcdef');
+    const partial = await fetch(localUrl, { headers: { Range: 'bytes=2-5' } }); assert.equal(partial.status, 206); assert.equal(await partial.text(), '2345');
+    assert.equal((await fetch(`${localUrl}/escape`)).status, 404);
+    await casting.control('pause'); await casting.control('stop'); assert.ok(soapActions.some(action => action.includes('#SetAVTransportURI'))); assert.ok(soapActions.some(action => action.includes('#Play'))); assert.ok(soapActions.some(action => action.includes('#Pause')));
+    await casting.disconnect(); await assert.rejects(() => fetch(localUrl), /fetch failed|ECONNREFUSED/);
+  } finally { await casting.disconnect(); await new Promise(resolve => deviceServer.close(resolve)); fs.rmSync(root, { recursive: true, force: true }); }
+});

@@ -30,7 +30,7 @@ Aktualne statusy i kryteria weryfikacji: docs/FEATURE_MATRIX.md. Poniższa kolum
 | REQ-09 | Eksport i import pliku kopii zapasowej `.prezent` | **UKOŃCZONE** | Zrzut JSON ze strukturą bazy, obsługa wymazywania GPS |
 | REQ-10 | Panel ustawień (12 kategorii stylu Untitled UI) | **UKOŃCZONE** | Personalizacja motywu, kafelków, sortowania i prezentacji |
 | REQ-11 | Menedżer map offline (pakiety regionalne) | **DEMONSTRACYJNY** | Podgląd UI z symulacją; zapis MBTiles zaplanowany w Electronie |
-| REQ-12 | Tryb TV Salon 4K ze sterowaniem QR Smart Remote | **CZĘŚCIOWY / DEMO** | Tryb kinowy działa; pilot QR wymaga serwera WebSocket w Electron |
+| REQ-12 | TV przez DLNA/UPnP z aplikacji Windows | **CZĘŚCIOWY / UNVERIFIED sprzętowo** | SSDP, AVTransport SOAP, wybrany plik, kontrola i izolowany serwer mediów; brak testu fizycznego TV |
 | REQ-13 | Natywna powłoka Windows 10/11 (Electron .exe, SQLite) | **DO WDROŻENIA (CODEX)**| Kolejny etap prac realizowany przez OpenAI Codex |
 | REQ-14 | Synchronizacja z aplikacją Android | **PRZYSZŁA WERSJA** | Odroczona do czasu stabilizacji aplikacji desktopowej |
 

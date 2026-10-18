@@ -138,7 +138,6 @@ export interface AppSettings {
   // 7. Telewizor i prezentacja
   tvTargetResolution: '4k' | '1080p';
   tvFontSize: 'normal' | 'large' | 'huge';
-  enableSmartRemoteQr: boolean;
   showCinematicCaptions: boolean;
 
   // 8. Pamięć i dane lokalne

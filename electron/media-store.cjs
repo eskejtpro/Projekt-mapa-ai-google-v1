@@ -1,5 +1,5 @@
 const { createHash, randomUUID } = require('node:crypto');
-const { mkdirSync, existsSync, writeFileSync, renameSync, readFileSync } = require('node:fs');
+const { mkdirSync, existsSync, writeFileSync, renameSync, readFileSync, realpathSync, statSync } = require('node:fs');
 const path = require('node:path');
 class MediaStore {
   constructor(directory) { this.directory = directory; mkdirSync(directory, { recursive: true }); }
@@ -26,6 +26,14 @@ class MediaStore {
     const bytes = readFileSync(path.join(this.directory, `${match[1]}.${match[2]}`));
     if (createHash('sha256').update(bytes).digest('hex') !== match[1]) throw new Error('Uszkodzony plik zdjęcia');
     return `data:image/${match[2]};base64,${bytes.toString('base64')}`;
+  }
+  pathFor(url) {
+    const match = /^prezent-media:([a-f0-9]{64})\.(png|jpeg|gif|webp)$/.exec(String(url || ''));
+    if (!match) throw new Error('Zdjęcie nie jest lokalnym medium aplikacji');
+    const target = realpathSync(path.join(this.directory, `${match[1]}.${match[2]}`));
+    const root = realpathSync(this.directory);
+    if (!target.startsWith(`${root}${path.sep}`) || !statSync(target).isFile()) throw new Error('Brak bezpiecznego pliku zdjęcia');
+    return target;
   }
   transform(key, value, operation) {
     const fields = key === 'prezent_travel_photos_v2' ? ['url', 'thumbnailUrl'] : key === 'prezent_travel_albums_v2' ? ['coverUrl'] : key === 'prezent_travel_trips_v2' ? ['coverPhotoUrl'] : [];

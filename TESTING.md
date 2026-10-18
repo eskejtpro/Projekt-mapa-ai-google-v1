@@ -1,5 +1,11 @@
 # TESTING.md - Procedury Testowe i Raport Weryfikacji
 
+## PR #8 — native DLNA casting
+
+- Test `tests/tv-casting.test.cjs`: symulator urządzenia, opis XML, SOAP, ograniczony plik, MIME, HTTP Range, odrzucenie ścieżki i zamknięcie serwera.
+- Fizyczny telewizor i faktyczne potwierdzenie dekodowania obrazu/dźwięku: **UNVERIFIED** — brak odbiornika w środowisku sesji.
+- Obsługiwany protokół: DLNA/UPnP AVTransport. Google Cast, Miracast i AirPlay nie są deklarowane.
+
 ## PR #7 — multimedia slideshow
 
 - `npm test`: **PASS**, 22/22.

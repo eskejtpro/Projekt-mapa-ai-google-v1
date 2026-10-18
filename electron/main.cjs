@@ -8,7 +8,7 @@ const { tmpdir } = require('node:os');
 const { LibraryDatabase } = require('./database.cjs');
 const { OfflineMap } = require('./offline-map.cjs');
 const { discoverRenderers } = require('./tv-discovery.cjs');
-const { RemoteControl } = require('./remote-control.cjs');
+const { hydrateRenderer, DlnaCasting } = require('./tv-casting.cjs');
 const { BackupManager } = require('./backup-manager.cjs');
 const { VideoLibrary } = require('./video-library.cjs');
 const { createLibraryBackup, restoreLibraryBackup } = require('./library-backup.cjs');
@@ -83,22 +83,19 @@ app.whenReady().then(async () => {
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, sandbox: true, nodeIntegration: false, webSecurity: true },
   });
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
-  const remoteControl = new RemoteControl(command => {
-    if (!window.isDestroyed()) window.webContents.send('remote:command', command);
-  });
-  window.once('closed', () => { void remoteControl.stop(); });
-  ipcMain.handle('remote:session', (event, action) => {
-    if (event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== page) throw new Error('Niedozwolony nadawca IPC');
-    if (action === 'start') return remoteControl.start();
-    if (action === 'stop') return remoteControl.stop();
-    throw new Error('Nieznana operacja pilota');
-  });
+  const casting = new DlnaCasting(async media => media.kind === 'video' ? { file: videoLibrary.pathFor(media.id), mimeType: media.mimeType, title: media.title } : database.pathForPhoto(media.id), [path.join(app.getPath('userData'), 'videos'), path.join(app.getPath('userData'), 'photos')]);
+  window.once('closed', () => { void casting.disconnect(); });
   let pendingDiscovery = null;
   ipcMain.handle('tv:discover', event => {
     if (event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== page) throw new Error('Niedozwolony nadawca IPC');
-    if (!pendingDiscovery) pendingDiscovery = discoverRenderers().finally(() => { pendingDiscovery = null; });
+    if (!pendingDiscovery) pendingDiscovery = discoverRenderers().then(async devices => { const hydrated = await Promise.allSettled(devices.map(hydrateRenderer)); const result = hydrated.map((item, index) => item.status === 'fulfilled' ? item.value : { ...devices[index], capabilities: ['discovery'], error: item.reason?.message || 'Nie udało się odczytać usług DLNA' }); casting.setDevices(result); return result; }).finally(() => { pendingDiscovery = null; });
     return pendingDiscovery;
   });
+  ipcMain.handle('tv:connect', async (event, deviceId) => { assertRenderer(event); if (typeof deviceId !== 'string' || deviceId.length > 300) throw new Error('Nieprawidłowy odbiornik'); return casting.connect(deviceId); });
+  ipcMain.handle('tv:play', async (event, media) => { assertRenderer(event); if (!media || !['photo', 'video'].includes(media.kind) || typeof media.id !== 'string') throw new Error('Nieprawidłowe medium'); return casting.play(media); });
+  ipcMain.handle('tv:slideshow', async (event, items) => { assertRenderer(event); if (!Array.isArray(items) || items.length > 500 || items.some(item => !item || !['photo', 'video'].includes(item.kind) || typeof item.id !== 'string')) throw new Error('Nieprawidłowy pokaz'); void casting.slideshow(items); return true; });
+  ipcMain.handle('tv:control', async (event, action) => { assertRenderer(event); return casting.control(action); });
+  ipcMain.handle('tv:disconnect', async event => { assertRenderer(event); await casting.disconnect(); return true; });
   ipcMain.handle('maps:import', async event => {
     if (event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== page) throw new Error('Niedozwolony nadawca IPC');
     const selected = await dialog.showOpenDialog(window, { properties: ['openFile'], filters: [{ name: 'Raster MBTiles', extensions: ['mbtiles'] }] });
@@ -274,9 +271,9 @@ app.whenReady().then(async () => {
         if (finalPhotos.length !== remaining || finalPhotos.some(photo => photo.albumId === albumId)) throw new Error('Nieprawidłowe usunięcie albumu');
         state.albumDeletedPhotosPreserved = true;
       }
-      if (process.argv.includes('--remote-smoke-test')) {
+      if (process.argv.includes('--tv-smoke-test')) {
         const waitFor = async expression => {
-          try { return await window.webContents.executeJavaScript(`new Promise((resolve, reject) => { const started = Date.now(); const timer = setInterval(() => { if (${expression}) { clearInterval(timer); resolve(true); } else if (Date.now() - started > 6000) { clearInterval(timer); reject(new Error('Timeout testu pilota')); } }, 50); })`); }
+          try { return await window.webContents.executeJavaScript(`new Promise((resolve, reject) => { const started = Date.now(); const timer = setInterval(() => { if (${expression}) { clearInterval(timer); resolve(true); } else if (Date.now() - started > 6000) { clearInterval(timer); reject(new Error('Timeout testu TV')); } }, 50); })`); }
           catch { throw new Error(`Niespełniony warunek runtime: ${expression.slice(0, 160)}`); }
         };
         if (process.argv.includes('--preferences-smoke-test')) {
@@ -285,26 +282,12 @@ app.whenReady().then(async () => {
           state.galleryPreferencesApplied = true;
         }
         await window.webContents.executeJavaScript(`document.querySelector('button[title="Tryb TV / Salon 4K"]').click()`);
-        await waitFor(`Array.from(document.querySelectorAll('button')).some(button => button.textContent.includes('Włącz pilota z telefonu'))`);
-        await window.webContents.executeJavaScript(`Array.from(document.querySelectorAll('button')).find(button => button.textContent.includes('Włącz pilota z telefonu')).click()`);
-        await waitFor(`document.querySelector('input[aria-label="Adres parowania pilota"]')?.value`);
-        const remoteUrl = new URL(await window.webContents.executeJavaScript(`document.querySelector('input[aria-label="Adres parowania pilota"]').value`));
-        await waitFor(`document.querySelector('img[alt="Kod QR parowania pilota"]')?.complete`);
-        await window.webContents.executeJavaScript(`Array.from(document.querySelectorAll('button')).find(button => button.textContent.includes('Rozpocznij prezentację na TV')).click()`);
-        await waitFor(`document.querySelector('[data-testid="slideshow"] h2')`);
-        const command = action => fetch(`http://127.0.0.1:${remoteUrl.port}/command`, { method: 'POST', headers: { Authorization: `Bearer ${remoteUrl.hash.slice(1)}` }, body: JSON.stringify({ command: action }) });
-        if (!(await command('toggle-play')).ok) throw new Error('Polecenie pauzy odrzucone');
-        await waitFor(`document.querySelector('button[title="Wznów (Spacja)"]')`);
-        const previousTitle = await window.webContents.executeJavaScript(`document.querySelector('[data-testid="slideshow"] h2').textContent`);
-        if (!(await command('next')).ok) throw new Error('Polecenie zmiany slajdu odrzucone');
-        await waitFor(`document.querySelector('[data-testid="slideshow"] h2').textContent !== ${JSON.stringify(previousTitle)}`);
-        state.remoteChangedSlide = true;
-        state.remotePausedSlideshow = true;
+        await waitFor(`Array.from(document.querySelectorAll('button')).some(button => button.textContent.includes('Odśwież'))`);
+        state.tvPanelOpened = true;
         if (process.argv.includes('--preferences-smoke-test')) {
           state.slideshowPreferencesApplied = await window.webContents.executeJavaScript(`!!document.querySelector('select[title="Czas wyświetlania slajdu"] option[value="12"]:checked') && !document.querySelector('.animate-ken-burns') && !document.querySelector('[data-testid="slideshow-minimap"]') && !!document.querySelector('button[title="Włącz nastrojowy ambient dźwiękowy"]')`);
           if (!state.slideshowPreferencesApplied) throw new Error('Ustawienia pokazu nie zostały zastosowane');
         }
-        await remoteControl.stop();
       }
         await new Promise(resolve => setTimeout(resolve, 1500));
         const screenshot = await window.webContents.capturePage();
