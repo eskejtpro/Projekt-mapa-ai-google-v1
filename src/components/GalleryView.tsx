@@ -37,6 +37,7 @@ interface GalleryViewProps {
   onImportVideos?: () => void;
   onOpenVideo?: (video: MediaItem) => void;
   onAssignVideo?: (video: MediaItem, albumId: string | null) => void;
+  onSetVideoLocation?: (video: MediaItem, location: import('../types/travel').GeoLocation | null) => void;
   density?: 'default' | 'compact' | 'large';
   showExifBadges?: boolean;
   defaultSortBy?: 'date-desc' | 'date-asc' | 'title' | 'location';
@@ -61,6 +62,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   onImportVideos,
   onOpenVideo,
   onAssignVideo,
+  onSetVideoLocation,
   density = 'default',
   showExifBadges = true,
   defaultSortBy = 'date-desc',
@@ -72,6 +74,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   const [onlyFavorites, setOnlyFavorites] = useState<boolean>(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [mediaFilter, setMediaFilter] = useState<'all' | 'photos' | 'videos'>('all');
+  const [videoLocationDrafts, setVideoLocationDrafts] = useState<Record<string, { lat: string; lng: string }>>({});
   useEffect(() => { setSelectedIds(ids => ids.filter(id => photos.some(photo => photo.id === id))); }, [photos]);
   const [countryFilter, setCountryFilter] = useState<string>('ALL');
   const [yearFilter, setYearFilter] = useState<string>('ALL');
@@ -630,7 +633,9 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                 <span className="absolute left-2 top-2 rounded-lg bg-indigo-500/90 px-2 py-1 text-[10px] font-bold text-white">FILM</span>
                 <span className="absolute right-2 top-2 rounded-lg bg-slate-950/80 px-2 py-1 text-[10px] text-white">{video.durationMs ? `${Math.round(video.durationMs / 1000)} s` : 'czas nieznany'}</span>
               </button>
-              <div className="p-3 space-y-2"><h4 className="font-bold text-sm text-white truncate">{video.title}</h4><select value={video.albumId || ''} onChange={event => onAssignVideo?.(video, event.target.value || null)} className="w-full rounded-lg bg-slate-950 border border-slate-700 px-2 py-1.5 text-xs text-slate-200"><option value="">Bez albumu</option>{albums.map(album => <option key={album.id} value={album.id}>{album.name}</option>)}</select></div>
+              <div className="p-3 space-y-2"><h4 className="font-bold text-sm text-white truncate">{video.title}</h4><select value={video.albumId || ''} onChange={event => onAssignVideo?.(video, event.target.value || null)} className="w-full rounded-lg bg-slate-950 border border-slate-700 px-2 py-1.5 text-xs text-slate-200"><option value="">Bez albumu</option>{albums.map(album => <option key={album.id} value={album.id}>{album.name}</option>)}</select>
+                {onSetVideoLocation && <div className="grid grid-cols-2 gap-1"><input aria-label={`${video.title} szerokość`} type="number" min="-90" max="90" step="any" placeholder="lat" value={videoLocationDrafts[video.id]?.lat ?? (video.location?.lat ?? '')} onChange={event => setVideoLocationDrafts(current => ({ ...current, [video.id]: { lat: event.target.value, lng: current[video.id]?.lng ?? String(video.location?.lng ?? '') } }))} className="rounded bg-slate-950 border border-slate-700 px-2 py-1 text-xs" /><input aria-label={`${video.title} długość`} type="number" min="-180" max="180" step="any" placeholder="lng" value={videoLocationDrafts[video.id]?.lng ?? (video.location?.lng ?? '')} onChange={event => setVideoLocationDrafts(current => ({ ...current, [video.id]: { lat: current[video.id]?.lat ?? String(video.location?.lat ?? ''), lng: event.target.value } }))} className="rounded bg-slate-950 border border-slate-700 px-2 py-1 text-xs" /><button type="button" className="col-span-2 rounded bg-indigo-500/80 px-2 py-1 text-xs" onClick={() => { const draft = videoLocationDrafts[video.id] ?? { lat: String(video.location?.lat ?? ''), lng: String(video.location?.lng ?? '') }; const lat = Number(draft.lat); const lng = Number(draft.lng); if (!Number.isFinite(lat) || !Number.isFinite(lng)) return; onSetVideoLocation(video, { lat, lng, cityName: video.location?.cityName ?? '', countryName: video.location?.countryName ?? '', countryCode: video.location?.countryCode ?? '' }); }}>Zapisz GPS</button></div>}
+              </div>
             </article>)}
           </div>
         </section>

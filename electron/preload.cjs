@@ -36,5 +36,6 @@ contextBridge.exposeInMainWorld('electronAPI', Object.freeze({
     import: () => ipcRenderer.invoke('video:import'),
     list: () => ipcRenderer.invoke('video:list'),
     setAlbum: (id, albumId) => ipcRenderer.invoke('video:set-album', id, albumId),
+    setLocation: (id, location, source = 'user') => ipcRenderer.invoke('video:set-location', id, location, source),
   }),
 }));

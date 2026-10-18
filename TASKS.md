@@ -64,3 +64,9 @@ Tabela PREZ poniżej zachowuje historyczne statusy AI Studio. Aktualny audyt: do
 | PREZ-025 | P0 | Katalogi | Układanie kolejności zdjęć w katalogach (Drag & Drop, przyciski, numeracja, szablony, odtwarzanie w kolejności) | **UKOŃCZONE** | Działa w podglądzie & testy Vitest |
 | PREZ-026 | P0 | Mapa | Matematyczna blokada pionowa mapy eliminująca czarną pustkę poza krawędziami | **UKOŃCZONE** | Działa w podglądzie (Vite) |
 | PREZ-027 | P0 | Katalogi | Bezpośrednie przeciąganie zdjęć z Eksploratora Windows na katalog (Drag & Drop) | **UKOŃCZONE** | Działa w podglądzie (Vite) |
+## PR #6 — Video GPS & Map Integration
+- [IN_PROGRESS] VGM-01 — wspólny model lokalizacji filmu, walidacja i migracja SQLite (`location_source`).
+- [IN_PROGRESS] VGM-02 — markery filmów w istniejącym klastrze Leaflet, filtr Wszystkie/Zdjęcia/Filmy i popup z playerem.
+- [IN_PROGRESS] VGM-03 — ręczne GPS z galerii oraz trwałość po restarcie.
+- [TODO] VGM-04 — wiarygodny test mapowego E2E na izolowanym profilu i offline MBTiles.
+- [TODO] VGM-05 — potwierdzenie GPS z rzeczywistego MP4/MOV bez wysyłania danych oraz test dużej biblioteki.

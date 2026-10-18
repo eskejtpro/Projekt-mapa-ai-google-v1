@@ -22,6 +22,13 @@
 - Test E2E nie potwierdza dekodowania H.264/VP8/VP9 ani dźwięku; rzeczywiste pliki/kodeki i odsłuch: **UNVERIFIED**.
 - Backup filmów: **NOT SUPPORTED** — obecny `.prezent`/`BackupManager` obejmuje zdjęcia, albumy, trasy i ustawienia, ale nie katalog `videos` ani rekordy `media_items`.
 
+## PR #6 — GPS filmów i mapa
+
+- `npm run test:desktop-restart`: **PASS**.
+- `npm run test:database`: **PASS**, 12/12, w tym migracja `location_source`, walidacja ręcznego GPS oraz usuwanie lokalizacji.
+- `npm run test:e2e:electron`: **PASS** dla galerii, playera, albumu i restartu; marker filmu na mapie: **UNVERIFIED**.
+- Automatyczny odczyt metadanych jest opcjonalny i lokalny przez `exifr`, z limitem czasu; brak rozpoznanych danych pozostaje `locationSource=unknown`.
+
 
 ## Codex — świeża weryfikacja 2026-10-17
 Baseline źródeł: 1be0136 + zmiany gałęzi work/windows-desktop-foundation. System wykonania: Windows 10 Pro 10.0.19045 x64, Node 26.8.1, npm 11.19.0; CI skonfigurowane na Node 24/windows-latest (wynik zdalny osobno).

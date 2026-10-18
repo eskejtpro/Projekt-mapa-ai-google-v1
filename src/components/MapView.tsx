@@ -4,6 +4,7 @@ import 'leaflet.markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { TravelPhoto, TravelTrip, MapTileProvider } from '../types/travel';
+import type { MediaItem } from '../types/media';
 import {
   Layers,
   MapPin,
@@ -34,10 +35,12 @@ import { formatCoordinates, guessNearestLocation, reverseGeocodeOnline, GeoGuess
 
 interface MapViewProps {
   photos: TravelPhoto[];
+  videos?: MediaItem[];
   albums?: unknown[];
   trips: TravelTrip[];
   selectedTripId: string | null;
   onSelectPhoto: (photo: TravelPhoto) => void;
+  onSelectVideo?: (video: MediaItem) => void;
   onStartSlideshow: (filteredPhotos?: TravelPhoto[]) => void;
   tileProvider: MapTileProvider;
   onChangeTileProvider: (provider: MapTileProvider) => void;
@@ -106,9 +109,11 @@ const MAP_STYLES: { id: MapTileProvider; label: string; sub: string; icon: any }
 
 export const MapView: React.FC<MapViewProps> = ({
   photos,
+  videos = [],
   trips,
   selectedTripId,
   onSelectPhoto,
+  onSelectVideo,
   onStartSlideshow,
   tileProvider,
   onChangeTileProvider,
@@ -132,6 +137,7 @@ export const MapView: React.FC<MapViewProps> = ({
   const [showLayerMenu, setShowLayerMenu] = useState<boolean>(false);
   const [showAddMenu, setShowAddMenu] = useState<boolean>(false);
   const [activeCountryFilter, setActiveCountryFilter] = useState<string>('ALL');
+  const [mediaFilter, setMediaFilter] = useState<'all' | 'photos' | 'videos'>('all');
   const [searchFeedback, setSearchFeedback] = useState<string | null>(null);
 
   // Stan menu kontekstowego prawego przycisku myszy (Right-Click Context Menu)
@@ -440,7 +446,12 @@ export const MapView: React.FC<MapViewProps> = ({
     if (activeCountryFilter !== 'ALL' && photo.location.countryCode !== activeCountryFilter) {
       return false;
     }
-    return true;
+    return mediaFilter !== 'videos';
+  });
+  const visibleVideos = videos.filter(video => {
+    if (mediaFilter === 'photos' || !video.location) return false;
+    if (selectedTripId && video.tripId !== selectedTripId) return false;
+    return activeCountryFilter === 'ALL' || video.location.countryCode === activeCountryFilter;
   });
 
   // Renderowanie klastrów markerów z leaflet.markercluster oraz tras podróży
@@ -537,6 +548,22 @@ export const MapView: React.FC<MapViewProps> = ({
       clusterGroupRef.current?.addLayer(marker);
     });
 
+    visibleVideos.forEach(video => {
+      if (!video.location) return;
+      bounds.extend([video.location.lat, video.location.lng]);
+      const icon = L.divIcon({ className: 'custom-video-pin', html: '<div style="width:48px;height:48px;border-radius:9999px;background:#312e81;border:3px solid #c4b5fd;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 14px rgba(99,102,241,.7)">▶</div>', iconSize: [48, 48], iconAnchor: [24, 44] });
+      const marker = L.marker([video.location.lat, video.location.lng], { icon });
+      const popup = document.createElement('div');
+      popup.className = 'p-3 text-slate-100 max-w-xs';
+      const title = document.createElement('h4'); title.className = 'font-bold text-sm text-white'; title.textContent = video.title; popup.appendChild(title);
+      const location = document.createElement('p'); location.className = 'text-xs text-slate-400 mt-1'; location.textContent = `${video.location.cityName || 'Lokalizacja'}, ${video.location.countryName || 'Świat'}`; popup.appendChild(location);
+      const duration = document.createElement('p'); duration.className = 'text-xs text-indigo-300 mt-1'; duration.textContent = `Film • ${video.durationMs ? `${Math.round(video.durationMs / 1000)} s` : 'czas nieznany'}`; popup.appendChild(duration);
+      const button = document.createElement('button'); button.className = 'w-full mt-3 py-1.5 px-3 bg-indigo-500 text-white rounded-lg font-bold text-xs'; button.textContent = 'Otwórz film'; button.onclick = () => onSelectVideo?.(video); popup.appendChild(button);
+      marker.bindPopup(popup, { minWidth: 220, maxWidth: 280 });
+      (marker as any).videoData = video;
+      clusterGroupRef.current?.addLayer(marker);
+    });
+
     if (showAnimatedRoutes) {
       trips.forEach(trip => {
         if (selectedTripId && trip.id !== selectedTripId) return;
@@ -580,7 +607,7 @@ export const MapView: React.FC<MapViewProps> = ({
     if (bounds.isValid() && visiblePhotos.length > 0 && selectedTripId) {
       mapInstanceRef.current.fitBounds(bounds, { padding: [60, 60], maxZoom: 9 });
     }
-  }, [visiblePhotos, selectedTripId, showAnimatedRoutes, trips]);
+  }, [visiblePhotos, visibleVideos, selectedTripId, showAnimatedRoutes, trips, onSelectVideo]);
 
   // Wyszukiwanie z animowanym flyTo
   const handleMapSearch = (e: React.FormEvent) => {
@@ -594,9 +621,11 @@ export const MapView: React.FC<MapViewProps> = ({
       p.title.toLowerCase().includes(q)
     );
 
-    if (matchedPhoto) {
+    const matchedVideo = visibleVideos.find(video => video.title.toLowerCase().includes(q) || video.location?.cityName.toLowerCase().includes(q) || video.location?.countryName.toLowerCase().includes(q));
+    if (matchedPhoto || matchedVideo?.location) {
       setSearchFeedback(null);
-      mapInstanceRef.current.flyTo([matchedPhoto.location.lat, matchedPhoto.location.lng], 8, {
+      const location = matchedPhoto?.location || matchedVideo?.location;
+      mapInstanceRef.current.flyTo([location!.lat, location!.lng], 8, {
         duration: 1.5,
       });
     } else {
@@ -614,7 +643,8 @@ export const MapView: React.FC<MapViewProps> = ({
 
   const centerOnPhotos = () => {
     if (!mapInstanceRef.current || visiblePhotos.length === 0) return;
-    const bounds = L.latLngBounds(visiblePhotos.map(p => [p.location.lat, p.location.lng]));
+    const locations = [...visiblePhotos.map(p => [p.location.lat, p.location.lng] as [number, number]), ...visibleVideos.filter(video => video.location).map(video => [video.location!.lat, video.location!.lng] as [number, number])];
+    const bounds = L.latLngBounds(locations);
     if (bounds.isValid()) {
       mapInstanceRef.current.fitBounds(bounds, { padding: [60, 60] });
     }
@@ -710,6 +740,9 @@ export const MapView: React.FC<MapViewProps> = ({
             className="w-full bg-[#0c101c]/90 backdrop-blur-md border border-slate-700/80 rounded-2xl pl-10 pr-4 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-2xl"
           />
         </form>
+        <div className="flex gap-1 rounded-2xl bg-[#0c101c]/90 backdrop-blur-md border border-slate-700/80 p-1 shadow-2xl" aria-label="Filtr mediów mapy">
+          {(['all', 'photos', 'videos'] as const).map(filter => <button key={filter} type="button" onClick={() => setMediaFilter(filter)} className={`px-2 py-1 rounded-xl text-[10px] font-bold ${mediaFilter === filter ? 'bg-amber-500 text-slate-950' : 'text-slate-300 hover:bg-slate-800'}`}>{filter === 'all' ? 'Wszystkie' : filter === 'photos' ? 'Zdjęcia' : 'Filmy'}</button>)}
+        </div>
 
         {/* Przycisk DODAJ ZDJĘCIA / KATALOG na mapie */}
         <div className="relative">
@@ -1101,7 +1134,7 @@ export const MapView: React.FC<MapViewProps> = ({
       <div className="absolute bottom-3 left-3 z-10 flex flex-wrap items-center gap-2 bg-[#0c101c]/90 backdrop-blur-md border border-slate-700/80 px-3.5 py-1.5 rounded-2xl shadow-2xl text-xs">
         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
         <span className="text-slate-300 font-medium">Widok mapy:</span>
-        <span className="font-bold text-white">{visiblePhotos.length} wspomnień</span>
+        <span className="font-bold text-white">{visiblePhotos.length + visibleVideos.length} mediów</span>
         <span className="text-slate-500 hidden sm:inline">|</span>
         <span className="text-slate-400 truncate max-w-[150px] sm:max-w-none hidden sm:inline">
           {selectedTripId ? trips.find(t => t.id === selectedTripId)?.title : 'Wszystkie wyprawy'}

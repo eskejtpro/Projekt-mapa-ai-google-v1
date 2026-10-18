@@ -13,7 +13,7 @@ const fixture = join(profile, 'e2e-fixture.webm');
 const launchOptions = {
   executablePath: electronPath,
   args: ['.', `--smoke-test`, `--smoke-profile=${profile}`],
-  env: { ...process.env, PREZENT_E2E_VIDEO_FIXTURE: fixture },
+  env: { ...process.env, PREZENT_E2E_VIDEO_FIXTURE: fixture, PREZENT_E2E_VIDEO_LOCATION: JSON.stringify({ lat: 52.2297, lng: 21.0122, cityName: 'Warszawa', countryName: 'Polska', countryCode: 'PL' }) },
 };
 let app = await electron.launch(launchOptions);
 try {
@@ -36,6 +36,7 @@ try {
   await page.getByRole('button', { name: 'Zamknij', exact: true }).click();
   assert.equal(await page.getByRole('dialog').count(), 0);
   await app.close();
+  await new Promise(resolve => setTimeout(resolve, 1000));
   app = await electron.launch(launchOptions);
   const restarted = await app.firstWindow();
   await restarted.locator('button[title*="Wszystkie Zdjęcia"]').click();
