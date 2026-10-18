@@ -48,6 +48,8 @@ DONE oznacza wyłącznie wskazany, sprawdzony zakres, nie certyfikację wszystki
 
 Izolacja kontekstu, sandbox i wyłączony Node renderera pozostają zachowane. CSP jest wstrzykiwane przez Vite do **produkcyjnego dist**, nie oceniano wyłącznie źródłowego index.html. IPC przechodzi przez ograniczony preload i walidację nadawcy. Serwer DLNA udostępnia wybrane medium, nie katalog biblioteki; testy obejmują token, IP, metody HTTP, Range, pliki poza roots, obce/publiczne adresy opisu i błędy SOAP. Nie otwierano publicznych portów ani nie wysyłano mediów do chmury. npm audit produkcyjnych zależności: 0 podatności podczas audytu. To nie niezależny pentest ani dowód odporności na wszystkie wyścigi symlink/TOCTOU.
 
+Pełne `npm audit --audit-level=high` zwróciło exit 0, ale zgłosiło **8 zależności o umiarkowanym poziomie ryzyka** w deweloperskim łańcuchu electron-builder → @electron/get → global-agent → roarr → sprintf-js (GHSA-hp3w-g68c-fv3c, DoS przez formatowanie). Nie są to 0 podatności całego drzewa. Automatyczna propozycja npm wymaga breaking downgrade electron-builder; nie uruchamiano `audit fix --force`. Pozostaje osobna, testowana aktualizacja narzędzi pakowania; nie wykazano ekspozycji tego formatera na importowane media w aplikacji.
+
 ## Braki blokujące pełne wydanie
 
 | Priorytet | Brak | Wymagany dowód / następna praca |

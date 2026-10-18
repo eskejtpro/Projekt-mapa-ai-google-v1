@@ -7,7 +7,9 @@
 - Zweryfikowano lokalnie: verify PASS (24 Vitest, 14 tooling, 23 integracyjne + 6 izolowanych backup), system E2E PASS, pakowanie NSIS/portable 1.8.1 PASS. Dalsze wyniki E2E, restartu i CI: TESTING.md.
 - Macierz wszystkich funkcji, granice bezpieczeństwa, braki ustawień i kryteria DoD: `docs/SYSTEM_AUDIT_2026-10-18.md`. Decyzja wydania: NOT READY. Fizyczny TV i odsłuch UNVERIFIED.
 - Profile testowe są odizolowane. Oryginalne media i nieśledzony `moje instrukcje do projektu.txt` nietknięte.
-- Następny krok: zakończyć regresje i Windows CI, zapisać commit w PR #10; nie scalać automatycznie. Braki wydania przekazać do małych prac naprawczych, nie oznaczać DONE.
+- Implementacja `cad73f4328e42cdd553e448262375356b0e8560d`: Windows Quality push/PR PASS (runs 39127184610 i 39127186995), w tym czyste npm ci, system E2E, realne kodeki, GPS i restart. Końcowy commit dokumentacyjny wymaga własnego wyniku CI.
+- Pełne npm audit: 8 umiarkowanych wpisów deweloperskiego łańcucha pakowania, brak high/critical; produkcyjne 0. Nie używano audit fix --force.
+- Następny krok: review PR #10 (bez automatycznego merge); małe poprawki ustawień i trwałości pokazu, następnie dowody instalacji/upgrade/Windows 11. Braków wydania nie oznaczać DONE.
 
 ## SESSION HANDOFF — PR #10, 2026-10-18 (aktualny)
 - Cel: końcowy audyt DoD i celowane regresje; branch `feature/final-quality-audit`, kandydat 1.8.1.

@@ -6,6 +6,7 @@
 - `npm run test:e2e:system`: PASS, 13,4 s; rzeczywisty Electron, JPEG/EXIF/folder, uszkodzony obraz, nieprawidłowy GPS, album, edytor, wyszukiwanie, błąd zapisu IPC, 9 ekranów, 12 kategorii ustawień, fullscreen, restart i pusty album. Raport `reports/system-audit.json` i zrzuty `reports/system-audit/`.
 - `npm run package:windows:isolated`: PASS; NSIS i portable 1.8.1 w `release-current/`. Brak dowodu instalacji/upgrade/deinstalacji tej wersji; nie instalowano na bibliotece użytkownika.
 - `npm audit --omit=dev --audit-level=high`: PASS, 0 podatności w zakresie zależności produkcyjnych.
+- Pełne `npm audit --audit-level=high`: exit 0, lecz WARN: 8 umiarkowanych zależności w łańcuchu narzędzi electron-builder/sprintf-js (jedna pierwotna advisory). Nie wykonano niebezpiecznego `audit fix --force`; szczegóły i granice w raporcie systemowym.
 - `npm run test:e2e:electron`: PASS — mapa 1513 mediów (1295 ms), popup, player, albumy i backup/restore. Pierwszy przebieg FAIL na oczekiwaniu 5 s na początkowy kafelek; powtórzenie PASS. Dodano diagnostykę stanu mapy i zrzut przy błędzie, bez zwiększania timeoutu; przyczyna pojedynczego przekroczenia niepotwierdzona.
 - `npm run test:video-playback-real`: PASS — H.264/AAC, VP8/Opus, VP9/Opus, klatki/postęp/pauza/seek, miniatury i zakończenie filmu w pokazie; ciężki przebieg tylko raz (1513 mediów, 1238 ms), backup/restore i restart PASS. Odsłuch UNVERIFIED.
 - `npm run test:video-gps-real`: PASS — MP4/loci i MOV/QuickTime, ffprobe, import MP4 i ponowne otwarcie SQLite. Nie oznacza obsługi importu wszystkich MOV.
@@ -13,6 +14,8 @@
 - `npm run test:desktop-restart`: PASS — dane zdjęcia i opis zachowane między dwoma procesami Electron.
 - `npm run release:check`: BLOCKED (exit 1, ready=false), zgodnie z niezakończonym DoD. Skrypt historycznie raportuje `release/`; bieżące artefakty izolowanego pakowania są w `release-current/` i `reports/windows-audit.json`.
 - Test handlera hooka nie dowodzi automatycznego wywołania przez klienta Codex. Wyniki nowego Windows CI raportować dopiero dla wypchniętego HEAD.
+- Windows Quality implementacji `cad73f4328e42cdd553e448262375356b0e8560d`: push run 39127184610 i PR run 39127186995 PASS — obejmują npm ci, verify, oba E2E, rzeczywiste kodeki/GPS i restart. Kolejny commit dokumentacyjny ma oddzielne kontrole. Actions zgłasza ostrzeżenie migracji runtime Node 20→24 dla akcji v4; nie jest to FAIL testu aplikacji.
+- Końcowe artefakty 1.8.1 po ponownym pakowaniu: Setup SHA-256 `1125657ecc1209637c9e251349f6a194466803259926ab36e01ce270a941c813`; Portable SHA-256 `b14ed0f2351e6ee9129688c2d184da5c4961a975f8a520d91f10c7ae8ccd82c6`. Spakowany runtime ponownie PASS; oryginalne dane użytkownika nie były profilem testowym.
 - Vite ostrzega o głównym chunku 793 kB. Fizyczny TV, odsłuch, Windows 11, 4K i odporność na awarię zasilania UNVERIFIED. Bramka wydania pozostaje BLOCKED.
 
 ## PR #10 — 1.8.1, audyt DoD (2026-10-18)
