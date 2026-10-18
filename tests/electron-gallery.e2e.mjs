@@ -112,7 +112,9 @@ try {
   await page.keyboard.press('End');
   await slideshow.getByTestId('slideshow-video').waitFor({ state: 'visible' });
   assert.match(await slideshow.locator('text=/\\d+ \/ \\d+/').first().innerText(), /\d+ \/ \d+/);
+  if (process.env.PREZENT_REAL_VIDEO) await page.waitForFunction(() => document.querySelector('div.fixed.inset-0.z-50 video')?.paused === false, { timeout: 5000 });
   await page.keyboard.press('Space');
+  if (process.env.PREZENT_REAL_VIDEO) await page.waitForFunction(() => document.querySelector('div.fixed.inset-0.z-50 video')?.paused === true, { timeout: 5000 });
   assert.equal(await slideshow.locator('video').first().evaluate(video => video.paused), true);
   await page.keyboard.press('Space');
   if (process.env.PREZENT_REAL_VIDEO) {
@@ -134,6 +136,10 @@ try {
   console.log(process.env.PREZENT_REAL_VIDEO
     ? 'PASS: mixed slideshow controls and real video completion advance'
     : 'PASS: mixed slideshow controls (real video completion is covered by test:video-playback-real)');
+  if (process.env.PREZENT_CODEC_ONLY) {
+    await app.close();
+    process.exit(0);
+  }
   await app.close();
   await new Promise(resolve => setTimeout(resolve, 1000));
   app = await electron.launch(launchOptions);

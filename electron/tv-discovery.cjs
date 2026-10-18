@@ -7,7 +7,8 @@ function parseRenderer(message, address) {
   const headers = {};
   for (const line of lines) { const colon = line.indexOf(':'); if (colon > 0) headers[line.slice(0, colon).toLowerCase()] = line.slice(colon + 1).trim(); }
   if (!headers.st?.includes('MediaRenderer') || !headers.usn) return null;
-  return { id: headers.usn.slice(0, 256), address, description: (headers.server || 'Odtwarzacz DLNA').slice(0, 256), protocol: 'DLNA/SSDP' };
+  if (!headers.location || !/^https?:\/\//i.test(headers.location)) return null;
+  return { id: headers.usn.slice(0, 256), address, location: headers.location.slice(0, 2048), description: (headers.server || 'Odtwarzacz DLNA').slice(0, 256), protocol: 'DLNA/SSDP', capabilities: ['discovery'] };
 }
 function scanInterface(localAddress, timeout) {
   return new Promise((resolve, reject) => {
