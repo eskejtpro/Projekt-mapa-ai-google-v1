@@ -59,7 +59,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   // 7. Telewizor i prezentacja
   tvTargetResolution: '4k',
   tvFontSize: 'large',
-  enableSmartRemoteQr: true,
   showCinematicCaptions: true,
 
   // 8. Pamięć i dane lokalne

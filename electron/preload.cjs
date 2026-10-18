@@ -16,17 +16,17 @@ contextBridge.exposeInMainWorld('electronAPI', Object.freeze({
   importOfflineMap: () => ipcRenderer.invoke('maps:import'),
   removeOfflineMap: () => ipcRenderer.invoke('system:action', 'remove-offline-map'),
   discoverTVs: () => ipcRenderer.invoke('tv:discover'),
-  startRemote: () => ipcRenderer.invoke('remote:session', 'start'),
-  stopRemote: () => ipcRenderer.invoke('remote:session', 'stop'),
+  tv: Object.freeze({
+    connect: deviceId => ipcRenderer.invoke('tv:connect', deviceId),
+    play: media => ipcRenderer.invoke('tv:play', media),
+    slideshow: media => ipcRenderer.invoke('tv:slideshow', media),
+    control: action => ipcRenderer.invoke('tv:control', action),
+    disconnect: () => ipcRenderer.invoke('tv:disconnect'),
+  }),
   onBackupError: callback => {
     const listener = () => callback();
     ipcRenderer.on('backup:error', listener);
     return () => ipcRenderer.removeListener('backup:error', listener);
-  },
-  onRemoteCommand: callback => {
-    const listener = (_event, command) => { if (['next', 'previous', 'toggle-play', 'close'].includes(command)) callback(command); };
-    ipcRenderer.on('remote:command', listener);
-    return () => ipcRenderer.removeListener('remote:command', listener);
   },
   storage: Object.freeze({
     get: key => storageCall('get', key),

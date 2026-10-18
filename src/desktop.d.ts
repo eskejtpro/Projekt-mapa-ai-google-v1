@@ -3,10 +3,8 @@ declare global {
   interface Window {
     electronAPI?: {
       onBackupError(callback: () => void): () => void;
-      startRemote(): Promise<{ urls: string[]; port: number }>;
-      stopRemote(): Promise<void>;
-      onRemoteCommand(callback: (command: 'next' | 'previous' | 'toggle-play' | 'close') => void): () => void;
-      discoverTVs(): Promise<{ id: string; address: string; description: string; protocol: string }[]>;
+      discoverTVs(): Promise<{ id: string; address: string; location?: string; name?: string; description: string; protocol: string; capabilities?: string[]; error?: string }[]>;
+      tv: { connect(deviceId: string): Promise<unknown>; play(media: { kind: 'photo' | 'video'; id: string }): Promise<unknown>; slideshow(media: Array<{ kind: 'photo' | 'video'; id: string }>): Promise<boolean>; control(action: 'play' | 'pause' | 'stop'): Promise<unknown>; disconnect(): Promise<boolean> };
       importOfflineMap(): Promise<{ name: string; sizeMb: number } | null>;
       removeOfflineMap(): Promise<{ removedBytes: number }>;
       systemInfo(): Promise<{ photosPath: string; autoStart: boolean; packaged: boolean; offlineMapAvailable: boolean }>;

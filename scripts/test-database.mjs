@@ -6,7 +6,7 @@ const databaseTests = [
   'tests/media-store.test.cjs',
   'tests/offline-map.test.cjs',
   'tests/tv-discovery.test.cjs',
-  'tests/remote-control.test.cjs',
+  'tests/tv-casting.test.cjs',
   'tests/backup-manager.test.cjs',
   'tests/video-library.test.cjs',
   'tests/video-gps.test.cjs',

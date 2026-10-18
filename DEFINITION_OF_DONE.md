@@ -16,7 +16,7 @@ Ten dokument dotyczy **działającej aplikacji Electron dla Windows 10/11**, a n
 - [ ] Migracja jest poprzedzona kopią zapasową; sprawdzono starsze formaty, integralność, rollback i przywrócenie.
 - [ ] `.prezent` prawidłowo przenosi zadeklarowany zakres danych. „Pełny backup” oznacza też odtworzenie oryginalnych mediów, a nie samych ścieżek i metadanych.
 - [ ] `contextIsolation`, sandbox, CSP, ograniczony preload, nadawca IPC, kontrola ścieżek, zewnętrznych URL-i i uprawnień nie zostały osłabione.
-- [ ] Nie wprowadzono nieuzasadnionej telemetrii ani publikowania prywatnych zdjęć, filmów, GPS czy baz; zewnętrzne mapy i pilot LAN są obsługiwane zgodnie z wymaganiami prywatności.
+- [x] Nie wprowadzono nieuzasadnionej telemetrii ani publikowania prywatnych zdjęć, filmów, GPS czy baz; casting udostępnia tylko wybrane medium w prywatnej sieci LAN.
 - [ ] Zmiany w kodzie, schemacie i testach nie psują używanej wersji Windows ani podglądu Vite w zakresie deklarowanej kompatybilności.
 
 ## 3. Zdjęcia i filmy — wymagania szczególne

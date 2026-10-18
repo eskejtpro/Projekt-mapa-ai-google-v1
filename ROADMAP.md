@@ -31,7 +31,7 @@ Etapy opisane poniżej zachowują historię AI Studio, nie dowodzą aktualnego u
 - [x] Ochrona przed duplikatami zdjęć w kolejce i bibliotece.
 - [x] Zabezpieczenie limitu `localStorage` przed utratą danych z powiadomieniem użytkownika.
 - [x] Usunięcie fikcyjnych ścieżek Windows (`localFilePath`).
-- [x] Oznaczenie funkcji demonstracyjnych (Menedżer Map Offline, pilot QR).
+- [x] Oznaczenie funkcji demonstracyjnych (Menedżer Map Offline); pilot QR został usunięty w PR #8.
 - [x] Zestaw testów jednostkowych w Vitest (`npm test`).
 - [x] Uporządkowanie dokumentacji i usunięcie przestarzałych wpisów Android.
 
@@ -54,7 +54,7 @@ Etapy opisane poniżej zachowują historię AI Studio, nie dowodzą aktualnego u
 
 ## Etap 5: Mapy Offline i Pilot TV (ELECTRON)
 - [ ] Implementacja lokalnego bufora kafelków w formacie MBTiles / SQLite.
-- [ ] Lekki lokalny serwer HTTP/WebSocket w Electronie do obsługi pilota Smart Remote ze smartfona w sieci domowej Wi-Fi.
+- [x] Ograniczony lokalny serwer HTTP dla wybranego medium DLNA z MIME, Range i zamykaniem sesji; pilot telefoniczny został usunięty.
 
 ## Etap 6: Dystrybucja i Wydanie Windows 10/11
 - [ ] Przygotowanie instalatora NSIS (`.exe`) i wersji przenośnej (portable).

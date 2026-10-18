@@ -1,5 +1,12 @@
 # PROGRESS.md - Rzeczywisty Stan Postępów Projektu „Prezent Mapy”
 
+## SESSION HANDOFF — PR #8 native DLNA casting, 2026-10-18
+- Cel: zastąpić Smart Remote/QR rzeczywistym wykrywaniem i przesyłaniem przez DLNA/UPnP.
+- Branch: `feature/native-tv-casting`; baza `main` po scaleniu PR #7; wersja robocza 1.8.0.
+- Wdrożono: SSDP z LOCATION, opis XML AVTransport, SOAP SetAVTransportURI/Play/Pause/Stop, bezpieczny serwer wybranego medium z tokenem/MIME/Range, IPC/preload, panel TvModeModal i pokaz sekwencyjny. Usunięto `remote-control.cjs`, QR, sesje/tokeny pilota i zależność qrcode.
+- Zweryfikowano: typecheck PASS; testy symulatora DLNA i build są uruchamiane w tej iteracji. Fizyczny TV, rzeczywisty start obrazu/dźwięku i kompatybilność konkretnych kodeków — UNVERIFIED.
+- Następny krok: pełne `npm run verify`, test Electron/restart, diff check, commit i PR #8; bez merge.
+
 ## SESSION HANDOFF — PR #7 multimedia slideshow, 2026-10-18
 - Wersja robocza: 1.7.0, branch `feature/multimedia-slideshow`, baza `main` po scaleniu PR #6.
 - Rozszerzono istniejący `SlideshowModal` o wspólną listę zdjęć i filmów, automatyczne odtwarzanie filmu, przejście po `ended`, pauzę/wznowienie, wyciszenie, głośność, fullscreen, kolejność, shuffle, pętlę i filmstrip.
