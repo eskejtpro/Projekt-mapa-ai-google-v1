@@ -1,6 +1,7 @@
-const { app, BrowserWindow, ipcMain, session, shell, protocol, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, session, shell, protocol, dialog, net } = require('electron');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
+const { Readable } = require('node:stream');
 const { mkdirSync, writeFileSync } = require('node:fs');
 const { mkdtempSync } = require('node:fs');
 const { tmpdir } = require('node:os');
@@ -9,8 +10,12 @@ const { OfflineMap } = require('./offline-map.cjs');
 const { discoverRenderers } = require('./tv-discovery.cjs');
 const { RemoteControl } = require('./remote-control.cjs');
 const { BackupManager } = require('./backup-manager.cjs');
+const { VideoLibrary } = require('./video-library.cjs');
 const { existsSync, copyFileSync, renameSync, statSync } = require('node:fs');
-protocol.registerSchemesAsPrivileged([{ scheme: 'prezent-tiles', privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'prezent-tiles', privileges: { standard: true, secure: true, supportFetchAPI: true } },
+  { scheme: 'prezent-video', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
+]);
 if (process.argv.includes('--smoke-test')) {
   const profileArgument = process.argv.find(argument => argument.startsWith('--smoke-profile='));
   const profile = profileArgument ? path.resolve(profileArgument.slice('--smoke-profile='.length)) : mkdtempSync(path.join(tmpdir(), 'prezent-desktop-smoke-'));
@@ -55,6 +60,7 @@ app.whenReady().then(async () => {
     } catch { return new Response(null, { status: 400 }); }
   });
   const database = new LibraryDatabase(path.join(app.getPath('userData'), 'library.sqlite'));
+  const videoLibrary = new VideoLibrary(path.join(app.getPath('userData'), 'library.sqlite'), path.join(app.getPath('userData'), 'videos'));
   const backupManager = new BackupManager(database, app.getPath('userData'), require('../package.json').version);
   const checkBackup = () => { try { backupManager.check(); } catch { if (!window?.isDestroyed()) window?.webContents.send('backup:error'); } };
   const backupTimer = setInterval(checkBackup, 6 * 60 * 60 * 1000);
@@ -67,7 +73,7 @@ app.whenReady().then(async () => {
   }
   let offlineNetworkBlocked = JSON.parse(database.get('prezent_app_settings_v2') || '{}').offlineSimulationMode === true;
   session.defaultSession.webRequest.onBeforeRequest({ urls: ['http://*/*', 'https://*/*'] }, (_details, callback) => callback({ cancel: offlineNetworkBlocked }));
-  app.once('will-quit', () => database.close());
+  app.once('will-quit', () => { videoLibrary.close(); database.close(); });
   session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
   window = new BrowserWindow({
     width: 1440, height: 900, minWidth: 960, minHeight: 640,
@@ -107,6 +113,44 @@ app.whenReady().then(async () => {
     offlineMap = new OfflineMap(offlineFile);
     return { name: metadata.name || 'Lokalny pakiet MBTiles', sizeMb: statSync(offlineFile).size / 1048576 };
   });
+  const assertRenderer = event => {
+    if (event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== page) throw new Error('Niedozwolony nadawca IPC');
+  };
+  protocol.handle('prezent-video', async request => {
+    try {
+      const url = new URL(request.url);
+      if (url.hostname !== 'local' || !/^\/[a-z0-9-]+$/.test(url.pathname)) return new Response(null, { status: 400 });
+      const file = videoLibrary.pathFor(url.pathname.slice(1));
+      const size = statSync(file).size;
+      const range = request.headers.get('range');
+      let start = 0;
+      let end = size - 1;
+      let status = 200;
+      if (range) {
+        const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+        if (!match) return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${size}` } });
+        if (match[1]) start = Number(match[1]);
+        if (match[2]) end = Number(match[2]);
+        else if (match[1]) end = Math.min(start + 1024 * 1024 - 1, size - 1);
+        if (start >= size || start > end) return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${size}` } });
+        end = Math.min(end, size - 1);
+        status = 206;
+      }
+      const contentType = path.extname(file).toLowerCase() === '.webm' ? 'video/webm' : 'video/mp4';
+      const headers = { 'Accept-Ranges': 'bytes', 'Content-Length': String(end - start + 1), 'Content-Type': contentType };
+      if (status === 206) headers['Content-Range'] = `bytes ${start}-${end}/${size}`;
+      return new Response(Readable.toWeb(require('node:fs').createReadStream(file, { start, end })), { status, headers });
+    } catch { return new Response(null, { status: 404 }); }
+  });
+  ipcMain.handle('video:import', async event => {
+    assertRenderer(event);
+    const selected = await dialog.showOpenDialog(window, { properties: ['openFile', 'multiSelections'], filters: [{ name: 'Filmy MP4/WebM', extensions: ['mp4', 'webm'] }] });
+    if (selected.canceled) return [];
+    const results = [];
+    for (const file of selected.filePaths) results.push(await videoLibrary.importVideo(file));
+    return results.map(result => ({ ...result, item: { ...result.item, playbackUrl: `prezent-video://local/${result.item.id}` } }));
+  });
+  ipcMain.handle('video:list', event => { assertRenderer(event); return videoLibrary.list().map(item => ({ ...item, playbackUrl: `prezent-video://local/${item.id}` })); });
   ipcMain.handle('system:action', async (event, action, value) => {
     if (event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== page) throw new Error('Niedozwolony nadawca IPC');
     const photosPath = path.join(app.getPath('userData'), 'photos');

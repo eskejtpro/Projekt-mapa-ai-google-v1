@@ -25,6 +25,11 @@ PREZ-020 / REQ-13 — IN_PROGRESS: SQLite podłączone do StorageService; test p
 | E0-04 | 2 | P0 | REQ-ENV | Testy skryptów hooków oraz dowód uruchomienia przez klienta | IN_REVIEW |
 | E0-05 | 1 | P0 | REQ-ENV | Dokumenty, walidacja skilli, rejestr braków i handoff | DONE |
 
+## Etap filmów — fundament
+- VID-FOUNDATION-01: IN_REVIEW — typ `MediaItem`, tabela `media_items`, lokalny import MP4/WebM, deduplikacja SHA-256 i bezpieczny protokół Electron z HTTP Range wdrożone; testy realnych kodeków Electron PASS dla obrazu, postępu i seek; wyjście audio UNVERIFIED.
+- VID-FOUNDATION-02: TODO — generowanie miniatur klatek i integracja importu z galerią.
+- VID-FOUNDATION-03: TODO — integracja wspólnego katalogu z mapą, albumami i pokazem; zgodnie z zakresem nie zmieniano jeszcze slideshow ani TV.
+
 Postęp zamknięcia tej iteracji = suma wag DONE / 10 (aktualnie 80%). Otwarte 20% to potwierdzenie automatycznych hooków klienta. Całość Windows nie ma zatwierdzonych wag i zamrożonego zakresu; nie podajemy procentu.
 
 Tabela PREZ poniżej zachowuje historyczne statusy AI Studio. Aktualny audyt: docs/FEATURE_MATRIX.md. Dowody bieżącej iteracji: TESTING.md.

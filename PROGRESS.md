@@ -92,3 +92,8 @@ Stan ogólny: **Kompletny, stabilny i sprawdzony prototyp gotowy do przejęcia p
    - Plik: `src/__tests__/services.test.ts`
    - Liczba testów: **7/7 ZDANYCH (100% zielonych)**.
    - Zweryfikowano: `StorageService.getTravelStats`, `StorageService.findDuplicates`, spójność eksportu/importu `.prezent`, heurystykę geokodowania `guessNearestLocation`, konwersję pakietów `travelPacks`, oraz trwałość i sortowanie `customPhotoOrder` w albumach.
+## Etap video-library-foundation
+- Branch: `feature/video-library-foundation`
+- Wdrożono: `MediaItem`, tabela `media_items`, import MP4/WebM do lokalnego katalogu, SHA-256 deduplikacji, metadata-only SQLite, bezpieczny protokół `prezent-video`, bazowy `VideoPlayer`.
+- Zweryfikowano: testy importu, duplikatu, nagłówka, restartu SQLite i ścieżki dostępu; rzeczywisty Electron Windows potwierdził H.264/AAC, VP8/Opus i VP9/Opus, dekodowanie obrazu, postęp czasu oraz seek po dodaniu HTTP Range. Wyjście audio jest `UNVERIFIED`, a UI importu/galeria pozostają zakresem następnego etapu.
+- Nie zmieniano logiki `SlideshowModal` ani `TvModeModal`.

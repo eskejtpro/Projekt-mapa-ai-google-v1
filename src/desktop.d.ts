@@ -18,6 +18,10 @@ declare global {
         set(key: string, value: string): void;
         batch(entries: [string, string][]): void;
       };
+      video: {
+        import(): Promise<Array<{ duplicate: boolean; item: { id: string; playbackUrl: string; title: string; mimeType: string; sizeBytes: number } }>>;
+        list(): Promise<Array<{ id: string; title: string; playbackUrl: string; mimeType: string; sizeBytes: number; thumbnailStatus: string }>>;
+      };
       minimize(): Promise<boolean>;
       maximize(): Promise<boolean>;
       close(): Promise<boolean>;
