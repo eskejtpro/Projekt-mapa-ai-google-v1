@@ -1,13 +1,13 @@
 # PROGRESS.md - Rzeczywisty Stan Postępów Projektu „Prezent Mapy”
 
-## SESSION HANDOFF — domknięcie PR #6 i UX, 2026-10-18
-- Wersja: 1.6.0, branch `feature/video-gps-map-integration`, baza prac `d0f7f59`. Ten handoff zastępuje wcześniejsze statusy PR #6 poniżej.
+## SESSION HANDOFF — PR #6 scalony, 2026-10-18
+- Wersja: 1.6.0, branch `main`, commit merge `38f83e14d58ebc4352801df4883097a158ae22c7`. Ten handoff zastępuje wcześniejsze statusy PR #6 poniżej.
 - Wdrożono ograniczony parser atomów GPS MP4/MOV, pełne kopie folderowe SQLite/mediów, walidowane IPC i panel ustawień, dopracowany edytor GPS, poprawki CSP/CORS miniaturek, HTTP Range i zwalnianie wideo.
 - Potwierdzono GPS MP4/MOV względem ffprobe, natywne odtwarzanie MP4/WebM, miniaturę, marker/popup offline, większą mapę 1512 mediów, backup/restore IPC oraz samodzielny restart SQLite.
 - Przyczyna niestabilnego E2E: równoległy wbudowany smoke szukał kafelków, gdy Playwright przechodził do galerii. Tryb interaktywny E2E wyłącza konkurujący scenariusz; osobny desktop-restart zachowuje pełny smoke.
-- Lokalne kontrole końcowe: `npm ci --prefer-offline`, `npm run verify`, `npm run test:video-playback-real`, `npm run test:desktop-restart` i `git diff --check` — PASS. GitHub Actions dla nowego commita pozostają do sprawdzenia po pushu.
+- Lokalne kontrole końcowe: `npm ci --prefer-offline`, `npm run verify`, `npm run test:video-playback-real`, `npm run test:desktop-restart` i `git diff --check` — PASS. GitHub Actions Quality #60 dla SHA `3472e2d` — PASS.
 - Otwarte ograniczenia: odsłuch głośników, GPS innych producentów/tagów, wielogigabajtowe biblioteki i awaria zasilania podczas restore. `.prezent` nadal nie obejmuje filmów — pełna kopia folderowa obejmuje.
-- Plik `moje instrukcje do projektu.txt` zachowany jako nieśledzony. Pokaz mieszany PR #7 i TV PR #8 pozostają następnymi etapami.
+- PR #6 scalony do `main` bez force-push. Plik `moje instrukcje do projektu.txt` zachowany jako nieśledzony. Pokaz mieszany PR #7 i TV PR #8 pozostają następnymi etapami.
 
 ## SESSION HANDOFF — automatyzacja Codex, 2026-10-18
 - Gałąź `chore/codex-automation-quality-gates` utworzona z `chore/codex-instructions-video-foundation` (bazowa gałąź istniejącego PR do main).
