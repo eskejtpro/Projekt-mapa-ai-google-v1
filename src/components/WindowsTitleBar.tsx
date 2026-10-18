@@ -16,12 +16,15 @@ import {
   ExternalLink,
   RotateCcw,
   Maximize2,
+  Minimize2,
   Copy
 } from 'lucide-react';
 
 interface WindowsTitleBarProps {
   isMaximized: boolean;
   onToggleMaximize: () => void;
+  isFullscreen?: boolean;
+  onToggleFullscreen?: () => void;
   onMinimize: () => void;
   onCloseApp: () => void;
   onOpenImport: () => void;
@@ -38,6 +41,8 @@ interface WindowsTitleBarProps {
 export const WindowsTitleBar: React.FC<WindowsTitleBarProps> = ({
   isMaximized,
   onToggleMaximize,
+  isFullscreen = false,
+  onToggleFullscreen,
   onMinimize,
   onCloseApp,
   onOpenImport,
@@ -249,6 +254,25 @@ export const WindowsTitleBar: React.FC<WindowsTitleBarProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Przycisk Pełny ekran (F11) - w miejscu wskazanym przez użytkownika */}
+            <button
+              onClick={onToggleFullscreen}
+              className={`ml-2 px-2.5 py-0.5 rounded transition-all flex items-center gap-1.5 cursor-pointer font-medium ${
+                isFullscreen
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-700/60'
+              }`}
+              title="Przełącz tryb pełnego ekranu (F11)"
+            >
+              {isFullscreen ? (
+                <Minimize2 className="w-3 h-3 text-amber-400" />
+              ) : (
+                <Maximize2 className="w-3 h-3 text-amber-400" />
+              )}
+              <span>Pełny ekran</span>
+              <kbd className="ml-0.5 px-1.5 py-0.2 bg-slate-800 text-[10px] text-slate-300 font-mono rounded border border-slate-700">F11</kbd>
+            </button>
           </div>
         </div>
 

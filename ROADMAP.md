@@ -35,6 +35,16 @@ Etapy opisane poniżej zachowują historię AI Studio, nie dowodzą aktualnego u
 - [x] Zestaw testów jednostkowych w Vitest (`npm test`).
 - [x] Uporządkowanie dokumentacji i usunięcie przestarzałych wpisów Android.
 
+## Etap 3.5: Zaawansowany Pokaz Slajdów 2.0 i Organizacja Katalogów (UKOŃCZONE - WERSJA 1.4.0)
+- [x] Matematyczna blokada pionowa mapy (`enforceVerticalBounds`) eliminująca czarną pustkę na biegunach.
+- [x] Rozbudowany Kinowy Pokaz Slajdów 2.0 z wyborem 4 przejść kinowych (Ken Burns, crossfade, slide push, zoom & fade).
+- [x] Wysuwany panel ustawień w pokazie (suwaki czasu 2-30s, pętla, kolejność odtwarzania, tryby napisów).
+- [x] 5 nastrojowych procedur dźwiękowych Web Audio API w 100% offline (ocean, las & wiatr, ognisko, cykady, ambient pad) z regulacją głośności.
+- [x] Dolny pasek miniatur (Filmstrip / Timeline) z natychmiastowym przeskokiem do slajdu.
+- [x] Auto-ukrywanie kontrolek i kursora myszy po 3.5s bezruchu (Clean Cinema).
+- [x] Pełny moduł układania zdjęć w katalogach (`CatalogOrganizerModal`) z Drag & Drop, przyciskami pozycji, numeracją `#1`, `#2`..., szablonami sortowania i trwałym zapisem w `customPhotoOrder`.
+- [x] Odtwarzanie pokazu slajdów dokładnie według kolejności ułożonej przez użytkownika.
+
 ## Etap 4: Przejęcie przez OpenAI Codex – Integracja z Windows (NAJBLIŻSZY CEL)
 - [ ] Utworzenie powłoki Electron (`electron`, `electron-builder`) bez naruszania istniejącego UI React.
 - [ ] Konfiguracja bezpiecznego IPC (`contextBridge.exposeInMainWorld`).

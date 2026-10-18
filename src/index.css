@@ -47,12 +47,15 @@
 .leaflet-div-icon,
 .custom-cluster-pin,
 .custom-photo-pin,
+.custom-leaflet-cluster,
 .step-pin {
   background: transparent !important;
   border: none !important;
 }
 
-.custom-cluster-pin img {
+.custom-leaflet-cluster img,
+.custom-cluster-pin img,
+.custom-photo-pin img {
   width: 100% !important;
   height: 100% !important;
   object-fit: cover !important;

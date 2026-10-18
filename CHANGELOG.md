@@ -22,6 +22,73 @@ Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.0.0/).
 
 ---
 
+## [1.4.1] - 2026-10-17 — Bezpośrednie Przeciąganie Zdjęć z Eksploratora Windows na Katalog (Drag & Drop)
+
+### Nowe Funkcjonalności & Usprawnienia
+- **Bezpośrednie dodawanie zdjęć do katalogu przez Drag & Drop z Eksploratora Windows**:
+  - **Przeciąganie na baner katalogu w Galerii**: upuszczenie plików z komputera na aktywny nagłówek katalogu (`GalleryView.tsx`) lub na obszar galerii natychmiast przypisuje zdjęcia do tego albumu.
+  - **Wizualna strefa upuszczania (Drop Zone Feedback)**: baner katalogu reaguje na najechanie kursorem z plikami podświetleniem w bursztynowej tonacji, animowaną ikoną `FolderDown` oraz informacją o docelowym katalogu.
+  - **Przeciąganie na karty w widoku Albumów**: każda karta w widoku *Albumy i Kolekcje* (`App.tsx`) posiada aktywny nasłuch zdarzeń przeciągania plików z dedykowaną, pulsującą nakładką upuszczenia.
+  - **Automatyczny wybór albumu w ImportModal**: przekazanie parametru `initialAlbumId` gwarantuje, że proces importu automatycznie przypisuje dodawane fotografie do właściwego katalogu z odczytem metadanych EXIF GPS.
+
+---
+
+## [1.4.0] - 2026-10-17 — Rozbudowany Pokaz Slajdów 2.0, Układanie Zdjęć w Katalogach & Blokada Pionowa Mapy
+
+### Nowe Funkcjonalności & Usprawnienia
+- **Rozbudowany Kinowy Pokaz Slajdów 2.0 (`SlideshowModal.tsx`)**:
+  - **Efekty przejść**: dodano wybór 4 kinowych animacji przejść: *Ken Burns* (płynny zoom & pan), *Płynne przenikanie* (crossfade), *Kinowy przesuw* (slide push), *Zoom & Fade*.
+  - **Zaawansowany panel ustawień (Drawer)**: wysuwany bez przerywania pokazu panel z suwakami czasu (2-30s), pętlą, kolejnością odtwarzania oraz nakładkami.
+  - **Rozbudowane tło dźwiękowe (Web Audio API - 100% offline)**: 5 nastrojowych pejzaży proceduralnych (*Szum oceanu*, *Szum lasu & letni wiatr*, *Ognisko & kominek*, *Letnie cykady*, *Spokojny ambient pad*) z płynną regulacją głośności 0-100%.
+  - **Pasek miniatur (Filmstrip / Timeline)**: rozwijany pasek u dołu ekranu z miniaturami wszystkich zdjęć w kolejności i możliwością natychmiastowego skoku do dowolnego slajdu.
+  - **Tryby wyświetlania napisów**: *Pełny opis*, *Minimalistyczny* (tylko miasto i data) oraz *Czyste kino* (bez żadnych napisów — idealne na TV 4K).
+  - **Auto-ukrywanie kontrolek**: kursor myszy i kontrolki HUD płynnie znikają po 3.5 sekundach bezruchu, odsłaniając nieskazitelny obraz fotografii.
+- **Układanie Zdjęć w Katalogach / Własna Kolejność (`CatalogOrganizerModal.tsx`)**:
+  - **Dedykowany moduł organizacji katalogu**: intuicyjne przeciąganie kart fotografii (Drag & Drop z uchwytem `GripVertical`) oraz precyzyjne przyciski: *Przesuń wcześniej*, *Przesuń później*, *Na początek*, *Na koniec*.
+  - **Szybkie szablony sortowania**: *Najstarsze pierwsze*, *Najnowsze pierwsze*, *Alfabetycznie A-Z*, *Trasa Zachód → Wschód*, *Odwróć kolejność*.
+  - **Numeracja slajdów**: każde zdjęcie w katalogu otrzymuje wyraźny identyfikator pozycji (`#1`, `#2`, `#3`...), gwarantujący pełną kontrolę nad scenariuszem pokazu.
+  - **Trwałość porządku**: własna kolejność zapisywana jest w strukturze `customPhotoOrder` albumu w `localStorage` i w plikach `.prezent`.
+  - **Integracja z Galerią i Pokazem Slajdów**: po ułożeniu zdjęć, przycisk *Odtwórz pokaz slajdów w tej kolejności* uruchamia slajdy dokładnie według ustalonego porządku. W galerii dodano tryb sortowania *⭐ Moja ułożona kolejność*.
+- **Ścisła Blokada Pionowa Mapy (`MapView.tsx`)**:
+  - Zaimplementowano matematyczne ryglowanie współrzędnych pikselowych na osi Y w `MapView.tsx` (`enforceVerticalBounds`).
+  - Górna i dolna krawędź kafelków świata są trwale zablokowane na granicy rzutu Web Mercator (±85.0511°).
+  - Przewijanie w pionie nigdy nie odsłania czarnej pustki poza mapą, przy zachowaniu nieskończonego przewijania poziomego (dookoła globu).
+
+---
+
+## [1.3.3] - 2026-10-17 — Dynamiczne Klastrowanie Markerów (leaflet.markercluster) & Pełny Ekran F11
+
+### Nowe Funkcjonalności & Usprawnienia
+- **Dynamiczne klastrowanie markerów (`leaflet.markercluster`)**:
+  - Zainstalowano i zintegrowano bibliotekę `leaflet.markercluster` wraz z typami TypeScript.
+  - Zastąpiono statyczne grupowanie współrzędnych pełnoprawnym, dynamicznym klastrowaniem kartograficznym.
+  - Przy oddaleniu mapy (zoom out) sąsiadujące zdjęcia automatycznie łączą się w eleganckie, okrągłe klastry z miniaturą i licznikiem zdjęć w gradiencie (szmaragd/bursztyn/fiolet).
+  - Kliknięcie klastra płynnie przybliża mapę (`zoomToBoundsOnClick`) lub rozsuwa pinezki w okręgu (`spiderfyOnMaxZoom`).
+  - Parametr promienia klastrowania (`maxClusterRadius`) powiązany z ustawieniami użytkownika (`settings.clusterRadius`).
+- **Przycisk Pełnego Ekranu (F11)**:
+  - Dodano dedykowany przycisk `Pełny ekran [F11]` w belce tytułowej okna Windows, obok menu *Pomoc*.
+  - Obsługa klawisza <kbd>F11</kbd> z synchronizacją z natywnym stanem `fullscreenchange` przeglądarki.
+- **Wyłączenie `worldCopyJump`**:
+  - Wyłączono parametr `worldCopyJump` w Leaflet, trwale eliminując błędy powielania i przycinania kafelków mapy.
+
+---
+
+## [1.3.2] - 2026-10-17 — Naprawa Map, Oczyszczenie UI i Wykrywanie Telewizorów w Sieci
+
+### Naprawiono i Usprawniono
+- **Usunięcie kafelków CARTO z wymogiem klucza API**: Zastąpiono zablokowane serwery kafelków CARTO (*Dark Matter*, *Voyager*, *Positron*) w 100% niezawodnymi, bezpłatnymi podkładami:
+  - **Nocny**: *Esri Dark Canvas* (baza rastrowa `World_Dark_Gray_Base` + przezroczysta warstwa etykiet `World_Dark_Gray_Reference`).
+  - **Kolor / Teren**: *Esri World Topo Map* (plastyczne cieniowanie rzeźby terenu, parki, rzeki, drogi i hipsometria).
+  - **Dzień**: *OpenStreetMap Dzień* (oficjalne, jasne i czytelne serwery OSM).
+  - **Satelita & Ulice**: *Esri World Imagery* wzbogacone o nakładkę granic i miejscowości (*World Boundaries & Places*) oraz *Esri World Street Map*.
+- **Oczyszczenie interfejsu mapy**: Usunięto zbędny, pływający poziomy pasek stylów z górnej części mapy (`absolute top-3 left-1/2`), odsłaniając pełną panoramę świata. Przełączanie stylów pozostaje dostępne w prawym pasku narzędzi oraz w Ustawieniach.
+- **Wykrywanie sieci domowej i udostępnianie ekranu na TV (`TvModeModal.tsx`)**:
+  - **Status aktywnej sieci**: Dodano dedykowaną kartę sieci domowej (Wi-Fi/LAN) ze statusem połączenia, nazwą sieci (SSID z opcją edycji), lokalnym IP komputera, bramą, standardem Wi-Fi 6, pasmem 5.0 GHz i pingiem.
+  - **Skaner i lista telewizorów w sieci**: Zaimplementowano moduł wyszukiwania urządzeń w sieci lokalnej (mDNS, SSDP, Miracast, Google Cast, DLNA) z listą wykrytych telewizorów (Samsung Neo QLED, LG OLED, Sony BRAVIA, Philips Ambilight) oraz możliwością dodania własnego TV po IP.
+  - **Natywne udostępnianie ekranu w przeglądarce**: Dodano integrację z `navigator.mediaDevices.getDisplayMedia` umożliwiającą bezpośrednie przekazywanie obrazu pulpitu/okna na telewizor.
+
+---
+
 ## [1.3.1] - 2026-10-17 — Finalna Stabilizacja i Przygotowanie do Przekazania Codexowi
 
 ### Naprawiono i Zabezpieczono

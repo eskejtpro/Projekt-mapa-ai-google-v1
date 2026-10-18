@@ -23,6 +23,7 @@ interface TvModeModalProps {
   trips: TravelTrip[];
   albums: TravelAlbum[];
   onStartSlideshow: (photos: TravelPhoto[]) => void;
+  onShowToast?: (message: string, type: 'info' | 'success' | 'warning') => void;
 }
 
 export const TvModeModal: React.FC<TvModeModalProps> = ({

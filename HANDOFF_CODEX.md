@@ -59,7 +59,8 @@ Projekt wykorzystuje nowoczesny, lekki i stabilny stos technologiczny z wyraźn�
 │   │   ├── MapView.tsx              # Mapa świata Leaflet, klastry, trasy, menu PPM
 │   │   ├── GalleryView.tsx          # Galeria: Siatka, Albumy, Oś Czasu (Timeline)
 │   │   ├── ImportModal.tsx          # Centrum importu: pliki, foldery, schowek, URL, pakiety
-│   │   ├── SlideshowModal.tsx       # Kinowy odtwarzacz Ken Burns, PiP mini-mapa, audio
+│   │   ├── SlideshowModal.tsx       # Kinowy odtwarzacz 2.0 (Ken Burns, crossfade, drawer, Web Audio, filmstrip)
+│   │   ├── CatalogOrganizerModal.tsx # Moduł układania zdjęć w katalogach (własna kolejność, drag & drop)
 │   │   ├── SettingsView.tsx         # 12-kategorialny panel ustawień (styl Untitled UI)
 │   │   ├── SidebarDock.tsx          # Wąski boczny dock nawigacyjny (styl Mica)
 │   │   ├── WindowsTitleBar.tsx      # Pasek tytułowy Windows 11 z kontrolkami okna

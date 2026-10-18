@@ -23,7 +23,9 @@ import {
   FolderOpen,
   Folder,
   Clock,
-  Navigation
+  Navigation,
+  ArrowUpDown,
+  FolderDown
 } from 'lucide-react';
 
 import { TravelPhoto, TravelAlbum, TravelTrip, OfflineMapPackage, MapTileProvider, AppSettings, TravelStats } from './types/travel';
@@ -46,6 +48,7 @@ import { TvModeModal } from './components/TvModeModal';
 import { OfflineMapsModal } from './components/OfflineMapsModal';
 import { AndroidSyncModal } from './components/AndroidSyncModal';
 import { PhotoDetailModal } from './components/PhotoDetailModal';
+import { CatalogOrganizerModal } from './components/CatalogOrganizerModal';
 
 export default function App() {
   // Baza danych wspomnień
@@ -55,11 +58,55 @@ export default function App() {
   const [offlinePackages, setOfflinePackages] = useState<OfflineMapPackage[]>([]);
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [libraryError, setLibraryError] = useState<string | null>(null);
+  const [reorderAlbum, setReorderAlbum] = useState<TravelAlbum | null>(null);
 
   // Okno Windows 10/11
   const [isWindowMaximized, setIsWindowMaximized] = useState<boolean>(true);
   const [isWindowMinimized, setIsWindowMinimized] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isAboutOpen, setIsAboutOpen] = useState<boolean>(false);
+
+  const handleToggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => {
+        setIsFullscreen(true);
+        showToast('Włączono tryb pełnego ekranu (F11)', 'info');
+      }).catch(() => {
+        setIsFullscreen(prev => !prev);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().then(() => {
+          setIsFullscreen(false);
+          showToast('Wyłączono tryb pełnego ekranu', 'info');
+        }).catch(() => {
+          setIsFullscreen(false);
+        });
+      }
+    }
+  };
+
+  // Globalna obsługa skrótu F11 i synchronizacja ze stanem przeglądarki
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    const handleGlobalF11 = (e: KeyboardEvent) => {
+      if (e.key === 'F11') {
+        e.preventDefault();
+        handleToggleFullscreen();
+      }
+    };
+
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    window.addEventListener('keydown', handleGlobalF11);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', onFullscreenChange);
+      window.removeEventListener('keydown', handleGlobalF11);
+    };
+  }, []);
 
   // Aktywny widok
   const [activeTab, setActiveTab] = useState<ActiveNavTab>('map');
@@ -71,6 +118,8 @@ export default function App() {
   const [importInitialLocation, setImportInitialLocation] = useState<InitialImportLocation | null>(null);
   const [importInitialMode, setImportInitialMode] = useState<ImportTabMode>('files');
   const [importInitialFiles, setImportInitialFiles] = useState<File[]>([]);
+  const [importInitialAlbumId, setImportInitialAlbumId] = useState<string | null>(null);
+  const [dragOverAlbumId, setDragOverAlbumId] = useState<string | null>(null);
   const [isSlideshowOpen, setIsSlideshowOpen] = useState<boolean>(false);
   const [slideshowPhotos, setSlideshowPhotos] = useState<TravelPhoto[]>([]);
   const [slideshowStartIndex, setSlideshowStartIndex] = useState<number>(0);
@@ -181,6 +230,20 @@ export default function App() {
     showToast(`Przeciągnięto ${files.length} zdjęć na mapę: ${guess.cityName} (${lat.toFixed(4)}, ${lng.toFixed(4)})`, 'info');
   };
 
+  // Upuszczenie plików bezpośrednio na określony katalog / album z Eksploratora Windows (Drag & Drop)
+  const handleDropPhotosOnAlbum = (files: File[], targetAlbumId: string) => {
+    const targetAlbum = albums.find(a => a.id === targetAlbumId);
+    setImportInitialFiles(files);
+    setImportInitialAlbumId(targetAlbumId);
+    setImportInitialLocation(null);
+    setImportInitialMode('files');
+    setIsImportOpen(true);
+    showToast(
+      `Przeciągnięto ${files.length} ${files.length === 1 ? 'zdjęcie' : 'zdjęć'} do katalogu: ${targetAlbum?.name || 'Album'}`,
+      'info'
+    );
+  };
+
   // Ulubione
   const handleToggleFavorite = (id: string) => {
     const updated = photos.map(p => p.id === id ? { ...p, isFavorite: !p.isFavorite } : p);
@@ -269,6 +332,39 @@ export default function App() {
     setSlideshowPhotos(list);
     setSlideshowStartIndex(startIndex);
     setIsSlideshowOpen(true);
+  };
+
+  // Zapis własnej kolejności slajdów w katalogu / albumie
+  const handleSaveAlbumOrder = (albumId: string, orderedPhotoIds: string[]) => {
+    setAlbums(prevAlbums => {
+      const updated = prevAlbums.map(a => {
+        if (a.id === albumId) {
+          return { ...a, customPhotoOrder: orderedPhotoIds };
+        }
+        return a;
+      });
+      StorageService.saveAlbums(updated);
+      return updated;
+    });
+    showToast('Zapisano własną kolejność zdjęć w katalogu!', 'success');
+  };
+
+  // Uruchomienie pokazu slajdów z wybranego albumu według jego własnej kolejności
+  const handleStartAlbumSlideshow = (album: TravelAlbum) => {
+    const albumPhotos = photos.filter(p => p.albumId === album.id);
+    if (album.customPhotoOrder && album.customPhotoOrder.length > 0) {
+      const orderMap = new Map<string, number>();
+      album.customPhotoOrder.forEach((id, idx) => orderMap.set(id, idx));
+      const sorted = [...albumPhotos].sort((a, b) => {
+        const orderA = orderMap.has(a.id) ? orderMap.get(a.id)! : 99999;
+        const orderB = orderMap.has(b.id) ? orderMap.get(b.id)! : 99999;
+        if (orderA !== orderB) return orderA - orderB;
+        return a.date.localeCompare(b.date);
+      });
+      handleStartSlideshow(sorted);
+    } else {
+      handleStartSlideshow(albumPhotos);
+    }
   };
 
   // Reset do demo
@@ -369,6 +465,8 @@ export default function App() {
             onToggleMaximize={() => { if (window.electronAPI) void window.electronAPI.maximize(); else setIsWindowMaximized(!isWindowMaximized); }}
             onMinimize={() => { if (window.electronAPI) void window.electronAPI.minimize(); else setIsWindowMinimized(true); }}
             onCloseApp={() => { if (window.electronAPI) void window.electronAPI.close(); else handleCloseApp(); }}
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={handleToggleFullscreen}
             onOpenImport={() => setIsImportOpen(true)}
             onStartSlideshow={() => handleStartSlideshow()}
             onOpenTvMode={() => setIsTvModeOpen(true)}
@@ -413,6 +511,8 @@ export default function App() {
                     showAnimatedRoutes={settings.showAnimatedRoutes}
                     offlineMode={settings.offlineSimulationMode}
                     autoCenterOnPhotos={settings.autoCenterOnPhotos}
+                    showMapLabels={settings.showMapLabels}
+                    clusterRadius={settings.clusterRadius}
                     onOpenImport={handleOpenImportWithLocation}
                     onShowToast={showToast}
                     onDropPhotosOnMap={handleDropPhotosOnMap}
@@ -476,6 +576,8 @@ export default function App() {
                   onStartSlideshow={(list) => handleStartSlideshow(list)}
                   onSelectAlbum={(id) => setSelectedAlbumId(id)}
                   selectedAlbumId={selectedAlbumId}
+                  onOpenOrganizer={(album) => setReorderAlbum(album)}
+                  onDropPhotosOnAlbum={handleDropPhotosOnAlbum}
                   density={settings.galleryDensity}
                   showExifBadges={settings.showExifBadges}
                   defaultSortBy={settings.defaultSortBy}
@@ -493,7 +595,7 @@ export default function App() {
                         Albumy i Kolekcje Podróżnicze
                       </h2>
                       <p className="text-xs text-slate-400">
-                        Podróże podzielone na albumy rodzinne oraz kolekcje inteligentne.
+                        Podróże podzielone na katalogi rodzinne z możliwością własnego układania kolejności slajdów.
                       </p>
                     </div>
 
@@ -508,6 +610,8 @@ export default function App() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {albums.map(album => {
                       const count = photos.filter(p => p.albumId === album.id).length;
+                      const isDragOver = dragOverAlbumId === album.id;
+
                       return (
                         <div
                           key={album.id}
@@ -515,8 +619,52 @@ export default function App() {
                             setSelectedAlbumId(album.id);
                             setActiveTab('gallery');
                           }}
-                          className="group bg-[#0f172a] rounded-2xl border border-slate-800 overflow-hidden shadow-xl hover:border-amber-500/60 hover:shadow-2xl transition-all cursor-pointer flex flex-col"
+                          onDragOver={(e) => {
+                            if (e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setDragOverAlbumId(album.id);
+                            }
+                          }}
+                          onDragLeave={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                              setDragOverAlbumId(null);
+                            }
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setDragOverAlbumId(null);
+                            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                              const validFiles = Array.from(e.dataTransfer.files).filter(f =>
+                                f.type.startsWith('image/') || /\.(jpe?g|png|webp|avif|heic|tiff?|gif)$/i.test(f.name)
+                              );
+                              if (validFiles.length > 0) {
+                                handleDropPhotosOnAlbum(validFiles, album.id);
+                              }
+                            }
+                          }}
+                          className={`group bg-[#0f172a] rounded-2xl border overflow-hidden shadow-xl transition-all cursor-pointer flex flex-col relative ${
+                            isDragOver
+                              ? 'border-amber-400 ring-4 ring-amber-400/40 scale-[1.02] shadow-2xl shadow-amber-500/20'
+                              : 'border-slate-800 hover:border-amber-500/60 hover:shadow-2xl'
+                          }`}
                         >
+                          {/* Aktywna nakładka upuszczenia zdjęć na kartę albumu */}
+                          {isDragOver && (
+                            <div className="absolute inset-0 z-40 bg-amber-500/90 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-slate-950 font-sans border-2 border-dashed border-white animate-in fade-in zoom-in-95 duration-150">
+                              <div className="w-12 h-12 rounded-2xl bg-white/25 flex items-center justify-center mb-2 animate-bounce">
+                                <FolderDown className="w-6 h-6" />
+                              </div>
+                              <h4 className="font-extrabold text-base tracking-tight">Upuść zdjęcia tutaj!</h4>
+                              <p className="text-xs font-semibold mt-0.5 opacity-90 text-center">
+                                Dodaj bezpośrednio do albumu: {album.name}
+                              </p>
+                            </div>
+                          )}
+
                           <div className="relative aspect-16/9 w-full overflow-hidden bg-slate-950">
                             <img
                               src={album.coverUrl}
@@ -530,6 +678,11 @@ export default function App() {
                             <div className="absolute bottom-3 right-3 bg-emerald-500/20 text-emerald-400 text-xs px-2.5 py-1 rounded-full font-bold border border-emerald-500/30">
                               {count} {count === 1 ? 'zdjęcie' : 'zdjęć'}
                             </div>
+                            {album.customPhotoOrder && album.customPhotoOrder.length > 0 && (
+                              <div className="absolute top-3 right-3 bg-amber-500/90 text-slate-950 text-[10px] px-2 py-0.5 rounded-md font-bold shadow flex items-center gap-1">
+                                <Sparkles className="w-3 h-3" /> Ułożony
+                              </div>
+                            )}
                           </div>
 
                           <div className="p-4 flex-1 flex flex-col justify-between space-y-2">
@@ -542,9 +695,30 @@ export default function App() {
                               </p>
                             </div>
 
-                            <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-amber-400 font-semibold">
-                              <span>Otwórz album</span>
-                              <ExternalLink className="w-3.5 h-3.5" />
+                            <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                              <span className="text-amber-400 font-semibold group-hover:underline flex items-center gap-1">
+                                Otwórz album <ExternalLink className="w-3.5 h-3.5" />
+                              </span>
+
+                              <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                                <button
+                                  onClick={() => setReorderAlbum(album)}
+                                  className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-amber-400 border border-slate-700 transition-colors flex items-center gap-1 font-medium cursor-pointer"
+                                  title="Ułóż kolejność zdjęć w tym katalogu"
+                                >
+                                  <ArrowUpDown className="w-3 h-3 text-amber-400" />
+                                  Kolejność
+                                </button>
+                                <button
+                                  onClick={() => handleStartAlbumSlideshow(album)}
+                                  disabled={count === 0}
+                                  className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500 text-amber-400 hover:text-slate-950 border border-amber-500/30 transition-all flex items-center gap-1 font-bold cursor-pointer disabled:opacity-30"
+                                  title="Uruchom pokaz slajdów tego albumu"
+                                >
+                                  <Play className="w-3 h-3 fill-current" />
+                                  Slajdy
+                                </button>
+                              </div>
                             </div>
                             <div className="flex flex-wrap gap-2 text-xs" onClick={event => event.stopPropagation()}>
                               <button className="text-red-300 p-1" onClick={() => handleDeleteAlbum(album.id, false)}>Usuń album, zachowaj zdjęcia</button>
@@ -875,12 +1049,14 @@ export default function App() {
           setIsImportOpen(false);
           setImportInitialLocation(null);
           setImportInitialFiles([]);
+          setImportInitialAlbumId(null);
         }}
         albums={albums}
         onImportComplete={handleImportComplete}
         initialLocation={importInitialLocation}
         initialMode={importInitialMode}
         initialFiles={importInitialFiles}
+        initialAlbumId={importInitialAlbumId}
         onShowToast={showToast}
       />
 
@@ -889,7 +1065,19 @@ export default function App() {
         onClose={() => setIsSlideshowOpen(false)}
         photos={slideshowPhotos}
         initialIndex={slideshowStartIndex}
-        settings={settings}
+        albumName={selectedAlbumId ? albums.find(a => a.id === selectedAlbumId)?.name : undefined}
+      />
+
+      <CatalogOrganizerModal
+        isOpen={!!reorderAlbum}
+        onClose={() => setReorderAlbum(null)}
+        album={reorderAlbum}
+        allPhotos={photos}
+        onSaveOrder={handleSaveAlbumOrder}
+        onStartSlideshow={(ordered) => {
+          setReorderAlbum(null);
+          handleStartSlideshow(ordered);
+        }}
       />
 
       <TvModeModal
@@ -899,6 +1087,7 @@ export default function App() {
         trips={trips}
         albums={albums}
         onStartSlideshow={(list) => handleStartSlideshow(list)}
+        onShowToast={showToast}
       />
 
       <OfflineMapsModal

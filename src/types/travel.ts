@@ -21,6 +21,7 @@ export interface TravelPhoto {
   tags: string[]; // np. ['Plaża', 'Zachód słońca', 'Góry', 'Kulinaria']
   isFavorite: boolean;
   isDemo?: boolean;
+  order?: number;
   cameraInfo?: {
     make?: string;
     model?: string;
@@ -63,6 +64,7 @@ export interface TravelAlbum {
   isDemo?: boolean;
   isSmartAlbum?: boolean;
   smartFilter?: 'favorites' | 'nature' | 'family' | 'food' | 'recent';
+  customPhotoOrder?: string[]; // Tablica identyfikatorów zdjęć w zdefiniowanej kolejności użytkownika
 }
 
 export type MapTileProvider = 'dark' | 'satellite' | 'voyager' | 'light' | 'osm' | 'streets';
@@ -76,6 +78,21 @@ export interface OfflineMapPackage {
   isDownloaded: boolean;
   downloadProgress?: number;
   downloadDate?: string;
+}
+
+export interface DiscoveredTvDevice {
+  id: string;
+  name: string;
+  model: string;
+  brand: 'Samsung' | 'LG' | 'Sony' | 'Philips' | 'Apple' | 'Inny';
+  ip: string;
+  protocol: 'Miracast' | 'Google Cast' | 'AirPlay 2' | 'DLNA';
+  resolution: string;
+  room: string;
+  signalStrength: number;
+  isOnline: boolean;
+  isPaired?: boolean;
+  lastConnected?: string;
 }
 
 // 12-kategorialne ustawienia aplikacji Prezent
