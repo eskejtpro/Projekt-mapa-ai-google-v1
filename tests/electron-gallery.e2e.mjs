@@ -122,11 +122,18 @@ try {
     });
     await page.waitForFunction(() => document.querySelector('div.fixed.inset-0.z-50 video')?.currentTime > 0.2);
     await slideshow.locator('video').first().evaluate(video => { video.currentTime = Math.max(0, video.duration - 0.1); });
-    await page.waitForFunction(() => document.querySelector('div.fixed.inset-0.z-50 video')?.ended === true, null, { timeout: 15000 });
+    // onEnded advances the React slideshow immediately, so the old <video>
+    // is unmounted before its `ended` property can be observed. Verify the
+    // user-visible contract instead: playback completion advances to media
+    // that is not the completed video.
+    await slideshow.locator('[data-testid="slideshow-video"]').waitFor({ state: 'detached', timeout: 15000 });
+    await slideshow.locator('img').first().waitFor({ state: 'visible' });
   }
   await page.keyboard.press('Escape');
   await slideshow.waitFor({ state: 'hidden' });
-  console.log('PASS: mixed photo/video slideshow controls and real video completion path');
+  console.log(process.env.PREZENT_REAL_VIDEO
+    ? 'PASS: mixed slideshow controls and real video completion advance'
+    : 'PASS: mixed slideshow controls (real video completion is covered by test:video-playback-real)');
   await app.close();
   await new Promise(resolve => setTimeout(resolve, 1000));
   app = await electron.launch(launchOptions);
