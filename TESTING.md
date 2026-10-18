@@ -1,5 +1,15 @@
 # TESTING.md - Procedury Testowe i Raport Weryfikacji
 
+## Automatyzacja Codex — nowa iteracja (2026-10-18)
+
+- Dodano `scripts/automation-check.mjs` do `npm run verify` (tryb quick i full); sprawdza strukturę konfiguracji, skilli, hooków i CI.
+- Dodano `tests/automation.test.mjs`: kontrola pozytywna oraz dwa przypadki negatywne (brak plików/skryptów i niepoprawny JSON hooków). Skrypt `test:tooling` uruchamia oba pliki testowe.
+- Workflow Quality: concurrency, timeout 30 minut, raporty z retencją 14 dni. Zachowano audyt zależności.
+- Status nowej iteracji: **NOT RUN / oczekiwanie na CI** — zmiany wykonano przez API GitHub, bez lokalnego Node/Electron. Nie przypisuj PASS przed sprawdzeniem workflow dla konkretnego SHA.
+- Testy automatycznych zdarzeń hooków Codex: **UNVERIFIED**. Test uruchomienia skryptu z przykładowym JSON nie potwierdza zaufania ani uruchomienia przez klienta.
+- Windows 10/11 instalator, portable, realny TV i testy danych użytkownika: **NOT RUN** w tej iteracji. `release:check` pozostaje blokadą.
+
+
 ## Codex — świeża weryfikacja 2026-10-17
 Baseline źródeł: 1be0136 + zmiany gałęzi work/windows-desktop-foundation. System wykonania: Windows 10 Pro 10.0.19045 x64, Node 26.8.1, npm 11.19.0; CI skonfigurowane na Node 24/windows-latest (wynik zdalny osobno).
 

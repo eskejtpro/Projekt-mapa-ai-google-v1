@@ -10,7 +10,7 @@
 
 ## Początek każdej sesji i zadania
 1. Sprawdź `git status --short --branch`, `git log -1 --oneline`, gałąź i aktualne wymagania. Nie zakładaj czystego drzewa.
-2. Odczytaj `PROGRESS.md` (SESSION HANDOFF), `TASKS.md`, `docs/FEATURE_MATRIX.md`, `docs/KNOWN_ISSUES.md`; w razie potrzeby `REQUIREMENTS.md`, `ARCHITECTURE.md`, `TESTING.md`.
+2. Przy rozpoczęciu większego zadania odczytaj `PROGRESS.md` (SESSION HANDOFF) i właściwą sekcję `TASKS.md`; `docs/FEATURE_MATRIX.md`, `docs/KNOWN_ISSUES.md`, `REQUIREMENTS.md`, `ARCHITECTURE.md`, `TESTING.md` czytaj tylko, gdy są istotne dla zmiany. Przy drobnej poprawce nie ładuj wszystkich dokumentów.
 3. Wybierz najmniejsze niezablokowane zadanie ze zdefiniowanymi kryteriami akceptacji, zależnościami i testami.
 4. Włącz odpowiedni skill z `.agents/skills/` (w szczególności project-continuity, feature-development, test-automation, windows-electron, photo-library, video-library, maps-offline).
 5. Nie kopiuj pełnych dokumentów do kontekstu bez potrzeby; odczytuj tylko sekcje właściwe dla zadania.
@@ -46,3 +46,9 @@
 - Skrypty/hooki Git wymagają weryfikacji. Skrypty w `.codex/hooks.json` nie są dowodem, że zdarzenia klienta uruchamiają się automatycznie — sprawdź je w bieżącej wersji Codexa.
 - Nie wstawiaj tokenów, prywatnych zdjęć, filmów, baz, `release-current/` ani `node_modules/` do commita.
 - W przypadku ograniczenia czasu/kontekstu zapisz konkretny handoff, nie twierdź, że praca będzie kontynuowana w tle.
+
+## Automatyzacja i bramki jakości
+- Szczegółowy przepływ: `docs/CODEX_AUTOMATION.md`. Statyczna kontrola: `npm run automation:check`; testy narzędzi: `npm run test:tooling`.
+- Pre-commit i pre-push wymagają jednorazowego `npm run hooks:install`. Niezależną bramką dla PR jest workflow `Quality` na Windows.
+- Hooki Codex mogą wymagać zaufania do projektu; przejście testów `lifecycle.mjs` nie potwierdza wywołań przez klienta. Wynik testu hooków raportuj oddzielnie od działania runtime.
+- PR zawiera wyniki i ograniczenia według `.github/pull_request_template.md`. Bez zielonego CI i dowodów dla dotkniętych funkcji nie oznaczaj zmiany DONE.
