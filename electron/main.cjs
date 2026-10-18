@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, session, shell, protocol, dialog, net } = require('electron');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
+const { Readable } = require('node:stream');
 const { mkdirSync, writeFileSync } = require('node:fs');
 const { mkdtempSync } = require('node:fs');
 const { tmpdir } = require('node:os');
@@ -120,7 +121,25 @@ app.whenReady().then(async () => {
       const url = new URL(request.url);
       if (url.hostname !== 'local' || !/^\/[a-z0-9-]+$/.test(url.pathname)) return new Response(null, { status: 400 });
       const file = videoLibrary.pathFor(url.pathname.slice(1));
-      return net.fetch(pathToFileURL(file).href);
+      const size = statSync(file).size;
+      const range = request.headers.get('range');
+      let start = 0;
+      let end = size - 1;
+      let status = 200;
+      if (range) {
+        const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+        if (!match) return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${size}` } });
+        if (match[1]) start = Number(match[1]);
+        if (match[2]) end = Number(match[2]);
+        else if (match[1]) end = Math.min(start + 1024 * 1024 - 1, size - 1);
+        if (start >= size || start > end) return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${size}` } });
+        end = Math.min(end, size - 1);
+        status = 206;
+      }
+      const contentType = path.extname(file).toLowerCase() === '.webm' ? 'video/webm' : 'video/mp4';
+      const headers = { 'Accept-Ranges': 'bytes', 'Content-Length': String(end - start + 1), 'Content-Type': contentType };
+      if (status === 206) headers['Content-Range'] = `bytes ${start}-${end}/${size}`;
+      return new Response(Readable.toWeb(require('node:fs').createReadStream(file, { start, end })), { status, headers });
     } catch { return new Response(null, { status: 404 }); }
   });
   ipcMain.handle('video:import', async event => {

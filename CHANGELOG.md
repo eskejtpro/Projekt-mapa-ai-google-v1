@@ -146,3 +146,6 @@ Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.0.0/).
 # 1.5.0 — fundament biblioteki filmów
 - Dodano typowany model `MediaItem`, lokalny import MP4/WebM, deduplikację SHA-256, metadane SQLite i bezpieczne odtwarzanie przez protokół Electron.
 - Nie dodano jeszcze obsługi filmów w galerii, mapie, slideshow ani TV.
+## [1.5.1] — 2026-10-18
+- Naprawiono obsługę HTTP Range w protokole `prezent-video://`, dzięki czemu przewijanie działa w Electronie.
+- Zweryfikowano rzeczywiste próbki H.264/AAC, VP8/Opus i VP9/Opus w Electronie na Windows; pomiar wyjścia audio pozostaje `UNVERIFIED`.

@@ -129,5 +129,6 @@ Kontynuacja SQLite: verify PASS (12 Vitest + 10 tooling + 2 SQLite). Testy bazy 
 
 - `tests/video-library.test.cjs` sprawdza import MP4/WebM, sygnaturę kontenera, duplikat SHA-256, brak Base64, ponowne otwarcie SQLite i odrzucenie nieznanego identyfikatora.
 - Import zapisuje plik w lokalnym katalogu `videos/`, a SQLite przechowuje wyłącznie metadane i ścieżkę względną.
-- Odtwarzanie używa bezpiecznego protokołu `prezent-video://local/<id>` oraz natywnego elementu `<video>`.
-- Walidacja kodeka w rzeczywistym Chromium/Electron pozostaje `UNVERIFIED` do testu z plikiem MP4 i WebM zawierającym obsługiwane kodeki; UI pokazuje błąd odtwarzania zamiast deklarować sukces.
+- Odtwarzanie używa bezpiecznego protokołu `prezent-video://local/<id>` oraz natywnego elementu `<video>`; protokół obsługuje odpowiedzi HTTP Range dla przewijania.
+- Rzeczywisty smoke Electron na Windows z próbkami H.264/AAC, VP8/Opus i VP9/Opus potwierdził metadane obrazu, dekodowanie, postęp czasu i seek. Raport lokalny: `.test-tools/electron-video-smoke.cjs` (narzędzia i próbki są poza repozytorium).
+- Wyjście dźwięku z głośników nie jest wiarygodnie mierzalne w bezgłowym smoke teście: `UNVERIFIED`; wymagany jest ręczny test głośności na Windows.
