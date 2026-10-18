@@ -133,6 +133,10 @@ export const MapView: React.FC<MapViewProps> = ({
   const referenceLayerRef = useRef<L.TileLayer | null>(null);
   const clusterGroupRef = useRef<L.MarkerClusterGroup | null>(null);
   const routesLayerRef = useRef<L.LayerGroup | null>(null);
+  const onSelectPhotoRef = useRef(onSelectPhoto);
+  const onSelectVideoRef = useRef(onSelectVideo);
+  onSelectPhotoRef.current = onSelectPhoto;
+  onSelectVideoRef.current = onSelectVideo;
 
   const [mapSearchQuery, setMapSearchQuery] = useState<string>('');
   const [showLayerMenu, setShowLayerMenu] = useState<boolean>(false);
@@ -254,8 +258,9 @@ export const MapView: React.FC<MapViewProps> = ({
       animate: true,
       iconCreateFunction: (cluster) => {
         const count = cluster.getChildCount();
-        const allMarkers = cluster.getAllChildMarkers();
-        const firstPhoto = (allMarkers[0] as any)?.photoData as TravelPhoto | undefined;
+        const directMarkers = (cluster as any)._markers as L.Marker[] | undefined;
+        const firstMarker = directMarkers?.[0] || cluster.getAllChildMarkers()[0];
+        const firstPhoto = (firstMarker as any)?.photoData as TravelPhoto | undefined;
         const thumbUrl = firstPhoto?.thumbnailUrl || firstPhoto?.url;
 
         const badgeBg = count >= 20
@@ -542,7 +547,7 @@ export const MapView: React.FC<MapViewProps> = ({
       const btnSpan = document.createElement('span');
       btnSpan.textContent = 'Otwórz wspomnienie';
       btn.appendChild(btnSpan);
-      btn.onclick = () => onSelectPhoto(photo);
+      btn.onclick = () => onSelectPhotoRef.current(photo);
 
       popupHtml.appendChild(btn);
       marker.bindPopup(popupHtml, { minWidth: 260, maxWidth: 300 });
@@ -560,7 +565,7 @@ export const MapView: React.FC<MapViewProps> = ({
       const title = document.createElement('h4'); title.className = 'font-bold text-sm text-white'; title.textContent = video.title; popup.appendChild(title);
       const location = document.createElement('p'); location.className = 'text-xs text-slate-400 mt-1'; location.textContent = `${video.location.cityName || 'Lokalizacja'}, ${video.location.countryName || 'Świat'}`; popup.appendChild(location);
       const duration = document.createElement('p'); duration.className = 'text-xs text-indigo-300 mt-1'; duration.textContent = `Film • ${video.durationMs ? `${Math.round(video.durationMs / 1000)} s` : 'czas nieznany'}`; popup.appendChild(duration);
-      const button = document.createElement('button'); button.className = 'w-full mt-3 py-1.5 px-3 bg-indigo-500 text-white rounded-lg font-bold text-xs'; button.textContent = 'Otwórz film'; button.onclick = () => onSelectVideo?.(video); popup.appendChild(button);
+      const button = document.createElement('button'); button.className = 'w-full mt-3 py-1.5 px-3 bg-indigo-500 text-white rounded-lg font-bold text-xs'; button.textContent = 'Otwórz film'; button.onclick = () => onSelectVideoRef.current?.(video); popup.appendChild(button);
       marker.bindPopup(popup, { minWidth: 220, maxWidth: 280 });
       (marker as any).videoData = video;
       clusterGroupRef.current?.addLayer(marker);
@@ -609,7 +614,7 @@ export const MapView: React.FC<MapViewProps> = ({
     if (autoCenterOnPhotos && bounds.isValid() && visiblePhotos.length + visibleVideos.length > 0 && selectedTripId) {
       mapInstanceRef.current.fitBounds(bounds, { padding: [60, 60], maxZoom: 9 });
     }
-  }, [visiblePhotos, visibleVideos, selectedTripId, showAnimatedRoutes, trips, albums, onSelectVideo, autoCenterOnPhotos]);
+  }, [visiblePhotos, visibleVideos, selectedTripId, showAnimatedRoutes, trips, autoCenterOnPhotos]);
 
   // Wyszukiwanie z animowanym flyTo
   const handleMapSearch = (e: React.FormEvent) => {

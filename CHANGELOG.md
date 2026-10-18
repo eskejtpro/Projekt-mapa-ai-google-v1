@@ -1,5 +1,11 @@
 # CHANGELOG.md - Historia Zmian Projektu „Prezent Mapy”
 
+## Unreleased — PR #9 performance fast track
+- Dodano powtarzalny benchmark Electron (`npm run benchmark:electron`) dla startu, kontenera mapy, galerii, odczytu SQLite i RSS; ciężki test 1513 mediów pozostaje w pełnym E2E.
+- Zmemoizowano filtrowanie, sortowanie i grupowanie galerii oraz dostępne kraje; miniatury filmów nie renderują ponownie bez zmiany źródła.
+- Ograniczono niepotrzebne przebudowy markerów Leaflet przy zmianach stanu React i skrócono ścieżkę wyboru miniatur klastra.
+- Wyniki BEFORE/AFTER i ograniczenia pomiaru zapisano w `docs/PERFORMANCE.md`.
+
 ## 1.7.0 — pokaz multimedialny zdjęć i filmów
 - Rozszerzono istniejący pokaz o wspólną listę zdjęć i filmów MP4/WebM.
 - Filmy odtwarzają się automatycznie, przechodzą dalej po zakończeniu i zachowują pauzę, seek, głośność, wyciszenie oraz fullscreen.
