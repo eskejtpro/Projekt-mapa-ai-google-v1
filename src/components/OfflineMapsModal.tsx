@@ -31,6 +31,7 @@ export const OfflineMapsModal: React.FC<OfflineMapsModalProps> = ({
 }) => {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
+  const [error, setError] = useState<string | null>(null);
   const intervalRef = useRef<number | null>(null);
 
   // Czyszczenie timera przy odmontowaniu
@@ -44,38 +45,23 @@ export const OfflineMapsModal: React.FC<OfflineMapsModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleDownload = (pkgId: string) => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
+  const handleDownload = async (pkgId: string) => {
+    if (!window.electronAPI) { setError('Import map MBTiles wymaga aplikacji Windows.'); return; }
     setDownloadingId(pkgId);
-    setDownloadProgress(10);
-    let currentProgress = 10;
-
-    intervalRef.current = window.setInterval(() => {
-      currentProgress += 25;
-      if (currentProgress >= 100) {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        intervalRef.current = null;
-        setDownloadProgress(100);
-        setDownloadingId(null);
-
-        const updated = packages.map(p => {
-          if (p.id === pkgId) {
-            return {
-              ...p,
-              isDownloaded: true,
-              downloadDate: new Date().toISOString().split('T')[0],
-            };
-          }
-          return p;
-        });
-        onUpdatePackages(updated);
-      } else {
-        setDownloadProgress(currentProgress);
-      }
-    }, 250);
+    setError(null);
+    try {
+      const imported = await window.electronAPI.importOfflineMap();
+      if (!imported) return;
+      onUpdatePackages(packages.map(pkg => pkg.id === pkgId ? { ...pkg, name: imported.name, estimatedSizeMb: imported.sizeMb, isDownloaded: true, downloadDate: new Date().toISOString().slice(0, 10) } : { ...pkg, isDownloaded: false }));
+      setDownloadProgress(100);
+      onToggleOfflineMode(true);
+    } catch { setError('Nie można otworzyć pakietu. Wybierz poprawny raster MBTiles z licencją na użycie offline.'); }
+    finally { setDownloadingId(null); }
   };
 
-  const handleDelete = (pkgId: string) => {
+  const handleDelete = async (pkgId: string) => {
+    try { if (window.electronAPI) await window.electronAPI.removeOfflineMap(); }
+    catch { setError('Nie udało się odłączyć lokalnego pakietu map.'); return; }
     const updated = packages.map(p => {
       if (p.id === pkgId) {
         return {
@@ -110,7 +96,7 @@ export const OfflineMapsModal: React.FC<OfflineMapsModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Pobierz wybrane regiony świata do pamięci komputera, aby przeglądać mapę i wspomnienia w samolocie lub w podróży.
+                Wczytaj własny pakiet MBTiles z prawem do użytku offline. Aktywny jest jeden pakiet naraz.
               </p>
             </div>
           </div>
@@ -128,19 +114,20 @@ export const OfflineMapsModal: React.FC<OfflineMapsModalProps> = ({
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3.5 flex items-start gap-3">
             <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
             <div className="space-y-0.5">
-              <span className="font-bold text-amber-300 text-xs">Tryb demonstracyjny w podglądzie przeglądarkowym:</span>
+              <span className="font-bold text-amber-300 text-xs">Lokalne mapy MBTiles:</span>
               <p className="text-[11px] text-slate-300 leading-relaxed">
-                Pobieranie kafelków w obecnej wersji podglądu symuluje działanie interfejsu. Rzeczywiste pobieranie i buforowanie plików baz kafelkowych (MBTiles / SQLite) na dysku lokalnym Windows zostanie wdrożone przez Codexa w środowisku Electron.
+                Przycisk przy regionie otwiera wybór pliku na dysku. Import nie pobiera kafelków z Internetu. Obsługiwane są pakiety rastrowe PNG, JPEG i WebP; dostępne przybliżenia zależą od zawartości pliku.
               </p>
             </div>
           </div>
 
           {/* Przełącznik trybu Offline (Samolotowego) */}
+          {error && <div role="alert" className="text-amber-300">{error}</div>}
           <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl flex items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="font-bold text-white flex items-center gap-2">
                 <WifiOff className="w-4 h-4 text-amber-400" />
-                Tryb symulacji Offline (Brak połączenia z siecią)
+                Tryb Offline (Lokalny pakiet map)
               </div>
               <p className="text-[11px] text-slate-400">
                 Wymuś korzystanie wyłącznie z lokalnie zapisanych kafelków i bazy danych bez odwołań do serwerów.

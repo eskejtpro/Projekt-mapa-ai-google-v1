@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { removeAlbum } from './services/library-actions';
 import { 
   Globe2, 
   Image as ImageIcon, 
@@ -29,6 +30,7 @@ import {
 
 import { TravelPhoto, TravelAlbum, TravelTrip, OfflineMapPackage, MapTileProvider, AppSettings, TravelStats } from './types/travel';
 import { StorageService, DEFAULT_SETTINGS } from './services/storage';
+import { validateBackup } from './services/backup-validation';
 
 import { WindowsTitleBar } from './components/WindowsTitleBar';
 import { SidebarDock, ActiveNavTab } from './components/SidebarDock';
@@ -55,6 +57,7 @@ export default function App() {
   const [trips, setTrips] = useState<TravelTrip[]>([]);
   const [offlinePackages, setOfflinePackages] = useState<OfflineMapPackage[]>([]);
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [libraryError, setLibraryError] = useState<string | null>(null);
   const [reorderAlbum, setReorderAlbum] = useState<TravelAlbum | null>(null);
 
   // Okno Windows 10/11
@@ -147,20 +150,32 @@ export default function App() {
   // Załadowanie danych
   useEffect(() => {
     loadAllData();
+    const unsubscribeBackup = window.electronAPI?.onBackupError(() => showToast('Nie udało się utworzyć automatycznej kopii. Sprawdź wolne miejsce i uprawnienia folderu danych.', 'warning'));
+    if (window.electronAPI) {
+      void window.electronAPI.systemInfo().then(info => {
+        setSettings(previous => ({ ...previous, windowsPhotosPath: info.photosPath, autoStartWithWindows: info.autoStart }));
+        if (!info.offlineMapAvailable) setOfflinePackages(previous => previous.map(pkg => ({ ...pkg, isDownloaded: false })));
+      }).catch(() => showToast('Nie udało się odczytać ustawień Windows.', 'warning'));
+    }
+    return () => unsubscribeBackup?.();
   }, []);
 
   const loadAllData = () => {
+    try {
     const p = StorageService.getPhotos();
     const a = StorageService.getAlbums();
     const t = StorageService.getTrips();
     const pkg = StorageService.getOfflinePackages();
     const s = StorageService.getSettings();
+    validateBackup({ app: 'Prezent Mapy', photos: p, albums: a, trips: t, settings: s });
 
     setPhotos(p);
     setAlbums(a);
     setTrips(t);
     setOfflinePackages(pkg);
     setSettings(s);
+    setLibraryError(null);
+    } catch { setLibraryError('Nie udało się odczytać biblioteki. Zachowaj kopię plików danych przed przywracaniem.'); }
   };
 
   // Statystyki
@@ -175,33 +190,20 @@ export default function App() {
 
   // Obsługa dodania zdjęć z importu z zabezpieczeniem przed duplikatami i obsługą limitu pamięci
   const handleImportComplete = (newPhotos: TravelPhoto[], newAlbum?: TravelAlbum) => {
-    setPhotos(prev => {
-      const existingSignatures = new Set(
-        prev.map(p => `${p.fileName || p.title}_${p.location.lat.toFixed(3)}_${p.location.lng.toFixed(3)}`)
-      );
-      const uniqueNew = newPhotos.filter(
-        np => !existingSignatures.has(`${np.fileName || np.title}_${np.location.lat.toFixed(3)}_${np.location.lng.toFixed(3)}`)
-      );
-
-      const updatedPhotos = [...uniqueNew, ...prev];
-      const saved = StorageService.savePhotos(updatedPhotos);
-      if (!saved) {
-        showToast('Uwaga: Limit pamięci podręcznej przeglądarki (localStorage) został osiągnięty. Zalecany eksport .prezent.', 'warning');
-      }
-      return updatedPhotos;
+    const identities = new Set(photos.filter(photo => photo.url.startsWith('data:image/')).map(photo => photo.url));
+    const uniqueNew = newPhotos.filter(photo => {
+      if (!settings.autoDetectDuplicates || !photo.url.startsWith('data:image/')) return true;
+      if (identities.has(photo.url)) return false;
+      identities.add(photo.url); return true;
     });
-
-    if (newAlbum) {
-      setAlbums(prev => {
-        if (prev.some(a => a.id === newAlbum.id)) return prev;
-        const updatedAlbums = [newAlbum, ...prev];
-        StorageService.saveAlbums(updatedAlbums);
-        return updatedAlbums;
-      });
-    }
-
+    const updatedPhotos = [...uniqueNew, ...photos];
+    const updatedAlbums = newAlbum && !albums.some(album => album.id === newAlbum.id) ? [newAlbum, ...albums] : albums;
+    if (!StorageService.saveLibrary(updatedPhotos, updatedAlbums)) { showToast('Nie zapisano importu. Sprawdź miejsce na dysku lub limit pamięci przeglądarki.', 'warning'); return false; }
+    setPhotos(updatedPhotos);
+    setAlbums(updatedAlbums);
     setImportInitialFiles([]);
     setImportInitialLocation(null);
+    return true;
   };
 
   // Otwarcie centrum importu zdjęć z predefiniowaną lokalizacją (np. kliknięcie PPM na mapie lub z menu)
@@ -245,36 +247,70 @@ export default function App() {
   // Ulubione
   const handleToggleFavorite = (id: string) => {
     const updated = photos.map(p => p.id === id ? { ...p, isFavorite: !p.isFavorite } : p);
+    if (!StorageService.savePhotos(updated)) { showToast('Nie zapisano zmiany ulubionych.', 'warning'); return false; }
     setPhotos(updated);
-    StorageService.savePhotos(updated);
+    return true;
   };
 
   // Usunięcie zdjęcia
   const handleDeletePhoto = (id: string) => {
     const updated = photos.filter(p => p.id !== id);
+    if (!StorageService.savePhotos(updated)) { showToast('Nie zapisano usunięcia zdjęcia.', 'warning'); return false; }
     setPhotos(updated);
-    StorageService.savePhotos(updated);
+    return true;
   };
 
   // Aktualizacja zdjęcia po edycji
+  const handleDeletePhotos = (ids: string[]) => {
+    const requested = new Set(ids);
+    const count = photos.filter(photo => requested.has(photo.id)).length;
+    if (!count) return;
+    setConfirmDialog({ title: 'Usuwanie zdjęć z biblioteki', message: `Usunąć ${count} zdjęć z biblioteki? Pliki źródłowe na dysku nie zostaną usunięte.`, confirmLabel: 'Usuń zdjęcia', isDanger: true, onConfirm: () => {
+      const updated = photos.filter(photo => !requested.has(photo.id));
+      if (!StorageService.savePhotos(updated)) { showToast('Nie zapisano usunięcia zdjęć.', 'warning'); return; }
+      setPhotos(updated);
+      setSelectedPhotoForDetail(null);
+      showToast(`Usunięto ${count} zdjęć z biblioteki.`, 'success');
+    }});
+  };
+  const handleDeleteAlbum = (id: string, deletePhotos: boolean) => {
+    const album = albums.find(item => item.id === id);
+    if (!album) return;
+    setConfirmDialog({ title: 'Usuwanie albumu', message: `Usunąć album „${album.name}”${deletePhotos ? ' wraz ze zdjęciami z biblioteki' : ', zachowując zdjęcia bez przypisania'}? Pliki źródłowe pozostaną na dysku.`, confirmLabel: 'Usuń album', isDanger: true, onConfirm: () => {
+      const { photos: updatedPhotos, albums: updatedAlbums } = removeAlbum(photos, albums, id, deletePhotos);
+      if (!StorageService.saveLibrary(updatedPhotos, updatedAlbums)) { showToast('Nie zapisano usunięcia albumu.', 'warning'); return; }
+      setPhotos(updatedPhotos); setAlbums(updatedAlbums); setSelectedAlbumId(null); setSelectedPhotoForDetail(null);
+      showToast('Usunięto album.', 'success');
+    }});
+  };
   const handleUpdatePhoto = (updatedPhoto: TravelPhoto) => {
     const updated = photos.map(p => p.id === updatedPhoto.id ? updatedPhoto : p);
+    if (!StorageService.savePhotos(updated)) { showToast('Nie zapisano edycji zdjęcia.', 'warning'); return false; }
     setPhotos(updated);
-    StorageService.savePhotos(updated);
     setSelectedPhotoForDetail(updatedPhoto);
+    return true;
   };
 
   // Zapis ustawień
-  const handleUpdateSettings = (newSettings: AppSettings) => {
-    setSettings(newSettings);
-    StorageService.saveSettings(newSettings);
+  const handleUpdateSettings = async (newSettings: AppSettings) => {
+    try {
+      if (window.electronAPI && newSettings.autoStartWithWindows !== settings.autoStartWithWindows) await window.electronAPI.setAutoStart(newSettings.autoStartWithWindows);
+      if (!StorageService.saveSettings(newSettings)) throw new Error('Błąd zapisu');
+      setSettings(newSettings);
+    } catch { showToast('Nie udało się zapisać ustawień. Autostart wymaga zainstalowanej wersji Windows.', 'warning'); }
   };
 
   // Czyszczenie pamięci podręcznej kafelków
-  const handleClearCache = () => {
-    const freed = StorageService.clearMapCache();
+  const handleClearCache = async () => {
+    if (!StorageService.clearMapCache()) { showToast('Nie udało się zapisać stanu map offline.', 'warning'); return; }
+    let removedBytes = 0;
+    if (window.electronAPI) {
+      try { removedBytes = (await window.electronAPI.removeOfflineMap()).removedBytes; }
+      catch { showToast('Nie udało się usunąć lokalnego pakietu map.', 'warning'); return; }
+    }
     loadAllData();
-    showToast(`Wyczyszczono pamięć podręczną map offline. Zwolniono ~${freed} MB.`, 'success');
+    const size = removedBytes > 0 ? ` Zwolniono ${(removedBytes / 1048576).toFixed(1)} MB.` : '';
+    showToast(`Wyczyszczono pamięć podręczną map offline.${size}`, 'success');
   };
 
   // Reset ustawień
@@ -338,7 +374,7 @@ export default function App() {
       message: 'Czy na pewno chcesz przywrócić fabryczny zestaw demonstracyjnych podróży rodzinnych?',
       confirmLabel: 'Przywróć demo',
       onConfirm: () => {
-        StorageService.resetToDemo();
+        if (!StorageService.resetToDemo()) { showToast('Nie udało się przywrócić zestawu demo.', 'warning'); return; }
         loadAllData();
         showToast('Przywrócono demonstracyjny zestaw wypraw.', 'success');
       },
@@ -353,15 +389,17 @@ export default function App() {
       confirmLabel: 'Usuń dane demonstracyjne',
       isDanger: true,
       onConfirm: () => {
-        StorageService.clearDemoData();
+        if (!StorageService.clearDemoData()) { showToast('Nie udało się usunąć danych demonstracyjnych.', 'warning'); return; }
         loadAllData();
         showToast('Usunięto dane demonstracyjne.', 'info');
       },
     });
   };
 
-  const handleOpenWindowsFolder = () => {
-    showToast(`Otwieranie folderu w Eksploratorze Windows: ${settings.windowsPhotosPath}`, 'info');
+  const handleOpenWindowsFolder = async () => {
+    if (!window.electronAPI) { showToast('Folder Windows jest dostępny w aplikacji desktopowej.', 'info'); return; }
+    try { await window.electronAPI.openPhotos(); }
+    catch { showToast('Nie udało się otworzyć folderu zdjęć.', 'warning'); }
   };
 
   const handleCloseApp = () => {
@@ -382,6 +420,7 @@ export default function App() {
     <div className={`min-h-screen text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950 overflow-hidden ${
       settings.interfaceTheme === 'light' ? 'bg-slate-100' : 'bg-[#070b14]'
     }`}>
+      {libraryError && <div role="alert" className="fixed inset-x-0 top-9 bottom-6 z-[100] bg-slate-950/95 flex items-center justify-center p-8"><div className="max-w-lg border border-amber-500/40 rounded-2xl bg-slate-900 p-6 space-y-4"><h2 className="text-xl font-bold text-amber-300">Odczyt biblioteki wstrzymany</h2><p>{libraryError}</p><button onClick={loadAllData} className="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold">Spróbuj ponownie</button><p className="text-xs text-slate-400">Zamknij aplikację i zachowaj folder danych Prezent Mapy w profilu Windows. Nie usuwaj library.sqlite ani katalogu photos.</p></div></div>}
       {/* TŁO PULPITU WINDOWS 11 GDY OKNO NIE JEST ZMAKSYMALIZOWANE */}
       {!isWindowMaximized && (
         <div className="absolute inset-0 bg-gradient-to-tr from-slate-950 via-[#0a1224] to-[#122345] flex items-center justify-center p-3 sm:p-5 pointer-events-none">
@@ -423,11 +462,11 @@ export default function App() {
           {/* 1. Belka Tytułowa Okna Windows 10/11 (Titlebar + Menu) */}
           <WindowsTitleBar
             isMaximized={isWindowMaximized}
-            onToggleMaximize={() => setIsWindowMaximized(!isWindowMaximized)}
+            onToggleMaximize={() => { if (window.electronAPI) void window.electronAPI.maximize(); else setIsWindowMaximized(!isWindowMaximized); }}
+            onMinimize={() => { if (window.electronAPI) void window.electronAPI.minimize(); else setIsWindowMinimized(true); }}
+            onCloseApp={() => { if (window.electronAPI) void window.electronAPI.close(); else handleCloseApp(); }}
             isFullscreen={isFullscreen}
             onToggleFullscreen={handleToggleFullscreen}
-            onMinimize={() => setIsWindowMinimized(true)}
-            onCloseApp={handleCloseApp}
             onOpenImport={() => setIsImportOpen(true)}
             onStartSlideshow={() => handleStartSlideshow()}
             onOpenTvMode={() => setIsTvModeOpen(true)}
@@ -462,6 +501,7 @@ export default function App() {
                 <div className="flex-1 flex flex-col space-y-2.5 h-full min-h-0">
                   <MapView
                     photos={photos}
+                    albums={albums}
                     trips={trips}
                     selectedTripId={selectedTripId}
                     onSelectPhoto={(photo) => setSelectedPhotoForDetail(photo)}
@@ -469,6 +509,8 @@ export default function App() {
                     tileProvider={settings.defaultMapLayer}
                     onChangeTileProvider={(p) => handleUpdateSettings({ ...settings, defaultMapLayer: p })}
                     showAnimatedRoutes={settings.showAnimatedRoutes}
+                    offlineMode={settings.offlineSimulationMode}
+                    autoCenterOnPhotos={settings.autoCenterOnPhotos}
                     showMapLabels={settings.showMapLabels}
                     clusterRadius={settings.clusterRadius}
                     onOpenImport={handleOpenImportWithLocation}
@@ -529,6 +571,8 @@ export default function App() {
                   onSelectPhoto={(photo) => setSelectedPhotoForDetail(photo)}
                   onToggleFavorite={handleToggleFavorite}
                   onDeletePhoto={handleDeletePhoto}
+                  onDeletePhotos={handleDeletePhotos}
+                  onDeleteAlbum={handleDeleteAlbum}
                   onStartSlideshow={(list) => handleStartSlideshow(list)}
                   onSelectAlbum={(id) => setSelectedAlbumId(id)}
                   selectedAlbumId={selectedAlbumId}
@@ -536,6 +580,8 @@ export default function App() {
                   onDropPhotosOnAlbum={handleDropPhotosOnAlbum}
                   density={settings.galleryDensity}
                   showExifBadges={settings.showExifBadges}
+                  defaultSortBy={settings.defaultSortBy}
+                  lazyLoadImages={settings.lazyLoadImages}
                 />
               )}
 
@@ -673,6 +719,10 @@ export default function App() {
                                   Slajdy
                                 </button>
                               </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2 text-xs" onClick={event => event.stopPropagation()}>
+                              <button className="text-red-300 p-1" onClick={() => handleDeleteAlbum(album.id, false)}>Usuń album, zachowaj zdjęcia</button>
+                              <button className="text-red-400 p-1" onClick={() => handleDeleteAlbum(album.id, true)}>Usuń ze zdjęciami</button>
                             </div>
                           </div>
                         </div>
@@ -993,6 +1043,7 @@ export default function App() {
       />
 
       <ImportModal
+        readExif={settings.readExifOnImport}
         isOpen={isImportOpen}
         onClose={() => {
           setIsImportOpen(false);
@@ -1034,6 +1085,7 @@ export default function App() {
         onClose={() => setIsTvModeOpen(false)}
         photos={photos}
         trips={trips}
+        albums={albums}
         onStartSlideshow={(list) => handleStartSlideshow(list)}
         onShowToast={showToast}
       />

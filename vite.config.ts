@@ -5,7 +5,14 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss()],
+    base: './',
+    plugins: [react(), tailwindcss(), {
+      name: 'desktop-production-csp',
+      apply: 'build',
+      transformIndexHtml() {
+        return [{ tag: 'meta', attrs: { 'http-equiv': 'Content-Security-Policy', content: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http: prezent-tiles:; connect-src 'self' https: prezent-tiles:; font-src 'self' data:; media-src 'self' data: blob:; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" }, injectTo: 'head-prepend' }];
+      },
+    }],
     resolve: {
       alias: {
         '@': path.resolve(import.meta.dirname, '.'),

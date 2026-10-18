@@ -4,19 +4,19 @@ import 'leaflet.markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { TravelPhoto, TravelTrip, MapTileProvider } from '../types/travel';
-import { 
-  Layers, 
-  MapPin, 
-  Plus, 
-  Minus, 
-  Locate, 
-  Search, 
-  Globe, 
-  Play, 
-  Sun, 
-  Moon, 
-  Compass, 
-  Map as MapIcon, 
+import {
+  Layers,
+  MapPin,
+  Plus,
+  Minus,
+  Locate,
+  Search,
+  Globe,
+  Play,
+  Sun,
+  Moon,
+  Compass,
+  Map as MapIcon,
   Check,
   FolderPlus,
   Upload,
@@ -34,6 +34,7 @@ import { formatCoordinates, guessNearestLocation, reverseGeocodeOnline, GeoGuess
 
 interface MapViewProps {
   photos: TravelPhoto[];
+  albums?: unknown[];
   trips: TravelTrip[];
   selectedTripId: string | null;
   onSelectPhoto: (photo: TravelPhoto) => void;
@@ -41,6 +42,8 @@ interface MapViewProps {
   tileProvider: MapTileProvider;
   onChangeTileProvider: (provider: MapTileProvider) => void;
   showAnimatedRoutes?: boolean;
+  offlineMode?: boolean;
+  autoCenterOnPhotos?: boolean;
   showMapLabels?: boolean;
   clusterRadius?: number;
   onOpenImport?: (location?: InitialImportLocation, mode?: ImportTabMode) => void;
@@ -110,6 +113,8 @@ export const MapView: React.FC<MapViewProps> = ({
   tileProvider,
   onChangeTileProvider,
   showAnimatedRoutes = true,
+  offlineMode = false,
+  autoCenterOnPhotos = true,
   showMapLabels = true,
   clusterRadius = 50,
   onOpenImport,
@@ -210,7 +215,7 @@ export const MapView: React.FC<MapViewProps> = ({
     map.on('resize', updateMapMinZoom);
 
     const activeProvider = tileProvider in TILE_SERVERS ? tileProvider : 'dark';
-    const config = TILE_SERVERS[activeProvider];
+    const config = offlineMode ? { url: 'prezent-tiles://local/{z}/{x}/{y}', attribution: 'Lokalny pakiet MBTiles', maxZoom: 22, subdomains: '' } : TILE_SERVERS[activeProvider];
     const tileLayer = L.tileLayer(config.url, {
       attribution: config.attribution,
       maxZoom: config.maxZoom,
@@ -246,10 +251,10 @@ export const MapView: React.FC<MapViewProps> = ({
         const firstPhoto = (allMarkers[0] as any)?.photoData as TravelPhoto | undefined;
         const thumbUrl = firstPhoto?.thumbnailUrl || firstPhoto?.url;
 
-        const badgeBg = count >= 20 
-          ? 'linear-gradient(135deg, #ec4899, #8b5cf6)' 
-          : count >= 5 
-            ? 'linear-gradient(135deg, #f59e0b, #ef4444)' 
+        const badgeBg = count >= 20
+          ? 'linear-gradient(135deg, #ec4899, #8b5cf6)'
+          : count >= 5
+            ? 'linear-gradient(135deg, #f59e0b, #ef4444)'
             : 'linear-gradient(135deg, #10b981, #06b6d4)';
 
         return L.divIcon({
@@ -384,7 +389,7 @@ export const MapView: React.FC<MapViewProps> = ({
   useEffect(() => {
     if (!mapInstanceRef.current) return;
     const activeProvider = tileProvider in TILE_SERVERS ? tileProvider : 'dark';
-    const config = TILE_SERVERS[activeProvider];
+    const config = offlineMode ? { url: 'prezent-tiles://local/{z}/{x}/{y}', attribution: 'Lokalny pakiet MBTiles', maxZoom: 22, subdomains: '' } : TILE_SERVERS[activeProvider];
 
     if (referenceLayerRef.current) {
       mapInstanceRef.current.removeLayer(referenceLayerRef.current);
@@ -583,8 +588,8 @@ export const MapView: React.FC<MapViewProps> = ({
     if (!mapSearchQuery.trim() || !mapInstanceRef.current) return;
     const q = mapSearchQuery.toLowerCase().trim();
 
-    const matchedPhoto = photos.find(p => 
-      p.location.cityName.toLowerCase().includes(q) || 
+    const matchedPhoto = photos.find(p =>
+      p.location.cityName.toLowerCase().includes(q) ||
       p.location.countryName.toLowerCase().includes(q) ||
       p.title.toLowerCase().includes(q)
     );
@@ -660,17 +665,17 @@ export const MapView: React.FC<MapViewProps> = ({
   };
 
   return (
-    <div 
+    <div
       className="relative w-full h-full min-h-[500px] flex-1 bg-[#080d1a] overflow-hidden rounded-2xl border border-slate-800 shadow-2xl flex flex-col"
       onDragOver={handleDragOverMap}
       onDragLeave={handleDragLeaveMap}
       onDrop={handleDropOnMap}
     >
       {/* Kontener Leaflet na pełną wysokość i szerokość */}
-      <div 
-        ref={mapContainerRef} 
-        className="w-full h-full flex-1 z-0" 
-        style={{ width: '100%', height: '100%', minHeight: '480px' }} 
+      <div
+        ref={mapContainerRef}
+        className="w-full h-full flex-1 z-0"
+        style={{ width: '100%', height: '100%', minHeight: '480px' }}
       />
 
       {/* Nakładka wizualna Drag & Drop nad mapą */}
@@ -721,7 +726,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
           {/* Menu rozwijane dodawania zdjęć */}
           {showAddMenu && (
-            <div 
+            <div
               onMouseLeave={() => setShowAddMenu(false)}
               className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1.5 w-64 bg-[#0c111e]/95 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl p-2 space-y-1 text-xs text-slate-200 z-50 animate-in fade-in"
             >

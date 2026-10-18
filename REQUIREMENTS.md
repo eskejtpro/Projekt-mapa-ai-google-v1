@@ -1,5 +1,10 @@
 # REQUIREMENTS.md - Wymagania Funkcjonalne i Niefunkcjonalne
 
+Aktualne statusy i kryteria weryfikacji: docs/FEATURE_MATRIX.md. Poniższa kolumna Stan realizacji jest historyczną deklaracją AI Studio.
+
+- REQ-ENV (P0): środowisko umożliwia npm ci, verify, testy hooków, kontrolę Git i CI. Kryterium: świeże wyniki lokalne oraz rzeczywiste uruchomienie CI i hooków klienta.
+- REQ-TV-LAN (P1): program wyszukuje dostępne telewizory w sieci w czasie używania funkcji TV (wymaganie z pliku użytkownika). Kryterium: wykrycie rzeczywistego kompatybilnego TV, odświeżanie i obsługa rozłączenia. Protokół i model TV: WYMAGA_UZUPELNIENIA przed implementacją tej funkcji.
+
 ## Wymagania Funkcjonalne
 
 | ID | Wymaganie | Stan realizacji | Uwagi architektoniczne |
@@ -32,3 +37,9 @@
 3. **Stabilność**:
    - Bezpieczny fallback przy przekroczeniu limitu `localStorage`.
    - Brak awarii przy uszkodzonym lub brakującym EXIF w importowanych plikach.
+# Rozszerzenie zatwierdzone 2026-10-17 — biblioteka, TV i mapy
+
+- REQ-DEL-01: zaznaczanie wielu zdjęć, wszystkich widocznych i odznaczanie; usuwanie po potwierdzeniu, z trwałym zapisem i obsługą błędu.
+- REQ-DEL-02: usuwanie albumu ze zdjęciami albo zachowanie zdjęć bez przypisania. Zapis atomowy; pliki źródłowe i kopie plików na dysku pozostają zachowane.
+- REQ-TV-SELECT: skan aktywnych interfejsów IPv4, ponawianie SSDP, ręczne odświeżanie i wybór wykrytego odbiornika. Fizyczna zgodność i casting wymagają osobnej weryfikacji.
+- REQ-MAP-LAYERS: działające warstwy Nocny, Dzień i Kolor/Teren; komunikat przy błędzie kafelków i zachowany lokalny MBTiles.

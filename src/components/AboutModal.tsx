@@ -1,4 +1,5 @@
 import React from 'react';
+import { APP_VERSION } from '../version';
 import { Globe2, X, CheckCircle2, HardDrive, ShieldCheck, Cpu } from 'lucide-react';
 
 interface AboutModalProps {
@@ -41,7 +42,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-base text-white">Prezent Mapy</h3>
-              <p className="text-[11px] text-slate-400">Wersja 1.2.0 (Kompilacja 26100.Windows_11.x64)</p>
+              <p className="text-[11px] text-slate-400">Wersja {APP_VERSION} (Desktop Preview)</p>
               <p className="text-[11px] text-emerald-400 font-medium mt-0.5">Program gotowy do użytku lokalnego</p>
             </div>
           </div>

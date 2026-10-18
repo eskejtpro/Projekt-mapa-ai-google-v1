@@ -1,5 +1,8 @@
 import { TravelPhoto, TravelAlbum, TravelTrip, OfflineMapPackage, AppSettings, TravelStats } from '../types/travel';
 import { DEMO_PHOTOS, DEMO_ALBUMS, DEMO_TRIPS, DEMO_OFFLINE_PACKAGES } from '../data/demoMemories';
+import { APP_VERSION } from '../version';
+import { persistence } from './persistence';
+import { validateBackup, validateSettings } from './backup-validation';
 
 const STORAGE_KEYS = {
   PHOTOS: 'prezent_travel_photos_v2',
@@ -8,13 +11,18 @@ const STORAGE_KEYS = {
   OFFLINE_PACKAGES: 'prezent_offline_packages_v2',
   SETTINGS: 'prezent_app_settings_v2',
 };
+function parseCollection<T>(data: string): T[] {
+  const parsed = JSON.parse(data);
+  if (!Array.isArray(parsed)) throw new Error('Nieprawidłowa kolekcja');
+  return parsed;
+}
 
 export const DEFAULT_SETTINGS: AppSettings = {
   // 1. Ogólne
   familyName: 'Nasza Rodzina',
   language: 'pl',
   distanceUnit: 'km',
-  autoStartWithWindows: true,
+  autoStartWithWindows: false,
 
   // 2. Wygląd i personalizacja
   interfaceTheme: 'dark',
@@ -36,7 +44,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   autoDetectDuplicates: true,
 
   // 5. Import oraz foldery
-  windowsPhotosPath: 'C:\\Users\\Rodzina\\Obrazy\\Prezent-Wspomnienia',
+  windowsPhotosPath: 'Biblioteka przeglądarki — brak katalogu Windows',
   autoScanNewPhotos: true,
   readExifOnImport: true,
   compressLocalThumbnails: false,
@@ -72,27 +80,31 @@ export const DEFAULT_SETTINGS: AppSettings = {
   saveSearchHistory: false,
 
   // 12. Informacje
-  appVersion: '1.3.1 (Windows 11 Edition / Codex Handover)',
+  appVersion: `${APP_VERSION} (Desktop Preview / Codex)`,
 };
 
 export const StorageService = {
+  saveLibrary(photos: TravelPhoto[], albums: TravelAlbum[]): boolean {
+    try { persistence.batch([[STORAGE_KEYS.PHOTOS, JSON.stringify(photos)], [STORAGE_KEYS.ALBUMS, JSON.stringify(albums)]]); return true; }
+    catch { return false; }
+  },
   // Zdjęcia
   getPhotos(): TravelPhoto[] {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.PHOTOS);
-      if (!data) {
-        this.savePhotos(DEMO_PHOTOS);
+      const data = persistence.getItem(STORAGE_KEYS.PHOTOS);
+      if (data === null) {
+        if (!this.savePhotos(DEMO_PHOTOS)) throw new Error('Błąd inicjalizacji');
         return DEMO_PHOTOS;
       }
-      return JSON.parse(data);
+      return parseCollection<TravelPhoto>(data);
     } catch {
-      return DEMO_PHOTOS;
+      throw new Error('Nie udało się odczytać fotografii');
     }
   },
 
   savePhotos(photos: TravelPhoto[]): boolean {
     try {
-      localStorage.setItem(STORAGE_KEYS.PHOTOS, JSON.stringify(photos));
+      persistence.setItem(STORAGE_KEYS.PHOTOS, JSON.stringify(photos));
       return true;
     } catch (e: any) {
       console.error('Błąd zapisu fotografii w localStorage (możliwe przekroczenie limitu pamięci):', e);
@@ -103,20 +115,20 @@ export const StorageService = {
   // Albumy
   getAlbums(): TravelAlbum[] {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.ALBUMS);
-      if (!data) {
-        this.saveAlbums(DEMO_ALBUMS);
+      const data = persistence.getItem(STORAGE_KEYS.ALBUMS);
+      if (data === null) {
+        if (!this.saveAlbums(DEMO_ALBUMS)) throw new Error('Błąd inicjalizacji');
         return DEMO_ALBUMS;
       }
-      return JSON.parse(data);
+      return parseCollection<TravelAlbum>(data);
     } catch {
-      return DEMO_ALBUMS;
+      throw new Error('Nie udało się odczytać albumów');
     }
   },
 
   saveAlbums(albums: TravelAlbum[]): boolean {
     try {
-      localStorage.setItem(STORAGE_KEYS.ALBUMS, JSON.stringify(albums));
+      persistence.setItem(STORAGE_KEYS.ALBUMS, JSON.stringify(albums));
       return true;
     } catch (e) {
       console.error('Błąd zapisu albumów w localStorage:', e);
@@ -127,20 +139,20 @@ export const StorageService = {
   // Trasy
   getTrips(): TravelTrip[] {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.TRIPS);
-      if (!data) {
-        this.saveTrips(DEMO_TRIPS);
+      const data = persistence.getItem(STORAGE_KEYS.TRIPS);
+      if (data === null) {
+        if (!this.saveTrips(DEMO_TRIPS)) throw new Error('Błąd inicjalizacji');
         return DEMO_TRIPS;
       }
-      return JSON.parse(data);
+      return parseCollection<TravelTrip>(data);
     } catch {
-      return DEMO_TRIPS;
+      throw new Error('Nie udało się odczytać podróży');
     }
   },
 
   saveTrips(trips: TravelTrip[]): boolean {
     try {
-      localStorage.setItem(STORAGE_KEYS.TRIPS, JSON.stringify(trips));
+      persistence.setItem(STORAGE_KEYS.TRIPS, JSON.stringify(trips));
       return true;
     } catch (e) {
       console.error('Błąd zapisu tras w localStorage:', e);
@@ -151,20 +163,20 @@ export const StorageService = {
   // Pakiety map offline
   getOfflinePackages(): OfflineMapPackage[] {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.OFFLINE_PACKAGES);
-      if (!data) {
-        this.saveOfflinePackages(DEMO_OFFLINE_PACKAGES);
+      const data = persistence.getItem(STORAGE_KEYS.OFFLINE_PACKAGES);
+      if (data === null) {
+        if (!this.saveOfflinePackages(DEMO_OFFLINE_PACKAGES)) throw new Error('Błąd inicjalizacji');
         return DEMO_OFFLINE_PACKAGES;
       }
-      return JSON.parse(data);
+      return parseCollection<OfflineMapPackage>(data);
     } catch {
-      return DEMO_OFFLINE_PACKAGES;
+      throw new Error('Nie udało się odczytać pakietów map');
     }
   },
 
   saveOfflinePackages(packages: OfflineMapPackage[]): boolean {
     try {
-      localStorage.setItem(STORAGE_KEYS.OFFLINE_PACKAGES, JSON.stringify(packages));
+      persistence.setItem(STORAGE_KEYS.OFFLINE_PACKAGES, JSON.stringify(packages));
       return true;
     } catch (e) {
       console.error('Błąd zapisu pakietów map w localStorage:', e);
@@ -175,17 +187,20 @@ export const StorageService = {
   // Ustawienia (12 kategorii)
   getSettings(): AppSettings {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-      if (!data) return DEFAULT_SETTINGS;
-      return { ...DEFAULT_SETTINGS, ...JSON.parse(data) };
+      const data = persistence.getItem(STORAGE_KEYS.SETTINGS);
+      if (data === null) return DEFAULT_SETTINGS;
+      const parsed = JSON.parse(data);
+      validateSettings(parsed);
+      return { ...DEFAULT_SETTINGS, ...parsed, appVersion: DEFAULT_SETTINGS.appVersion };
     } catch {
-      return DEFAULT_SETTINGS;
+      throw new Error('Nie udało się odczytać ustawień');
     }
   },
 
   saveSettings(settings: AppSettings): boolean {
     try {
-      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+      validateSettings(settings);
+      persistence.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
       return true;
     } catch (e) {
       console.error('Błąd zapisu ustawień w localStorage:', e);
@@ -197,14 +212,12 @@ export const StorageService = {
   getStorageStats(): { usedKb: number; isNearLimit: boolean } {
     try {
       let total = 0;
-      for (const key in localStorage) {
-        if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
-          total += (localStorage[key]?.length || 0) * 2; // UTF-16
-        }
+      for (const key of Object.values(STORAGE_KEYS)) {
+        total += (persistence.getItem(key)?.length || 0) * 2;
       }
       const usedKb = Math.round(total / 1024);
       // Większość przeglądarek ma limit ~5MB (5120 KB)
-      const isNearLimit = usedKb > 4000;
+      const isNearLimit = !(typeof window !== 'undefined' && window.electronAPI) && usedKb > 4000;
       return { usedKb, isNearLimit };
     } catch {
       return { usedKb: 0, isNearLimit: false };
@@ -236,9 +249,8 @@ export const StorageService = {
 
     photos.forEach(p => {
       // Klucz dopasowania: zbliżona lokalizacja + ta sama data LUB identyczna nazwa pliku
-      const key = p.fileName 
-        ? `name_${p.fileName}` 
-        : `geo_${p.location.lat.toFixed(3)}_${p.location.lng.toFixed(3)}_${p.date}`;
+      const key = p.url.startsWith('data:image/') ? p.url : null;
+      if (!key) return;
 
       const existing = map.get(key) || [];
       existing.push(p);
@@ -248,7 +260,7 @@ export const StorageService = {
     const duplicateGroups: { groupKey: string; duplicates: TravelPhoto[] }[] = [];
     map.forEach((items, key) => {
       if (items.length > 1) {
-        duplicateGroups.push({ groupKey: key, duplicates: items });
+        duplicateGroups.push({ groupKey: key.startsWith('sha256_') ? key : `identical-image-${duplicateGroups.length + 1}`, duplicates: items });
       }
     });
 
@@ -256,26 +268,29 @@ export const StorageService = {
   },
 
   // Reset do fabrycznego demo
-  resetToDemo(): void {
-    this.savePhotos(DEMO_PHOTOS);
-    this.saveAlbums(DEMO_ALBUMS);
-    this.saveTrips(DEMO_TRIPS);
-    this.saveOfflinePackages(DEMO_OFFLINE_PACKAGES);
+  resetToDemo(): boolean {
+    try {
+      persistence.batch([
+        [STORAGE_KEYS.PHOTOS, JSON.stringify(DEMO_PHOTOS)],
+        [STORAGE_KEYS.ALBUMS, JSON.stringify(DEMO_ALBUMS)],
+        [STORAGE_KEYS.TRIPS, JSON.stringify(DEMO_TRIPS)],
+        [STORAGE_KEYS.OFFLINE_PACKAGES, JSON.stringify(DEMO_OFFLINE_PACKAGES)],
+      ]);
+      return true;
+    } catch { return false; }
   },
 
   // Usunięcie zdjęć demonstracyjnych
-  clearDemoData(): void {
+  clearDemoData(): boolean {
     const photos = this.getPhotos().filter(p => !p.isDemo);
     const albums = this.getAlbums().filter(a => !a.isDemo);
-    this.savePhotos(photos);
-    this.saveAlbums(albums);
+    return this.saveLibrary(photos, albums);
   },
 
   // Czyszczenie pamięci podręcznej kafelków mapy
-  clearMapCache(): number {
+  clearMapCache(): boolean {
     const pkgs = this.getOfflinePackages().map(p => ({ ...p, isDownloaded: false, downloadDate: undefined }));
-    this.saveOfflinePackages(pkgs);
-    return 145; // zwolniono MB
+    return this.saveOfflinePackages(pkgs);
   },
 
   // Eksport bazy do .prezent
@@ -290,11 +305,11 @@ export const StorageService = {
 
     const backup = {
       app: 'Prezent Mapy',
-      version: '1.3.1',
+      version: APP_VERSION,
       exportDate: new Date().toISOString(),
-      photos: photosToExport,
+      photos: this.getSettings().includeThumbnailsInBackup ? photosToExport : photosToExport.map(({ thumbnailUrl, ...photo }) => photo),
       albums: this.getAlbums(),
-      trips: this.getTrips(),
+      trips: stripGps ? this.getTrips().map(trip => ({ ...trip, routePoints: [] })) : this.getTrips(),
       settings: this.getSettings(),
     };
     return JSON.stringify(backup, null, 2);
@@ -304,13 +319,13 @@ export const StorageService = {
   importPrezentBackup(jsonString: string): boolean {
     try {
       const data = JSON.parse(jsonString);
-      if ((data.app !== 'Prezent' && data.app !== 'Prezent Mapy') || !Array.isArray(data.photos)) {
-        throw new Error('Nieprawidłowy format pliku .prezent');
-      }
-      if (data.photos) this.savePhotos(data.photos);
-      if (data.albums) this.saveAlbums(data.albums);
-      if (data.trips) this.saveTrips(data.trips);
-      if (data.settings) this.saveSettings(data.settings);
+      validateBackup(data);
+      validateBackup({ ...data, albums: data.albums ?? this.getAlbums(), trips: data.trips ?? this.getTrips() });
+      const entries: [string, string][] = [[STORAGE_KEYS.PHOTOS, JSON.stringify(data.photos)]];
+      if (data.albums) entries.push([STORAGE_KEYS.ALBUMS, JSON.stringify(data.albums)]);
+      if (data.trips) entries.push([STORAGE_KEYS.TRIPS, JSON.stringify(data.trips)]);
+      if (data.settings) entries.push([STORAGE_KEYS.SETTINGS, JSON.stringify(data.settings)]);
+      persistence.batch(entries);
       return true;
     } catch (e) {
       console.error('Błąd importu kopii zapasowej:', e);

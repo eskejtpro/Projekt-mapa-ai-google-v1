@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { TravelPhoto, TravelAlbum, TravelTrip } from '../types/travel';
-import { 
-  Heart, 
-  MapPin, 
-  Calendar, 
-  Users, 
-  Search, 
-  Folder, 
-  Play, 
-  Trash2, 
+import {
+  Heart,
+  MapPin,
+  Calendar,
+  Users,
+  Search,
+  Folder,
+  Play,
+  Trash2,
   Compass,
   ArrowUpDown,
   Sparkles,
@@ -24,6 +24,8 @@ interface GalleryViewProps {
   onSelectPhoto: (photo: TravelPhoto) => void;
   onToggleFavorite: (id: string) => void;
   onDeletePhoto: (id: string) => void;
+  onDeletePhotos?: (ids: string[]) => void;
+  onDeleteAlbum?: (id: string, deletePhotos: boolean) => void;
   onStartSlideshow: (photos: TravelPhoto[]) => void;
   onSelectAlbum: (albumId: string | null) => void;
   selectedAlbumId: string | null;
@@ -31,6 +33,8 @@ interface GalleryViewProps {
   onDropPhotosOnAlbum?: (files: File[], albumId: string) => void;
   density?: 'default' | 'compact' | 'large';
   showExifBadges?: boolean;
+  defaultSortBy?: 'date-desc' | 'date-asc' | 'title' | 'location';
+  lazyLoadImages?: boolean;
 }
 
 export const GalleryView: React.FC<GalleryViewProps> = ({
@@ -40,6 +44,8 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   onSelectPhoto,
   onToggleFavorite,
   onDeletePhoto,
+  onDeletePhotos,
+  onDeleteAlbum,
   onStartSlideshow,
   onSelectAlbum,
   selectedAlbumId,
@@ -47,15 +53,19 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   onDropPhotosOnAlbum,
   density = 'default',
   showExifBadges = true,
+  defaultSortBy = 'date-desc',
+  lazyLoadImages = true,
 }) => {
   const currentAlbum = albums.find(a => a.id === selectedAlbumId);
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [onlyFavorites, setOnlyFavorites] = useState<boolean>(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  useEffect(() => { setSelectedIds(ids => ids.filter(id => photos.some(photo => photo.id === id))); }, [photos]);
   const [countryFilter, setCountryFilter] = useState<string>('ALL');
   const [yearFilter, setYearFilter] = useState<string>('ALL');
-  const [sortBy, setSortBy] = useState<'custom' | 'date-desc' | 'date-asc' | 'title'>(
-    currentAlbum?.customPhotoOrder && currentAlbum.customPhotoOrder.length > 0 ? 'custom' : 'date-desc'
+  const [sortBy, setSortBy] = useState<'custom' | 'date-desc' | 'date-asc' | 'title' | 'location'>(
+    currentAlbum?.customPhotoOrder && currentAlbum.customPhotoOrder.length > 0 ? 'custom' : defaultSortBy
   );
 
   // Stany przeciągania plików z Eksploratora Windows (Drag & Drop)
@@ -195,7 +205,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   }
 
   return (
-    <div 
+    <div
       onDragOver={handleGalleryDragOver}
       onDragLeave={handleGalleryDragLeave}
       onDrop={handleGalleryDrop}
@@ -227,7 +237,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
             </span>
           </div>
           <p className="text-[11px] text-slate-400 mt-0.5">
-            {currentAlbum 
+            {currentAlbum
               ? (currentAlbum.description || 'Kolekcja zdjęć w wybranym katalogu rodzinnym')
               : 'Lokalna kolekcja fotografii rodzinnych uporządkowana chronologicznie i geograficznie'}
           </p>
@@ -298,6 +308,15 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
           </button>
         </div>
       </div>
+
+      <div className="flex flex-wrap gap-2 items-center text-xs text-slate-200">
+        <button className="px-3 py-2 rounded-xl bg-slate-800" onClick={() => setSelectedIds(filteredPhotos.map(photo => photo.id))}>Zaznacz widoczne ({filteredPhotos.length})</button>
+        <button className="px-3 py-2 rounded-xl bg-slate-800" onClick={() => setSelectedIds([])}>Odznacz wszystkie</button>
+        <button disabled={!selectedIds.length || !onDeletePhotos} className="px-3 py-2 rounded-xl bg-red-950 text-red-200 disabled:opacity-40" onClick={() => onDeletePhotos?.(selectedIds)}>Usuń zaznaczone ({selectedIds.length})</button>
+        <span>Pliki źródłowe na dysku pozostają bez zmian.</span>
+      </div>
+
+      {onDeleteAlbum && <div className="flex flex-wrap gap-2 text-xs">{albums.map(album => <details key={album.id} className="bg-slate-900 border border-slate-700 rounded-xl p-2"><summary className="cursor-pointer">{album.name} — opcje</summary><div className="flex gap-2 pt-2"><button onClick={() => onDeleteAlbum(album.id, false)}>Usuń album, zachowaj zdjęcia</button><button className="text-red-300" onClick={() => onDeleteAlbum(album.id, true)}>Usuń album i zdjęcia</button></div></details>)}</div>}
 
       {/* Aktywny filtr katalogu / albumu z przyciskiem układania kolejności i strefą upuszczania Drag & Drop */}
       {selectedAlbumId && currentAlbum && (

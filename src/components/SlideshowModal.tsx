@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { TravelPhoto } from '../types/travel';
 import { ambientSound, AmbientSoundTrack } from '../services/audioAmbient';
-import { 
-  Play, 
-  Pause, 
-  SkipForward, 
-  SkipBack, 
-  X, 
-  Volume2, 
-  VolumeX, 
-  Maximize2, 
-  Minimize2, 
-  MapPin, 
-  Calendar, 
-  Users, 
+import {
+  Play,
+  Pause,
+  SkipForward,
+  SkipBack,
+  X,
+  Volume2,
+  VolumeX,
+  Maximize2,
+  Minimize2,
+  MapPin,
+  Calendar,
+  Users,
   Sparkles,
   Compass,
   Settings,
@@ -57,7 +57,7 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
   const [isLooping, setIsLooping] = useState<boolean>(true);
   const [orderMode, setOrderMode] = useState<SlideshowOrderMode>('original');
   const [transition, setTransition] = useState<SlideshowTransition>('ken-burns');
-  
+
   // Ustawienia dźwięku
   const [ambientTrack, setAmbientTrack] = useState<AmbientSoundTrack>('ocean');
   const [isMuted, setIsMuted] = useState<boolean>(false);
@@ -474,8 +474,8 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
                 key={photo.id}
                 onClick={() => setCurrentIndex(pIdx)}
                 className={`relative shrink-0 w-20 h-14 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
-                  isCurrent 
-                    ? 'border-amber-400 scale-105 shadow-lg shadow-amber-500/20 ring-2 ring-amber-400/50' 
+                  isCurrent
+                    ? 'border-amber-400 scale-105 shadow-lg shadow-amber-500/20 ring-2 ring-amber-400/50'
                     : 'border-white/20 opacity-60 hover:opacity-100 hover:border-white/50'
                 }`}
                 title={`#${pIdx + 1} - ${photo.title}`}

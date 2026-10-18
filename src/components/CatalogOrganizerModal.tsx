@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { TravelAlbum, TravelPhoto } from '../types/travel';
-import { 
-  X, 
-  ArrowUp, 
-  ArrowDown, 
-  ChevronsUp, 
-  ChevronsDown, 
-  Play, 
-  Save, 
-  Folder, 
-  Sparkles, 
-  Calendar, 
-  MapPin, 
+import {
+  X,
+  ArrowUp,
+  ArrowDown,
+  ChevronsUp,
+  ChevronsDown,
+  Play,
+  Save,
+  Folder,
+  Sparkles,
+  Calendar,
+  MapPin,
   GripVertical,
   RotateCcw,
   Check,
@@ -155,7 +155,7 @@ export const CatalogOrganizerModal: React.FC<CatalogOrganizerModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-hidden">
       <div className="bg-[#0f172a] border border-slate-800 rounded-3xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden font-sans">
-        
+
         {/* NAGŁÓWEK OKNA */}
         <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
           <div className="flex items-center gap-3">
@@ -225,8 +225,8 @@ export const CatalogOrganizerModal: React.FC<CatalogOrganizerModalProps> = ({
             <button
               onClick={handleSave}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-md ${
-                hasSaved 
-                  ? 'bg-emerald-500 text-slate-950' 
+                hasSaved
+                  ? 'bg-emerald-500 text-slate-950'
                   : 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700'
               }`}
             >

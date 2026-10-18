@@ -660,7 +660,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
             <div className="bg-[#121829] border border-slate-800 rounded-2xl p-5 space-y-4">
               <div className="space-y-1.5">
-                <label className="text-white font-semibold">Częstotliwość przypomnień o kopii:</label>
+                <label className="text-white font-semibold">Częstotliwość automatycznych kopii (Windows):</label>
                 <select
                   value={settings.autoBackupIntervalDays}
                   onChange={e => update('autoBackupIntervalDays', Number(e.target.value))}
@@ -669,13 +669,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <option value={7}>Co 7 dni</option>
                   <option value={14}>Co 14 dni</option>
                   <option value={30}>Co miesiąc</option>
+                  <option value={0}>Wyłączone</option>
                 </select>
+                <p className="text-slate-400 text-[11px]">Kopie lokalne są sprawdzane przy starcie i podczas pracy aplikacji Windows. Zawierają pełne dane biblioteki. Podgląd przeglądarkowy obsługuje ręczny eksport.</p>
+                {window.electronAPI && <button onClick={() => void window.electronAPI!.openBackups().catch(() => setFolderStatusMsg('Nie udało się otworzyć katalogu kopii.'))} className="px-3 py-2 rounded-xl bg-slate-800 text-amber-300">Otwórz katalog kopii</button>}
               </div>
 
               <div className="flex items-center justify-between border-t border-slate-800 pt-3">
                 <div>
                   <div className="text-white font-semibold">Dołączaj miniatury do pliku .prezent:</div>
-                  <div className="text-slate-400 text-[11px]">Pozwala na pełny podgląd fotografii bez dostępu do oryginalnego dysku</div>
+                  <div className="text-slate-400 text-[11px]">Dodatkowe miniatury. Oryginalne obrazy osadzone w bibliotece są dołączane niezależnie; zewnętrzne adresy wymagają sieci.</div>
                 </div>
                 <input
                   type="checkbox"

@@ -5,6 +5,9 @@ description: Zasady ciągłości projektu, przekazywania kodu i zachowania archi
 
 # Skill: Project Continuity dla Aplikacji „Prezent Mapy”
 
+## Odtworzenie sesji
+Odczytaj PROGRESS.md / SESSION HANDOFF, TASKS.md i docs/FEATURE_MATRIX.md. Sprawdź branch, HEAD, remote i niezapisane zmiany. Historyczne opisy AI Studio nie są aktualnymi dowodami runtime. Po iteracji zapisz wyniki i jeden następny krok. Przed nowym czatem przygotuj handoff, nie kopiuj pełnej rozmowy. Nie sugeruj nowego czatu tylko na podstawie liczby wiadomości.
+
 ## Kluczowe Zasady Pracy z Projektem dla Inżynierów i OpenAI Codex
 
 1. **Zachowanie działającego interfejsu (Zero Regresji)**:

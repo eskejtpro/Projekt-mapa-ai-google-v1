@@ -1,5 +1,23 @@
 # CHANGELOG.md - Historia Zmian Projektu „Prezent Mapy”
 
+## Unreleased — środowisko Codex
+- Zaznaczanie i usuwanie zbiorcze zdjęć, usuwanie albumu z zachowaniem albo usunięciem zdjęć z biblioteki; pliki na dysku pozostają zachowane. Skan SSDP na wielu interfejsach, wybór TV i ręczne odświeżanie. Warstwy OSM dzień/noc i Esri Topographic zastępują dotychczasowe warstwy CARTO.
+- Widok mapy w trybie offline nie renderuje już uszkodzonych obrazów zewnętrznych; dla niedostępnych URL-i pokazuje bezpieczny placeholder, a lokalne obrazy data URL pozostają obsługiwane.
+- Operacje resetu demo, usuwania demo i czyszczenia stanu map wykonują zapisy kolekcji atomowo; czyszczenie map przenosi rzeczywisty plik MBTiles do odzyskiwalnego archiwum i raportuje jego rozmiar. Dodano blokadę drugiej instancji aplikacji Electron.
+- Dodano automatyczne lokalne kopie .prezent, harmonogram podczas działania aplikacji, sygnalizowanie błędów i dostęp do katalogu kopii z ustawień. Ręczny eksport respektuje ustawienie miniatur.
+- Rozszerzono walidację kopii i ustawień, stan odzyskiwania oraz kontrolę zapisu edycji/usuwania. Dodano produkcyjne CSP i test restartu procesu. Zoptymalizowano powtarzane odczyty identycznych mediów i dodano jawnie syntetyczny benchmark.
+- Podłączono ustawienia pokazu, sortowania/lazy-load galerii, EXIF i autocentrowania wypraw. Mapa korzysta z relacji albumów; nazwy tras i punktów renderowane jako tekst. Wzmocniono raportowanie błędów testu runtime.
+- Wdrożono pilot HTTP z lokalnym QR/parowaniem, tokenem, ograniczonymi komendami i integracją pokazu slajdów. Zastąpiono sieciową minimapę lokalną. Naprawiono rozpoznawanie duplikatów oraz atomowy import zdjęć i albumu, błąd/anulowanie FileReader.
+- Dodano odświeżane na żądanie panelu wyszukiwanie DLNA/SSDP w LAN i relacyjny filtr zdjęć pokazu TV. Test renderowania MBTiles przy zablokowanej sieci PASS na syntetycznych kafelkach.
+- Dodano konfigurację NSIS/portable, natywny folder i autostart; autostart domyślnie wyłączony. Dodano import rastrowego MBTiles i lokalną warstwę; wyłączono automatyczne wysyłanie współrzędnych i zabezpieczono atrybuty pinezek.
+- Zdjęcia osadzane w kopii mogą być przechowywane w osobnych plikach z SHA-256; import .prezent waliduje rekordy i zapisuje atomowo. Eksport bez GPS usuwa również punkty tras.
+- Dodano SQLite w procesie głównym, ograniczony mostek danych, transakcyjny zapis wsadu i migrację z kopią źródła; podgląd Vite nadal używa localStorage.
+- Rozpoczęto powłokę Electron: izolowany preload, walidacja nadawcy IPC, natywne kontrolki okna, blokada nowych okien i nawigacji. Dodano tryb testu uruchomienia ze zrzutem renderera.
+- Dopasowano esbuild do Vite 8 po błędzie instalacji, dodano npm lockfile i kanoniczną wersję 1.3.1 w package.json.
+- Dodano quality gates, kontrole Git, konfigurację hooków Codex, workflow Windows CI i blokadę niegotowego wydania.
+- Dodano testy integracji kopii i środowiska, skille oraz rzeczywisty rejestr braków i ciągłości.
+- Zachowano UI; brak nowego instalatora i brak deklaracji ukończenia Windows.
+
 Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.0.0/).
 
 ---

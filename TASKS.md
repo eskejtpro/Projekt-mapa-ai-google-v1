@@ -1,5 +1,34 @@
 # TASKS.md - Rejestr Zadań i Implementacji Projektu „Prezent Mapy”
 
+## Rozszerzenie biblioteki / TV / map — 2026-10-17
+- REQ-DEL-01/02: IN_REVIEW — zaznaczanie i usuwanie zbiorcze, dwa warianty usuwania albumu, potwierdzenie i atomowy zapis. Test jednostkowy i runtime SQLite PASS.
+- REQ-TV-SELECT: IN_PROGRESS — skan na wielu interfejsach, ponowienie, ręczne odświeżanie i radio wyboru. Rzeczywisty skan LAN 0 odpowiedzi; fizyczny TV i casting UNVERIFIED.
+- REQ-MAP-LAYERS: IN_REVIEW — OSM dzień/noc (filtr wyłącznie kafelków), Esri Topographic; runtime 24/24/21 kafelków PASS.
+
+## Iteracja środowiska E0 (2026-10-17)
+REQ-10 backup: wdrożony BackupManager i katalog kopii w ustawieniach; harmonogram/0=wyłączone/miniatury test PASS. Wielodniowy test na rzeczywistej bibliotece oraz odzyskiwanie po awarii dysku NOT RUN.
+REQ-09: rozszerzona walidacja pól/enumów/relacji, regresje i legacy PASS. F10: restart dwóch procesów z odczytem zdjęcia PASS. Bezpieczeństwo: produkcyjne CSP, blokada popup i fałszywej ramki PASS w smoke. Odzyskiwanie uszkodzonego rekordu PASS; fizycznie uszkodzona baza i pełne odtwarzanie otwarte. Pozostałe narzędzia reset/czyszczenie i migracje wymagają kontroli atomowości.
+REQ-10: IN_PROGRESS — podłączono podstawowe ustawienia pokazu/EXIF/galerii/autocentrowania; smoke potwierdza ustawienia galerii i pokazu w rendererze. Pozostała część preferencji, hardware acceleration/backup i testy wyglądu nadal otwarte.
+REQ-12 pilot: IN_REVIEW — HTTP+QR+IPC i zmiana/pauza pokazu w Electron PASS; telefon fizyczny i casting nadal otwarte. REQ-06: poprawiono kryterium identycznej treści i dodano regresję dla tej samej nazwy/obcego hasha. REQ-04: atomowy import zdjęć+albumu i obsługa błędów FileReader wdrożone; rzeczywiste EXIF/D&D/folder nadal wymagają testów.
+F11: instalacja/start/deinstalacja NSIS w wydzielonym katalogu PASS. Pozostają: przebudowa po TV discovery, test portable, aktualizacja i zachowanie biblioteki oraz podpis wydawcy.
+REQ-TV-LAN: IN_PROGRESS — wyszukiwanie DLNA/SSDP w otwartym panelu wdrożone, test parsera PASS, skan LAN 0 odpowiedzi; test fizycznego TV/casting/pilot pozostają otwarte. PREZ-018: smoke lokalnego renderu MBTiles przy blokadzie HTTP(S) PASS (24 kafelki syntetyczne); prawdziwe regionalne pakiety i test importu dialogiem otwarte.
+PREZ-018: IN_PROGRESS — import rastrowego MBTiles, lokalny czytnik i warstwa Leaflet; test renderowania bez sieci otwarty. PREZ-021/022: IN_PROGRESS — podłączono folder/autostart; autostart wymaga testu zainstalowanej wersji. F11: IN_PROGRESS — NSIS/portable zbudowane, spakowany program startuje; instalacja/deinstalacja i przebudowa po offline do wykonania.
+PREZ-020: dodano pliki obrazów pod SHA-256 i odczyt z kontrolą integralności; test powtórnego otwarcia PASS. PREZ-010: walidacja rekordów .prezent, atomowy zapis i błąd quota PASS; pełne relacje i ograniczenia ustawień pozostają IN_PROGRESS.
+Aktywna implementacja: PREZ-019 / REQ-13 — dodano proces main, izolowany preload oraz sterowanie oknem. Status IN_PROGRESS: test uruchomienia Electron i odrzucania nieprawidłowego IPC wymagany przed DONE.
+PREZ-020 / REQ-13 — IN_PROGRESS: SQLite podłączone do StorageService; test plikowy trwałości/rollback oraz migracji PASS. Przechowywanie obrazów w osobnych plikach i pełny test restartu całej aplikacji pozostają otwarte.
+
+| ID | Waga | Priorytet | Wymaganie | Warunek zakończenia | Status |
+|---|---|---|---|---|---|
+| E0-01 | 2 | P0 | REQ-ENV | Backup historii i pliku użytkownika, branch, bundle verify | DONE |
+| E0-02 | 3 | P0 | REQ-ENV | Powtarzalna instalacja, typecheck, testy, build | DONE |
+| E0-03 | 2 | P0 | REQ-ENV | Kontrole Git i wykonanie GitHub Actions | DONE |
+| E0-04 | 2 | P0 | REQ-ENV | Testy skryptów hooków oraz dowód uruchomienia przez klienta | IN_REVIEW |
+| E0-05 | 1 | P0 | REQ-ENV | Dokumenty, walidacja skilli, rejestr braków i handoff | DONE |
+
+Postęp zamknięcia tej iteracji = suma wag DONE / 10 (aktualnie 80%). Otwarte 20% to potwierdzenie automatycznych hooków klienta. Całość Windows nie ma zatwierdzonych wag i zamrożonego zakresu; nie podajemy procentu.
+
+Tabela PREZ poniżej zachowuje historyczne statusy AI Studio. Aktualny audyt: docs/FEATURE_MATRIX.md. Dowody bieżącej iteracji: TESTING.md.
+
 | ID | Priorytet | Moduł | Zadanie | Status | Weryfikacja |
 |---|---|---|---|---|---|
 | PREZ-001 | P0 | Mapa | Interaktywna mapa świata Leaflet z 6 stylami kafelków i pływającymi kontrolkami | **UKOŃCZONE** | Działa w podglądzie (Vite) |

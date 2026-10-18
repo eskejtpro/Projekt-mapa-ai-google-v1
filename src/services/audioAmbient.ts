@@ -202,7 +202,7 @@ class AmbientSoundEngine {
         const osc = this.audioCtx.createOscillator();
         const crackGain = this.audioCtx.createGain();
         const now = this.audioCtx.currentTime;
-        
+
         osc.frequency.setValueAtTime(600 + Math.random() * 1200, now);
         crackGain.gain.setValueAtTime(0.04 * this.volumeLevel, now);
         crackGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03 + Math.random() * 0.05);
@@ -259,7 +259,7 @@ class AmbientSoundEngine {
       const osc = ctx.createOscillator();
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(freq, ctx.currentTime);
-      
+
       const detuneOsc = ctx.createOscillator();
       detuneOsc.type = 'sine';
       detuneOsc.frequency.setValueAtTime(freq * 1.002, ctx.currentTime);

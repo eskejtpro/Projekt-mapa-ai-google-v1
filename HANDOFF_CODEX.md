@@ -1,6 +1,18 @@
 # HANDOFF_CODEX.md - Dokument Przekazania Projektu „Prezent Mapy” do OpenAI Codex
 
+> Aktualny handoff sesji: PROGRESS.md / SESSION HANDOFF. Aktualne funkcje: docs/FEATURE_MATRIX.md; testy: TESTING.md. Poniższy dokument to historyczne przekazanie i projekt architektury AI Studio; jego deklaracje 100%, 4K, offline i bezpłatnych kafelków nie są świeżymi dowodami. Nie pobieraj masowo kafelków bez sprawdzenia licencji dostawcy.
+
 **Projekt**: Prezent Mapy  
+BackupManager: harmonogram lokalny wdrożony, test przenośnego obrazu i miniatur PASS. Aktualna suma verify: 38 testów. Pozostałe kryteria przejrzyj w zaktualizowanym docs/KNOWN_ISSUES.md; projekt nie ma jeszcze zamkniętego wydania.
+Aktualne dowody: 37 testów verify PASS, restart dwóch procesów PASS, smoke CSP/offline/pilot/preferencje oraz odzyskiwanie PASS. Następne otwarte obszary: reszta ustawień/backupy, atomowość reset/czyszczenie, import rzeczywistych EXIF i nowe pakiety; casting TV pozostaje niezaimplementowany. Benchmark wyłącznie syntetyczny opisany w docs/PERFORMANCE.md.
+Ustawienia podstawowe podłączone; smoke preferences+offline+remote PASS. Kolejne otwarte obszary: pełny schemat .prezent, pozostałe preferencje, testy importu plików/EXIF, casting fizycznego TV i pakiety aktualnej wersji.
+Pilot QR/HTTP działa w teście Electron: pauza i zmiana slajdu PASS. 32 testy + verify PASS; zdjęcia+album importują się atomowo, PiP lokalne. Fizyczny telefon/TV/casting i aktualne pakiety wymagają dalszej pracy. Serwer uruchamia użytkownik w panelu TV, token nie jest zapisywany w raportach.
+NSIS: test instalacji/startu offline/deinstalacji PASS w katalogu testowym. Pakiet poprzedza TV discovery; aktualizację/zachowanie danych i portable trzeba sprawdzić oddzielnie. Następny zakres to pilot TV, pełna walidacja/duplikaty i pozostałe kryteria macierzy.
+Kontynuacja: offline smoke renderuje 24 lokalne kafelki; dodano tv-discovery.cjs, parser i listę odświeżaną w panelu. Rzeczywisty skan LAN: 0 odpowiedzi, casting i pilot nadal otwarte. Trwający build package:windows uruchomiono przed zmianami TV; jego pakiety wymagają późniejszej przebudowy przed wydaniem.
+Nowy stan: kandydat NSIS/portable zbudowany i smoke packaged PASS; wymaga przebudowy po zmianach offline. Czytnik/import MBTiles podłączony, runtime render offline otwarty. Pełna lista pozostałych kryteriów w PROGRESS.md.
+Ostatnia iteracja: media-store.cjs, backup-validation.ts, atomowy snapshot Vite; szczegóły i nierozstrzygnięty model TV w PROGRESS.md. Testy 29/29 PASS.
+Aktualna iteracja: rozpoczęta implementacja `electron/main.cjs` i `electron/preload.cjs`, polecenie `npm run desktop`; stan testów w PROGRESS.md.
+Kontynuacja: `electron/database.cjs` i `src/services/persistence.ts` realizują SQLite oraz migrację. 24 testy i smoke SQLite w Electron PASS. Pliki zdjęć i pełny import .prezent do dokończenia.
 **Repozytorium GitHub**: `https://github.com/eskejtpro/Projekt-mapa-ai-google-v1`  
 **Wersja przekazania**: 1.3.1 (Desktop Preview & Architecture Frozen)  
 **Platforma docelowa**: Windows 10 / Windows 11 Desktop (x64)  
@@ -251,3 +263,6 @@ npm run electron:build   # Generowanie instalatora Windows NSIS (.exe) w folderz
 5. **Krok 5 (Packaging)**: Skonfigurować `electron-builder` i wygenerować instalator Windows 10/11 (`Prezent-Mapy-Setup-1.3.1.exe`).
 
 **ZASADA NACZELNA**: Wszystkie powyższe kroki należy realizować bez niszczenia i bez przebudowywania istniejącego, ustabilizowanego interfejsu React!
+# Iteracja 2026-10-17 — aktualizacja
+
+Nowe opcje biblioteki, map i TV: REQUIREMENTS.md / TASKS.md / PROGRESS.md. Uruchomienie smoke z `--library-actions-smoke-test` potwierdziło usuwanie zbiorcze i zachowanie zdjęć przy usunięciu albumu; `--map-layers-smoke-test` potwierdził trzy warstwy online. Fizyczny TV/casting pozostają otwarte. Starsze artefakty release wymagają przebudowy po tej iteracji.

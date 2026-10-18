@@ -41,7 +41,8 @@ interface ImportModalProps {
   isOpen: boolean;
   onClose: () => void;
   albums: TravelAlbum[];
-  onImportComplete: (photos: TravelPhoto[], newAlbum?: TravelAlbum) => void;
+  onImportComplete: (photos: TravelPhoto[], newAlbum?: TravelAlbum) => boolean;
+  readExif?: boolean;
   initialLocation?: InitialImportLocation | null;
   initialMode?: ImportTabMode;
   initialFiles?: File[];
@@ -50,6 +51,7 @@ interface ImportModalProps {
 }
 
 interface QueuedItem {
+  contentHash?: string;
   id: string;
   file?: File;
   dataUrl: string;
@@ -67,6 +69,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   onClose,
   albums,
   onImportComplete,
+  readExif = true,
   initialLocation,
   initialMode = 'files',
   initialFiles,
@@ -151,7 +154,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   }, [initialMode, isOpen]);
 
   // Automatyczne wczytanie plików przekazanych do modalu (np. przeciągnięcie na mapę Drag & Drop)
-  const processedFilesKeyRef = useRef<Set<string>>(new Set());
+  const processedFilesKeyRef = useRef<Set<File>>(new Set());
 
   useEffect(() => {
     if (!isOpen) {
@@ -161,7 +164,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
 
     if (initialFiles && initialFiles.length > 0) {
       const unprocessed = initialFiles.filter(f => {
-        const key = `${f.name}_${f.size}_${f.lastModified}`;
+        const key = f;
         if (processedFilesKeyRef.current.has(key)) return false;
         processedFilesKeyRef.current.add(key);
         return true;
@@ -217,11 +220,11 @@ export const ImportModal: React.FC<ImportModalProps> = ({
       try {
         let exifData: Record<string, unknown> | null = null;
         try {
-          exifData = await exifr.parse(file, {
+          exifData = readExif ? await exifr.parse(file, {
             gps: true,
             tiff: true,
             exif: true,
-          });
+          }) : null;
         } catch {
           // Brak lub uszkodzony EXIF w pliku
         }
@@ -235,13 +238,17 @@ export const ImportModal: React.FC<ImportModalProps> = ({
           photoDate = exifData.DateTimeOriginal.toISOString().split('T')[0];
         }
 
-        const dataUrl = await new Promise<string>((resolve) => {
+        const contentHash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', await file.arrayBuffer()))).map(byte => byte.toString(16).padStart(2, '0')).join('');
+        const dataUrl = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(reader.error || new Error('Błąd odczytu zdjęcia'));
+          reader.onabort = () => reject(new Error('Odczyt anulowany'));
           reader.readAsDataURL(file);
         });
 
         newQueued.push({
+          contentHash,
           id: `queue-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 6)}`,
           file,
           dataUrl,
@@ -263,8 +270,8 @@ export const ImportModal: React.FC<ImportModalProps> = ({
 
     setQueuedItems(prev => {
       // Zapobieganie powielaniu w kolejce
-      const existingSignatures = new Set(prev.map(p => `${p.name}_${p.sizeStr}`));
-      const filtered = newQueued.filter(item => !existingSignatures.has(`${item.name}_${item.sizeStr}`));
+      const existingSignatures = new Set(prev.map(p => p.contentHash || p.dataUrl));
+      const filtered = newQueued.filter(item => { const identity = item.contentHash || item.dataUrl; if (existingSignatures.has(identity)) return false; existingSignatures.add(identity); return true; });
       return [...prev, ...filtered];
     });
     setIsProcessing(false);
@@ -338,7 +345,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
   // Dodanie całej gotowej paczki tematycznej
   const handleImportPack = (pack: TravelPhotoPack) => {
     const { photos, album } = convertPackToPhotosAndAlbum(pack);
-    onImportComplete(photos, album);
+    if (!onImportComplete(photos, album)) return;
     onShowToast?.(`Pomyślnie zaimportowano pakiet "${pack.name}" (${photos.length} zdjęć) na mapę!`, 'success');
     onClose();
   };
@@ -409,12 +416,13 @@ export const ImportModal: React.FC<ImportModalProps> = ({
         isDemo: false,
         cameraInfo: item.camera,
         fileName: item.name,
+        contentHash: item.contentHash,
         fileSize: item.sizeStr,
         localFilePath: (item.file as any)?.path || undefined,
       };
     });
 
-    onImportComplete(importedPhotos, createdAlbum);
+    if (!onImportComplete(importedPhotos, createdAlbum)) return;
     onShowToast?.(`Pomyślnie dodano ${importedPhotos.length} zdjęć do mapy świata!`, 'success');
     onClose();
   };

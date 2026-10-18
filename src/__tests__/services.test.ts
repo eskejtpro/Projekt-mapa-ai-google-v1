@@ -128,8 +128,15 @@ describe('StorageService', () => {
     ];
 
     const duplicateGroups = StorageService.findDuplicates(mockPhotos);
-    expect(duplicateGroups.length).toBe(1);
-    expect(duplicateGroups[0].duplicates.length).toBe(2);
+    expect(duplicateGroups.length).toBe(0);
+    mockPhotos[0].contentHash = 'a'.repeat(64);
+    mockPhotos[1].contentHash = 'a'.repeat(64);
+    expect(StorageService.findDuplicates(mockPhotos)).toHaveLength(0);
+    mockPhotos[0].url = 'data:image/jpeg;base64,YQ==';
+    mockPhotos[1].url = 'data:image/jpeg;base64,YQ==';
+    const confirmed = StorageService.findDuplicates(mockPhotos);
+    expect(confirmed.length).toBe(1);
+    expect(confirmed[0].duplicates.length).toBe(2);
   });
 
   it('eksportuje i importuje kopię zapasową .prezent z zachowaniem spójności struktury', () => {
