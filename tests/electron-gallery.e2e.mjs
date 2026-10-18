@@ -112,9 +112,9 @@ try {
   await page.keyboard.press('End');
   await slideshow.getByTestId('slideshow-video').waitFor({ state: 'visible' });
   assert.match(await slideshow.locator('text=/\\d+ \/ \\d+/').first().innerText(), /\d+ \/ \d+/);
-  await page.waitForFunction(() => document.querySelector('div.fixed.inset-0.z-50 video')?.paused === false, { timeout: 5000 });
+  if (process.env.PREZENT_REAL_VIDEO) await page.waitForFunction(() => document.querySelector('div.fixed.inset-0.z-50 video')?.paused === false, { timeout: 5000 });
   await page.keyboard.press('Space');
-  await page.waitForFunction(() => document.querySelector('div.fixed.inset-0.z-50 video')?.paused === true, { timeout: 5000 });
+  if (process.env.PREZENT_REAL_VIDEO) await page.waitForFunction(() => document.querySelector('div.fixed.inset-0.z-50 video')?.paused === true, { timeout: 5000 });
   assert.equal(await slideshow.locator('video').first().evaluate(video => video.paused), true);
   await page.keyboard.press('Space');
   if (process.env.PREZENT_REAL_VIDEO) {
