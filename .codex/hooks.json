@@ -8,7 +8,7 @@
           {
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/lifecycle.mjs\"",
-            "commandWindows": "powershell.exe -NoProfile -Command \"$r=git rev-parse --show-toplevel; & node (Join-Path $r '.codex/hooks/lifecycle.mjs')\"",
+            "commandWindows": "powershell.exe -NoProfile -Command \"$c=git rev-parse --show-cdup; & node (Join-Path (Get-Location).Path (Join-Path $c '.codex/hooks/windows-launcher.mjs'))\"",
             "timeout": 10
           }
         ]
@@ -20,7 +20,7 @@
           {
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/lifecycle.mjs\"",
-            "commandWindows": "powershell.exe -NoProfile -Command \"$r=git rev-parse --show-toplevel; & node (Join-Path $r '.codex/hooks/lifecycle.mjs')\"",
+            "commandWindows": "powershell.exe -NoProfile -Command \"$c=git rev-parse --show-cdup; & node (Join-Path (Get-Location).Path (Join-Path $c '.codex/hooks/windows-launcher.mjs'))\"",
             "timeout": 10
           }
         ]
@@ -33,7 +33,7 @@
           {
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/lifecycle.mjs\"",
-            "commandWindows": "powershell.exe -NoProfile -Command \"$r=git rev-parse --show-toplevel; & node (Join-Path $r '.codex/hooks/lifecycle.mjs')\"",
+            "commandWindows": "powershell.exe -NoProfile -Command \"$c=git rev-parse --show-cdup; & node (Join-Path (Get-Location).Path (Join-Path $c '.codex/hooks/windows-launcher.mjs'))\"",
             "timeout": 10
           }
         ]
@@ -46,7 +46,7 @@
           {
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/lifecycle.mjs\"",
-            "commandWindows": "powershell.exe -NoProfile -Command \"$r=git rev-parse --show-toplevel; & node (Join-Path $r '.codex/hooks/lifecycle.mjs')\"",
+            "commandWindows": "powershell.exe -NoProfile -Command \"$c=git rev-parse --show-cdup; & node (Join-Path (Get-Location).Path (Join-Path $c '.codex/hooks/windows-launcher.mjs'))\"",
             "timeout": 10
           }
         ]
@@ -58,7 +58,7 @@
           {
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/lifecycle.mjs\"",
-            "commandWindows": "powershell.exe -NoProfile -Command \"$r=git rev-parse --show-toplevel; & node (Join-Path $r '.codex/hooks/lifecycle.mjs')\"",
+            "commandWindows": "powershell.exe -NoProfile -Command \"$c=git rev-parse --show-cdup; & node (Join-Path (Get-Location).Path (Join-Path $c '.codex/hooks/windows-launcher.mjs'))\"",
             "timeout": 10
           }
         ]
@@ -70,7 +70,7 @@
           {
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/lifecycle.mjs\"",
-            "commandWindows": "powershell.exe -NoProfile -Command \"$r=git rev-parse --show-toplevel; & node (Join-Path $r '.codex/hooks/lifecycle.mjs')\"",
+            "commandWindows": "powershell.exe -NoProfile -Command \"$c=git rev-parse --show-cdup; & node (Join-Path (Get-Location).Path (Join-Path $c '.codex/hooks/windows-launcher.mjs'))\"",
             "timeout": 10
           }
         ]
@@ -82,7 +82,7 @@
           {
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/lifecycle.mjs\"",
-            "commandWindows": "powershell.exe -NoProfile -Command \"$r=git rev-parse --show-toplevel; & node (Join-Path $r '.codex/hooks/lifecycle.mjs')\"",
+            "commandWindows": "powershell.exe -NoProfile -Command \"$c=git rev-parse --show-cdup; & node (Join-Path (Get-Location).Path (Join-Path $c '.codex/hooks/windows-launcher.mjs'))\"",
             "timeout": 10
           }
         ]
