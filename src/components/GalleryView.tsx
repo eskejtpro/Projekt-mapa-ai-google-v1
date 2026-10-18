@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TravelPhoto, TravelAlbum, TravelTrip } from '../types/travel';
+import type { MediaItem } from '../types/media';
 import {
   Heart,
   MapPin,
@@ -16,9 +17,11 @@ import {
   FolderDown,
   Upload
 } from 'lucide-react';
+import { VideoThumbnail } from './VideoThumbnail';
 
 interface GalleryViewProps {
   photos: TravelPhoto[];
+  videos?: MediaItem[];
   albums: TravelAlbum[];
   trips: TravelTrip[];
   onSelectPhoto: (photo: TravelPhoto) => void;
@@ -31,6 +34,9 @@ interface GalleryViewProps {
   selectedAlbumId: string | null;
   onOpenOrganizer?: (album: TravelAlbum) => void;
   onDropPhotosOnAlbum?: (files: File[], albumId: string) => void;
+  onImportVideos?: () => void;
+  onOpenVideo?: (video: MediaItem) => void;
+  onAssignVideo?: (video: MediaItem, albumId: string | null) => void;
   density?: 'default' | 'compact' | 'large';
   showExifBadges?: boolean;
   defaultSortBy?: 'date-desc' | 'date-asc' | 'title' | 'location';
@@ -39,6 +45,7 @@ interface GalleryViewProps {
 
 export const GalleryView: React.FC<GalleryViewProps> = ({
   photos,
+  videos = [],
   albums,
   trips,
   onSelectPhoto,
@@ -51,6 +58,9 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   selectedAlbumId,
   onOpenOrganizer,
   onDropPhotosOnAlbum,
+  onImportVideos,
+  onOpenVideo,
+  onAssignVideo,
   density = 'default',
   showExifBadges = true,
   defaultSortBy = 'date-desc',
@@ -61,6 +71,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [onlyFavorites, setOnlyFavorites] = useState<boolean>(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [mediaFilter, setMediaFilter] = useState<'all' | 'photos' | 'videos'>('all');
   useEffect(() => { setSelectedIds(ids => ids.filter(id => photos.some(photo => photo.id === id))); }, [photos]);
   const [countryFilter, setCountryFilter] = useState<string>('ALL');
   const [yearFilter, setYearFilter] = useState<string>('ALL');
@@ -147,7 +158,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   };
 
   // Filtrowanie i sortowanie
-  const filteredPhotos = photos
+  const filteredPhotos = (mediaFilter === 'videos' ? [] : photos)
     .filter(p => {
       if (selectedAlbumId && p.albumId !== selectedAlbumId) return false;
       if (onlyFavorites && !p.isFavorite) return false;
@@ -180,6 +191,12 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
       if (sortBy === 'date-asc') return a.date.localeCompare(b.date);
       return a.title.localeCompare(b.title);
     });
+
+  const filteredVideos = (mediaFilter === 'photos' ? [] : videos).filter(video => {
+    if (selectedAlbumId && video.albumId !== selectedAlbumId) return false;
+    if (searchQuery.trim() && !video.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    return true;
+  });
 
   // Grupowanie według miesięcy/lat dla standardowego widoku chronologicznego
   const groupedSections: { dateTitle: string; items: TravelPhoto[] }[] = [];
@@ -306,7 +323,13 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
             <Play className="w-3.5 h-3.5 fill-current" />
             Pokaz slajdów ({filteredPhotos.length})
           </button>
+          {onImportVideos && <button onClick={onImportVideos} className="px-3.5 py-1.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-xs flex items-center gap-1.5"><Upload className="w-3.5 h-3.5" /> Dodaj filmy</button>}
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-slate-400">Widok:</span>
+        {(['all', 'photos', 'videos'] as const).map(filter => <button key={filter} onClick={() => setMediaFilter(filter)} className={`px-3 py-1.5 rounded-lg border ${mediaFilter === filter ? 'bg-amber-500 text-slate-950 border-amber-400 font-bold' : 'bg-slate-900 text-slate-300 border-slate-700'}`}>{filter === 'all' ? `Wszystkie (${filteredPhotos.length + filteredVideos.length})` : filter === 'photos' ? `Zdjęcia (${filteredPhotos.length})` : `Filmy (${filteredVideos.length})`}</button>)}
       </div>
 
       <div className="flex flex-wrap gap-2 items-center text-xs text-slate-200">
@@ -594,6 +617,23 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
             </div>
           ))}
         </div>
+      )}
+
+      {filteredVideos.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-2"><h3 className="text-sm font-bold text-slate-200 flex items-center gap-2"><Play className="w-4 h-4 text-indigo-400" /> Filmy</h3><span className="text-xs text-slate-400">{filteredVideos.length} elementów</span></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+            {filteredVideos.map(video => <article key={video.id} className="group relative rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+              <button onClick={() => onOpenVideo?.(video)} className="w-full aspect-video bg-slate-950 flex items-center justify-center relative text-left">
+                <VideoThumbnail src={`prezent-video://local/${video.id}`} title={video.title} />
+                <Play className="relative z-10 w-12 h-12 text-white opacity-80 group-hover:scale-110 transition-transform" />
+                <span className="absolute left-2 top-2 rounded-lg bg-indigo-500/90 px-2 py-1 text-[10px] font-bold text-white">FILM</span>
+                <span className="absolute right-2 top-2 rounded-lg bg-slate-950/80 px-2 py-1 text-[10px] text-white">{video.durationMs ? `${Math.round(video.durationMs / 1000)} s` : 'czas nieznany'}</span>
+              </button>
+              <div className="p-3 space-y-2"><h4 className="font-bold text-sm text-white truncate">{video.title}</h4><select value={video.albumId || ''} onChange={event => onAssignVideo?.(video, event.target.value || null)} className="w-full rounded-lg bg-slate-950 border border-slate-700 px-2 py-1.5 text-xs text-slate-200"><option value="">Bez albumu</option>{albums.map(album => <option key={album.id} value={album.id}>{album.name}</option>)}</select></div>
+            </article>)}
+          </div>
+        </section>
       )}
     </div>
   );

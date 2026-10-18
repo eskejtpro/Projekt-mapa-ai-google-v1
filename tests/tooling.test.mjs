@@ -31,3 +31,18 @@ test('Windows launcher działa z src i ścieżką ze spacjami', { skip: process.
   assert.equal(result.status, 0, result.stderr);
   assert.equal(JSON.parse(result.stdout).hookSpecificOutput.hookEventName, 'SessionStart');
 });
+
+test('Windows launcher nie przekazuje ścieżki Unicode przez wynik git', { skip: process.platform !== 'win32' }, () => {
+  const definition = config.hooks.SessionStart[0].hooks[0];
+  assert.match(definition.commandWindows, /--show-cdup/);
+  assert.doesNotMatch(definition.commandWindows, /--show-toplevel/);
+  const command = definition.commandWindows.replace(/^powershell\.exe -NoProfile -Command "/, '').replace(/"$/, '');
+  const result = spawnSync('powershell.exe', ['-NoProfile', '-Command', command], {
+    cwd: 'src',
+    input: JSON.stringify({ hook_event_name: 'SessionStart' }),
+    encoding: 'utf8',
+    env: { ...process.env, PREZENT_HOOK_TEST: '1' },
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout).hookSpecificOutput.hookEventName, 'SessionStart');
+});

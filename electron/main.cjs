@@ -144,13 +144,16 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle('video:import', async event => {
     assertRenderer(event);
-    const selected = await dialog.showOpenDialog(window, { properties: ['openFile', 'multiSelections'], filters: [{ name: 'Filmy MP4/WebM', extensions: ['mp4', 'webm'] }] });
+    const selected = process.env.PREZENT_E2E_VIDEO_FIXTURE
+      ? { canceled: false, filePaths: [path.resolve(process.env.PREZENT_E2E_VIDEO_FIXTURE)] }
+      : await dialog.showOpenDialog(window, { properties: ['openFile', 'multiSelections'], filters: [{ name: 'Filmy MP4/WebM', extensions: ['mp4', 'webm'] }] });
     if (selected.canceled) return [];
     const results = [];
     for (const file of selected.filePaths) results.push(await videoLibrary.importVideo(file));
     return results.map(result => ({ ...result, item: { ...result.item, playbackUrl: `prezent-video://local/${result.item.id}` } }));
   });
   ipcMain.handle('video:list', event => { assertRenderer(event); return videoLibrary.list().map(item => ({ ...item, playbackUrl: `prezent-video://local/${item.id}` })); });
+  ipcMain.handle('video:set-album', (event, id, albumId) => { assertRenderer(event); if (typeof id !== 'string' || (albumId !== null && typeof albumId !== 'string')) throw new Error('Nieprawidłowe medium lub album'); videoLibrary.setAlbum(id, albumId); return true; });
   ipcMain.handle('system:action', async (event, action, value) => {
     if (event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== page) throw new Error('Niedozwolony nadawca IPC');
     const photosPath = path.join(app.getPath('userData'), 'photos');

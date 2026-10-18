@@ -96,4 +96,10 @@ Stan ogólny: **Kompletny, stabilny i sprawdzony prototyp gotowy do przejęcia p
 - Branch: `feature/video-library-foundation`
 - Wdrożono: `MediaItem`, tabela `media_items`, import MP4/WebM do lokalnego katalogu, SHA-256 deduplikacji, metadata-only SQLite, bezpieczny protokół `prezent-video`, bazowy `VideoPlayer`.
 - Zweryfikowano: testy importu, duplikatu, nagłówka, restartu SQLite i ścieżki dostępu; rzeczywisty Electron Windows potwierdził H.264/AAC, VP8/Opus i VP9/Opus, dekodowanie obrazu, postęp czasu oraz seek po dodaniu HTTP Range. Wyjście audio jest `UNVERIFIED`, a UI importu/galeria pozostają zakresem następnego etapu.
+
+## Etap video-gallery-albums
+- Branch: `feature/video-gallery-albums`.
+- Wdrożono: import filmów z istniejącego widoku galerii, wspólny widok zdjęć/filmów, filtry, kafelki z ikoną i czasem, miniaturę klatki z fallbackiem, odtwarzacz inline oraz przypisywanie do albumów przez IPC/SQLite.
+- Nie zmieniano: mapy, pokazu slajdów i trybu TV.
+- Status: IN_REVIEW; wymagany jeszcze pełny Electron UI/E2E i osobny PR do `main`.
 - Nie zmieniano logiki `SlideshowModal` ani `TvModeModal`.
