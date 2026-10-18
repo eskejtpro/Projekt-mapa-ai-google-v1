@@ -21,6 +21,7 @@ declare global {
       video: {
         import(): Promise<Array<{ duplicate: boolean; item: { id: string; playbackUrl: string; title: string; mimeType: string; sizeBytes: number } }>>;
         list(): Promise<Array<{ id: string; title: string; playbackUrl: string; mimeType: string; sizeBytes: number; thumbnailStatus: string }>>;
+        setAlbum(id: string, albumId: string | null): Promise<boolean>;
       };
       minimize(): Promise<boolean>;
       maximize(): Promise<boolean>;

@@ -49,6 +49,8 @@ import { OfflineMapsModal } from './components/OfflineMapsModal';
 import { AndroidSyncModal } from './components/AndroidSyncModal';
 import { PhotoDetailModal } from './components/PhotoDetailModal';
 import { CatalogOrganizerModal } from './components/CatalogOrganizerModal';
+import { VideoPlayer } from './components/VideoPlayer';
+import type { MediaItem } from './types/media';
 
 export default function App() {
   // Baza danych wspomnień
@@ -59,6 +61,8 @@ export default function App() {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [libraryError, setLibraryError] = useState<string | null>(null);
   const [reorderAlbum, setReorderAlbum] = useState<TravelAlbum | null>(null);
+  const [videos, setVideos] = useState<MediaItem[]>([]);
+  const [selectedVideo, setSelectedVideo] = useState<MediaItem | null>(null);
 
   // Okno Windows 10/11
   const [isWindowMaximized, setIsWindowMaximized] = useState<boolean>(true);
@@ -150,6 +154,7 @@ export default function App() {
   // Załadowanie danych
   useEffect(() => {
     loadAllData();
+    void loadVideos();
     const unsubscribeBackup = window.electronAPI?.onBackupError(() => showToast('Nie udało się utworzyć automatycznej kopii. Sprawdź wolne miejsce i uprawnienia folderu danych.', 'warning'));
     if (window.electronAPI) {
       void window.electronAPI.systemInfo().then(info => {
@@ -176,6 +181,25 @@ export default function App() {
     setSettings(s);
     setLibraryError(null);
     } catch { setLibraryError('Nie udało się odczytać biblioteki. Zachowaj kopię plików danych przed przywracaniem.'); }
+  };
+
+  const loadVideos = async () => {
+    if (!window.electronAPI) return;
+    try { setVideos(await window.electronAPI.video.list() as unknown as MediaItem[]); } catch { showToast('Nie udało się odczytać biblioteki filmów.', 'warning'); }
+  };
+
+  const handleImportVideos = async () => {
+    if (!window.electronAPI) { showToast('Import filmów wymaga aplikacji Windows.', 'warning'); return; }
+    try {
+      const imported = await window.electronAPI.video.import();
+      await loadVideos();
+      showToast(imported.length ? `Dodano ${imported.length} filmów do biblioteki.` : 'Nie wybrano filmów.', 'success');
+    } catch (error) { showToast(error instanceof Error ? error.message : 'Import filmu nie powiódł się.', 'warning'); }
+  };
+
+  const handleAssignVideo = async (video: MediaItem, albumId: string | null) => {
+    try { await window.electronAPI?.video.setAlbum(video.id, albumId); await loadVideos(); showToast('Zapisano przypisanie filmu do albumu.', 'success'); }
+    catch { showToast('Nie udało się przypisać filmu do albumu.', 'warning'); }
   };
 
   // Statystyki
@@ -566,6 +590,7 @@ export default function App() {
               {activeTab === 'gallery' && (
                 <GalleryView
                   photos={photos}
+                  videos={videos}
                   albums={albums}
                   trips={trips}
                   onSelectPhoto={(photo) => setSelectedPhotoForDetail(photo)}
@@ -578,6 +603,9 @@ export default function App() {
                   selectedAlbumId={selectedAlbumId}
                   onOpenOrganizer={(album) => setReorderAlbum(album)}
                   onDropPhotosOnAlbum={handleDropPhotosOnAlbum}
+                  onImportVideos={handleImportVideos}
+                  onOpenVideo={setSelectedVideo}
+                  onAssignVideo={handleAssignVideo}
                   density={settings.galleryDensity}
                   showExifBadges={settings.showExifBadges}
                   defaultSortBy={settings.defaultSortBy}
@@ -1059,6 +1087,15 @@ export default function App() {
         initialAlbumId={importInitialAlbumId}
         onShowToast={showToast}
       />
+
+      {selectedVideo && (
+        <div className="fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6" role="dialog" aria-label={selectedVideo.title}>
+          <div className="w-full max-w-4xl bg-slate-900 rounded-3xl border border-slate-700 p-4 shadow-2xl">
+            <div className="flex items-center justify-between mb-3"><h2 className="text-white font-bold">{selectedVideo.title}</h2><button onClick={() => setSelectedVideo(null)} className="px-3 py-1 rounded-lg bg-slate-800 text-slate-200">Zamknij</button></div>
+            <VideoPlayer src={`prezent-video://local/${selectedVideo.id}`} title={selectedVideo.title} />
+          </div>
+        </div>
+      )}
 
       <SlideshowModal
         isOpen={isSlideshowOpen}

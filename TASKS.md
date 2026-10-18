@@ -29,6 +29,8 @@ PREZ-020 / REQ-13 — IN_PROGRESS: SQLite podłączone do StorageService; test p
 - VID-FOUNDATION-01: IN_REVIEW — typ `MediaItem`, tabela `media_items`, lokalny import MP4/WebM, deduplikacja SHA-256 i bezpieczny protokół Electron z HTTP Range wdrożone; testy realnych kodeków Electron PASS dla obrazu, postępu i seek; wyjście audio UNVERIFIED.
 - VID-FOUNDATION-02: TODO — generowanie miniatur klatek i integracja importu z galerią.
 - VID-FOUNDATION-03: TODO — integracja wspólnego katalogu z mapą, albumami i pokazem; zgodnie z zakresem nie zmieniano jeszcze slideshow ani TV.
+- VID-GALLERY-01: IN_REVIEW — wspólna galeria pokazuje zdjęcia i filmy, ma filtry wszystkich/zdjęć/filmów, kafelki filmów z ikoną/czasem, miniaturę klatki z fallbackiem, odtwarzacz inline i przypisanie do istniejących albumów.
+- VID-GALLERY-02: TODO — pełny Electron UI/E2E, usuwanie filmów z backupem oraz testy dużej biblioteki; mapa, slideshow i TV pozostają poza zakresem.
 
 Postęp zamknięcia tej iteracji = suma wag DONE / 10 (aktualnie 80%). Otwarte 20% to potwierdzenie automatycznych hooków klienta. Całość Windows nie ma zatwierdzonych wag i zamrożonego zakresu; nie podajemy procentu.
 

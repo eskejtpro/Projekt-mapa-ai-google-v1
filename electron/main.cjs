@@ -151,6 +151,7 @@ app.whenReady().then(async () => {
     return results.map(result => ({ ...result, item: { ...result.item, playbackUrl: `prezent-video://local/${result.item.id}` } }));
   });
   ipcMain.handle('video:list', event => { assertRenderer(event); return videoLibrary.list().map(item => ({ ...item, playbackUrl: `prezent-video://local/${item.id}` })); });
+  ipcMain.handle('video:set-album', (event, id, albumId) => { assertRenderer(event); if (typeof id !== 'string' || (albumId !== null && typeof albumId !== 'string')) throw new Error('Nieprawidłowe medium lub album'); videoLibrary.setAlbum(id, albumId); return true; });
   ipcMain.handle('system:action', async (event, action, value) => {
     if (event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== page) throw new Error('Niedozwolony nadawca IPC');
     const photosPath = path.join(app.getPath('userData'), 'photos');

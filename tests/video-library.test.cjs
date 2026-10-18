@@ -35,6 +35,8 @@ test('importuje MP4/WebM do katalogu aplikacji bez Base64 i odrzuca duplikat', a
     library.close();
     const reopened = new VideoLibrary(db, store);
     assert.equal(reopened.list().length, 2);
+    reopened.setAlbum(first.item.id, 'album-1');
+    assert.equal(reopened.list().find(item => item.id === first.item.id).albumId, 'album-1');
     reopened.close();
   } finally { rmSync(root, { recursive: true, force: true }); }
 });

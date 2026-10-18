@@ -88,6 +88,11 @@ class VideoLibrary {
     return { duplicate: false, item: this.#row(item) };
   }
   list() { return this.db.prepare('SELECT * FROM media_items ORDER BY date DESC, id DESC').all().map(row => this.#row(row)); }
+  setAlbum(id, albumId) {
+    const result = this.db.prepare('UPDATE media_items SET album_id = ? WHERE id = ?').run(albumId || null, id);
+    if (!result.changes) throw new Error('Nieznane medium');
+    return this.db.prepare('SELECT * FROM media_items WHERE id = ?').get(id);
+  }
   pathFor(id) {
     const row = this.db.prepare('SELECT relative_path FROM media_items WHERE id = ?').get(id);
     if (!row) throw new Error('Nieznane medium');
