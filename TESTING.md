@@ -1,5 +1,13 @@
 # TESTING.md - Procedury Testowe i Raport Weryfikacji
 
+## PR #7 — multimedia slideshow
+
+- `npm test`: **PASS**, 22/22.
+- `npm run typecheck`: **PASS**.
+- `npm run build`: **PASS**.
+- `npm run test:e2e:electron`: **PASS** — izolowany Electron sprawdza pokaz zawierający zdjęcie i film, pauzę/wznowienie, zakończenie filmu, mapę, backup/restore i restart.
+- Pełne `npm run verify`: **BLOCKED/UNVERIFIED** w tej sesji — proces zatrzymał się podczas łączenia wielu plików testów backupu; pojedyncze testy backupu oraz wcześniejszy pełny przebieg 21/21 PASS. Przed scaleniem wymagana jest ponowna kontrola na CI.
+
 ## Automatyzacja Codex — nowa iteracja (2026-10-18)
 
 - Dodano `scripts/automation-check.mjs` do `npm run verify` (tryb quick i full); sprawdza strukturę konfiguracji, skilli, hooków i CI.

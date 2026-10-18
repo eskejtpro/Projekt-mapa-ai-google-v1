@@ -1,5 +1,18 @@
 # PROGRESS.md - Rzeczywisty Stan Postępów Projektu „Prezent Mapy”
 
+## SESSION HANDOFF — PR #7 multimedia slideshow, 2026-10-18
+- Wersja robocza: 1.7.0, branch `feature/multimedia-slideshow`, baza `main` po scaleniu PR #6.
+- Rozszerzono istniejący `SlideshowModal` o wspólną listę zdjęć i filmów, automatyczne odtwarzanie filmu, przejście po `ended`, pauzę/wznowienie, wyciszenie, głośność, fullscreen, kolejność, shuffle, pętlę i filmstrip.
+- Galeria i album mogą przekazać do pokazu oba rodzaje mediów; zachowano istniejący wygląd ciemny/bursztynowy i kontrolki klawiatury.
+- TypeScript, build i Vitest 22/22: PASS. E2E Electron pokazu mieszanego, pauzy/wznowienia, zakończenia filmu, mapy, backupu/restore i restartu: PASS.
+- Pełne `npm run verify`: BLOCKED/UNVERIFIED w tej sesji — zawieszenie przy łączeniu plików testów backupu; pojedyncze testy problematyczne PASS, wcześniejszy pełny przebieg 21/21 PASS.
+- Status: IN_REVIEW; nie tworzyć merge ani nie oznaczać DONE przed zielonym CI i wyjaśnieniem bramki verify.
+- Ostatni stan kodu: `SlideshowModal.tsx` obsługuje union zdjęcie/MediaItem, autoplay filmu, `ended` → następny element, pauzę/wznowienie, wyciszenie, głośność, fullscreen i filmstrip. `App.tsx` przekazuje bibliotekę mieszaną, a `GalleryView.tsx` może uruchomić pokaz zdjęć i filmów.
+- Wersja/package-lock ustawiona na 1.7.0; `CHANGELOG.md`, `TASKS.md` i `docs/FEATURE_MATRIX.md` zawierają status PR #7.
+- Zweryfikowano przed przerwaniem: `npm run typecheck` PASS, `npm run build` PASS, `git diff --check` PASS. `npm run verify` przerwano na wolnym teście dużego backupu; nie oznaczono jako PASS. Test Vitest był uruchomiony, ale został przerwany przed wynikiem końcowym.
+- Niezapisane zmiany są lokalne na branchu `feature/multimedia-slideshow`; plik `moje instrukcje do projektu.txt` pozostaje nieśledzony i nietknięty.
+- Następny krok: commit i PR #7 do przeglądu, sprawdzenie CI; osobno naprawić/wyjaśnić zawieszenie zbiorczego verify przed scaleniem.
+
 ## SESSION HANDOFF — PR #6 scalony, 2026-10-18
 - Wersja: 1.6.0, branch `main`, commit merge `38f83e14d58ebc4352801df4883097a158ae22c7`. Ten handoff zastępuje wcześniejsze statusy PR #6 poniżej.
 - Wdrożono ograniczony parser atomów GPS MP4/MOV, pełne kopie folderowe SQLite/mediów, walidowane IPC i panel ustawień, dopracowany edytor GPS, poprawki CSP/CORS miniaturek, HTTP Range i zwalnianie wideo.

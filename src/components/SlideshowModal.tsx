@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { TravelPhoto } from '../types/travel';
+import { MediaItem } from '../types/media';
 import { ambientSound, AmbientSoundTrack } from '../services/audioAmbient';
 import {
   Play,
@@ -39,10 +40,13 @@ export type SlideshowOrderMode = 'original' | 'chronological' | 'reverse' | 'shu
 interface SlideshowModalProps {
   isOpen: boolean;
   onClose: () => void;
-  photos: TravelPhoto[];
+  photos: Array<TravelPhoto | MediaItem>;
   initialIndex?: number;
   albumName?: string;
 }
+
+type SlideshowMedia = TravelPhoto | MediaItem;
+const isVideoMedia = (media: SlideshowMedia): media is MediaItem => 'kind' in media && media.kind === 'video';
 
 export const SlideshowModal: React.FC<SlideshowModalProps> = ({
   isOpen,
@@ -62,6 +66,7 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
   const [ambientTrack, setAmbientTrack] = useState<AmbientSoundTrack>('ocean');
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [volume, setVolume] = useState<number>(50);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // Widok i nakładki
   const [infoMode, setInfoMode] = useState<SlideshowInfoMode>('full');
@@ -75,7 +80,7 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
   const idleTimerRef = useRef<number | null>(null);
 
   // Lista zdjęć w wybranej kolejności
-  const activePhotos = useMemo(() => {
+  const activePhotos = useMemo<SlideshowMedia[]>(() => {
     if (inputPhotos.length <= 1) return inputPhotos;
     const list = [...inputPhotos];
     if (orderMode === 'chronological') {
@@ -125,7 +130,7 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
 
   // Timer automatycznej zmiany slajdów
   useEffect(() => {
-    if (!isOpen || !isPlaying || activePhotos.length <= 1) return;
+    if (!isOpen || !isPlaying || activePhotos.length <= 1 || isVideoMedia(activePhotos[currentIndex])) return;
 
     const timer = setInterval(() => {
       setCurrentIndex(prev => {
@@ -143,6 +148,16 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
 
     return () => clearInterval(timer);
   }, [isOpen, isPlaying, intervalSec, activePhotos.length, isLooping]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !isVideoMedia(activePhotos[currentIndex])) return;
+    video.volume = volume / 100;
+    video.muted = isMuted;
+    if (isPlaying) void video.play().catch(() => setIsPlaying(false));
+    else video.pause();
+    return () => video.pause();
+  }, [activePhotos, currentIndex, isMuted, isPlaying, volume]);
 
   // Auto-scrollowanie paska miniatur do aktywnego zdjęcia
   useEffect(() => {
@@ -216,6 +231,10 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
   if (!isOpen || activePhotos.length === 0) return null;
 
   const currentPhoto = activePhotos[currentIndex] || activePhotos[0];
+  const mediaTitle = (media: SlideshowMedia) => media.title;
+  const mediaDate = (media: SlideshowMedia) => media.date;
+  const mediaLocation = (media: SlideshowMedia) => media.location;
+  const mediaNotes = (media: SlideshowMedia) => isVideoMedia(media) ? '' : media.notes;
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -256,12 +275,29 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
     >
       {/* TŁO ZDJĘCIA: Płynne skalowanie i efekty wizualne */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none flex items-center justify-center">
-        <img
-          key={`${currentPhoto.id}-${currentIndex}`}
-          src={currentPhoto.url}
-          alt={currentPhoto.title}
-          className={`w-full h-full object-cover ${getTransitionClass()}`}
-        />
+        {isVideoMedia(currentPhoto) ? (
+          <video
+            data-testid="slideshow-video"
+            ref={videoRef}
+            key={`${currentPhoto.id}-${currentIndex}`}
+            src={`prezent-video://local/${currentPhoto.id}`}
+            className="pointer-events-auto w-full h-full object-contain bg-black"
+            autoPlay={isPlaying}
+            controls
+            muted={isMuted}
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+            onEnded={nextSlide}
+            onError={() => setIsPlaying(false)}
+          />
+        ) : (
+          <img
+            key={`${currentPhoto.id}-${currentIndex}`}
+            src={currentPhoto.url}
+            alt={currentPhoto.title}
+            className={`w-full h-full object-contain ${getTransitionClass()}`}
+          />
+        )}
         {/* Winieta kinowa i gradient ochronny na napisy */}
         {infoMode !== 'clean' && (
           <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/15 to-black/60 pointer-events-none" />
@@ -394,13 +430,13 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="px-3 py-1 rounded-full bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold flex items-center gap-1.5 shadow-lg">
               <MapPin className="w-3.5 h-3.5" />
-              {currentPhoto.location.cityName}, {currentPhoto.location.countryName}
+              {mediaLocation(currentPhoto)?.cityName || 'Brak lokalizacji'}, {mediaLocation(currentPhoto)?.countryName || ''}
             </span>
             <span className="px-3 py-1 rounded-full bg-black/70 backdrop-blur text-slate-300 border border-white/10 flex items-center gap-1.5 font-mono">
               <Calendar className="w-3.5 h-3.5" />
-              {currentPhoto.date}
+              {mediaDate(currentPhoto)}
             </span>
-            {infoMode === 'full' && currentPhoto.participants.length > 0 && (
+            {infoMode === 'full' && !isVideoMedia(currentPhoto) && currentPhoto.participants.length > 0 && (
               <span className="px-3 py-1 rounded-full bg-black/70 backdrop-blur text-slate-300 border border-white/10 flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5" />
                 {currentPhoto.participants.join(', ')}
@@ -409,12 +445,12 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
           </div>
 
           <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white drop-shadow-xl">
-            {currentPhoto.title}
+            {mediaTitle(currentPhoto)}
           </h2>
 
-          {infoMode === 'full' && currentPhoto.notes && (
+          {infoMode === 'full' && mediaNotes(currentPhoto) && (
             <p className="text-sm text-slate-200/95 leading-relaxed drop-shadow bg-black/50 backdrop-blur-sm p-3 rounded-2xl border border-white/10 max-w-xl">
-              {currentPhoto.notes}
+              {mediaNotes(currentPhoto)}
             </p>
           )}
         </div>
@@ -422,12 +458,12 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
         {/* Prawa strona: Mini-Mapa Picture-in-Picture & Pływający pilot */}
         <div className="flex flex-col items-end gap-3 shrink-0">
           {/* Mini-Mapa PiP */}
-          {showMiniMap && (
+          {showMiniMap && mediaLocation(currentPhoto) && (
             <div className="w-48 h-32 rounded-2xl overflow-hidden border border-amber-400/50 shadow-2xl bg-slate-900 relative">
               <iframe
                 title="Mini Map"
                 className="w-full h-full pointer-events-none filter brightness-90 contrast-125"
-                src={`https://www.openstreetmap.org/export/embed.html?bbox=${currentPhoto.location.lng - 0.2}%2C${currentPhoto.location.lat - 0.2}%2C${currentPhoto.location.lng + 0.2}%2C${currentPhoto.location.lat + 0.2}&layer=mapnik&marker=${currentPhoto.location.lat}%2C${currentPhoto.location.lng}`}
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${mediaLocation(currentPhoto)!.lng - 0.2}%2C${mediaLocation(currentPhoto)!.lat - 0.2}%2C${mediaLocation(currentPhoto)!.lng + 0.2}%2C${mediaLocation(currentPhoto)!.lat + 0.2}&layer=mapnik&marker=${mediaLocation(currentPhoto)!.lat}%2C${mediaLocation(currentPhoto)!.lng}`}
               />
               <div className="absolute top-2 left-2 bg-black/85 backdrop-blur text-[10px] px-2 py-0.5 rounded-full font-bold text-amber-400 border border-amber-500/30 flex items-center gap-1">
                 <Compass className="w-3 h-3" /> Lokalizacja
@@ -480,11 +516,15 @@ export const SlideshowModal: React.FC<SlideshowModalProps> = ({
                 }`}
                 title={`#${pIdx + 1} - ${photo.title}`}
               >
-                <img
-                  src={photo.thumbnailUrl || photo.url}
-                  alt={photo.title}
-                  className="w-full h-full object-cover"
-                />
+                {isVideoMedia(photo) ? (
+                  <div className="w-full h-full bg-slate-800 flex items-center justify-center text-[10px] text-amber-300">FILM</div>
+                ) : (
+                  <img
+                    src={photo.thumbnailUrl || photo.url}
+                    alt={photo.title}
+                    className="w-full h-full object-cover"
+                  />
+                )}
                 <span className="absolute bottom-0.5 right-0.5 bg-black/80 px-1 rounded text-[9px] font-mono text-white">
                   #{pIdx + 1}
                 </span>

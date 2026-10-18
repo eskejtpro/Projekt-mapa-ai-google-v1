@@ -1,5 +1,11 @@
 # CHANGELOG.md - Historia Zmian Projektu „Prezent Mapy”
 
+## 1.7.0 — pokaz multimedialny zdjęć i filmów
+- Rozszerzono istniejący pokaz o wspólną listę zdjęć i filmów MP4/WebM.
+- Filmy odtwarzają się automatycznie, przechodzą dalej po zakończeniu i zachowują pauzę, seek, głośność, wyciszenie oraz fullscreen.
+- Pokaz z galerii i albumu może obejmować oba rodzaje mediów; zachowano pasek miniatur, kolejność, shuffle, pętlę i auto-ukrywanie kontrolek.
+- Testy UI Electron dla mieszanego pokazu pozostają wymagane przed scaleniem PR #7.
+
 ## 1.6.0 — integracja GPS filmów i pełna kopia biblioteki
 - GPS z MP4 `loci` i MOV QuickTime `©xyz`, odczyt lokalny z ograniczeniem ilości metadanych; pozostałe warianty GPS pozostają nieobsługiwane. Import MOV nadal nie jest deklarowany.
 - Markery filmów, filtrowanie i otwieranie odtwarzacza z mapy; testy offline z rzeczywistymi plikami i większą biblioteką.
