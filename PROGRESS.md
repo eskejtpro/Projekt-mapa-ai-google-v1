@@ -2,12 +2,13 @@
 
 ## SESSION HANDOFF — PR #9 performance fast track, 2026-10-18
 - Cel: zmniejszyć koszt renderowania galerii i mapy bez zmiany funkcji, danych ani wyglądu.
-- Branch: `feature/performance-optimization`, baza `origin/main` `566e081`; PR jeszcze nieutworzony.
+- Branch: `feature/performance-optimization`, baza `origin/main` `566e081`; commit `025e939`; PR #9: https://github.com/eskejtpro/Projekt-mapa-ai-google-v1/pull/9.
 - Wdrożono: memoizację filtrów/sortowania/grupowania galerii, `React.memo` dla `VideoThumbnail`, stabilne referencje callbacków MapView oraz szybszy wybór miniatury klastra.
 - Pomiar: start 3568→3580 ms (końcowy powtórzony AFTER 3415 ms), kontener mapy 433→408 ms w pierwszej parze (końcowy AFTER 436 ms), galeria 167→167 ms (końcowy AFTER 161 ms), SQLite 4,82→4,94 ms (końcowy AFTER 3,74 ms), RSS 94→91 MB; 1513 mediów E2E 1199→1170 ms. Rozrzut potwierdza brak podstaw do deklarowania stałej poprawy procentowej.
 - Testy zakończone: `npm ci`, `npm run typecheck`, build, benchmark SQLite, benchmark Electron, E2E galerii/mapy/backupu/restartu — PASS; benchmark kafelków w krótkim skrypcie ma `UNVERIFIED`, osobny E2E offline PASS.
 - Niezapisane: własne zmiany PR9 oraz nietknięty plik `moje instrukcje do projektu.txt`.
-- Następny krok: uruchomić `npm run verify`, testy restartu i wymagane kontrole Windows, potem commit/push i PR #9 bez scalania.
+- Następny krok: poczekać na zakończenie obu jobów Windows quality gate PR #9 i przejrzeć ich logi; nie scalać automatycznie.
+- GitHub Actions po utworzeniu PR: oba joby `Windows quality gate` są `pending`; nie traktować jako PASS przed zakończeniem.
 
 ## SESSION HANDOFF — PR #7 multimedia slideshow, 2026-10-18
 - Wersja robocza: 1.7.0, branch `feature/multimedia-slideshow`, baza `main` po scaleniu PR #6.
