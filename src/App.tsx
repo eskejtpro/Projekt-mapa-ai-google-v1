@@ -203,7 +203,7 @@ export default function App() {
   };
   const handleSetVideoLocation = async (video: MediaItem, location: import('./types/travel').GeoLocation | null) => {
     try { await window.electronAPI?.video.setLocation(video.id, location, 'user'); await loadVideos(); showToast(location ? 'Zapisano lokalizację filmu.' : 'Usunięto lokalizację filmu.', 'success'); }
-    catch (error) { showToast(error instanceof Error ? error.message : 'Nie udało się zapisać lokalizacji filmu.', 'warning'); }
+    catch (error) { showToast(error instanceof Error ? error.message : 'Nie udało się zapisać lokalizacji filmu.', 'warning'); throw error; }
   };
 
   // Statystyki

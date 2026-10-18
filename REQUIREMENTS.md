@@ -1,5 +1,15 @@
 # REQUIREMENTS.md - Wymagania Funkcjonalne i Niefunkcjonalne
 
+## Zatwierdzony zakres PR #6 — 1.6.0
+
+- REQ-VGM-01: film z poprawnym GPS ma rzeczywisty marker w istniejącym klastrze Leaflet, popup i otwarcie playera; test Electron również przy blokadzie HTTP(S).
+- REQ-VGM-02: poprawne tagi MP4 loci i QuickTime ©xyz są odczytywane lokalnie z walidacją zakresów; inne warianty nie są deklarowane jako obsługiwane. Ręczna edycja nie fabrykuje punktu dla pustych pól i zachowuje dane po restarcie.
+- REQ-VGM-03: pełna kopia folderowa obejmuje bazę, zdjęcia i filmy; SHA-256/rozmiary, konflikty, brak plików oraz niebezpieczne ścieżki są sprawdzane przed udanym przywróceniem. Istniejące dane i oryginalne pliki nie są nadpisywane.
+- REQ-VGM-04: testy rzeczywistego MP4 H.264/AAC i WebM VP8/Opus, VP9/Opus potwierdzają klatki, postęp, pauzę, seek, miniaturę i restart w produkcyjnym Electronie; odsłuch może pozostać jawnie UNVERIFIED z procedurą ręczną.
+- REQ-VGM-05: UI zachowuje ciemny motyw i bursztynowe akcenty; pola GPS mają widoczne etykiety, klawiaturę, błąd i stan zapisu. Szczegóły: DESIGN.md.
+
+Zakres, kryteria testów i ograniczenia formatów: docs/VIDEO_GPS_AND_BACKUP.md. Slideshow i TV należą do oddzielnych PR.
+
 Aktualne statusy i kryteria weryfikacji: docs/FEATURE_MATRIX.md. Poniższa kolumna Stan realizacji jest historyczną deklaracją AI Studio.
 
 - REQ-ENV (P0): środowisko umożliwia npm ci, verify, testy hooków, kontrolę Git i CI. Kryterium: świeże wyniki lokalne oraz rzeczywiste uruchomienie CI i hooków klienta.

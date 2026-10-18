@@ -12,6 +12,7 @@ declare global {
       systemInfo(): Promise<{ photosPath: string; autoStart: boolean; packaged: boolean; offlineMapAvailable: boolean }>;
       openPhotos(): Promise<boolean>;
       openBackups(): Promise<boolean>;
+      libraryBackup(operation: 'create' | 'restore'): Promise<{ directory: string; safety?: string } | null>;
       setAutoStart(enabled: boolean): Promise<boolean>;
       storage: {
         get(key: string): string | null;

@@ -5,7 +5,7 @@
 - Źródło wersji: `package.json`. Źródło prawdy o działających funkcjach: **kod + świeże testy + `docs/FEATURE_MATRIX.md`**, a nie historyczne wpisy „UKOŃCZONE”.
 - Stos: React 19, TypeScript, Vite, Tailwind CSS, Leaflet/markercluster, Electron, Node.js `node:sqlite`, lokalne pliki, electron-builder (NSIS/portable).
 - Electron/SQLite/MBTiles/pilot LAN są już częściowo wdrożone. Nie nadpisuj ich samym UI z AI Studio.
-- Docelowo lokalna biblioteka **zdjęć i filmów**. Wideo to **PLANOWANA NOWA FUNKCJA**, a nie istniejący moduł; nie oznaczaj jej DONE przed testami.
+- Lokalna biblioteka **zdjęć i filmów** obejmuje import MP4/WebM, galerię, albumy i mapę GPS. Zakres potwierdzony i ograniczenia: `docs/FEATURE_MATRIX.md` oraz `docs/VIDEO_GPS_AND_BACKUP.md`; mieszany pokaz i TV są kolejnymi etapami.
 - Priorytetem jest stabilny program Windows 10/11, pełne wymagane funkcje i przetestowany instalator. Android pozostaje poza bieżącym zakresem.
 
 ## Początek każdej sesji i zadania

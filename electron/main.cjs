@@ -11,10 +11,11 @@ const { discoverRenderers } = require('./tv-discovery.cjs');
 const { RemoteControl } = require('./remote-control.cjs');
 const { BackupManager } = require('./backup-manager.cjs');
 const { VideoLibrary } = require('./video-library.cjs');
+const { createLibraryBackup, restoreLibraryBackup } = require('./library-backup.cjs');
 const { existsSync, copyFileSync, renameSync, statSync } = require('node:fs');
 protocol.registerSchemesAsPrivileged([
   { scheme: 'prezent-tiles', privileges: { standard: true, secure: true, supportFetchAPI: true } },
-  { scheme: 'prezent-video', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
+  { scheme: 'prezent-video', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, corsEnabled: true } },
 ]);
 if (process.argv.includes('--smoke-test')) {
   const profileArgument = process.argv.find(argument => argument.startsWith('--smoke-profile='));
@@ -37,7 +38,7 @@ app.whenReady().then(async () => {
   if (!hasSingleInstanceLock) return;
   const offlineFile = path.join(app.getPath('userData'), 'offline.mbtiles');
   const offlineSmoke = process.argv.includes('--smoke-test') && process.argv.includes('--offline-smoke-test');
-  if (offlineSmoke) {
+  if (offlineSmoke && !existsSync(offlineFile)) {
     const { DatabaseSync } = require('node:sqlite');
     const fixture = new DatabaseSync(offlineFile);
     fixture.exec("CREATE TABLE metadata(name TEXT,value TEXT); INSERT INTO metadata VALUES('format','png'); CREATE TABLE tiles(zoom_level INTEGER,tile_column INTEGER,tile_row INTEGER,tile_data BLOB);");
@@ -61,6 +62,7 @@ app.whenReady().then(async () => {
   });
   const database = new LibraryDatabase(path.join(app.getPath('userData'), 'library.sqlite'));
   const videoLibrary = new VideoLibrary(path.join(app.getPath('userData'), 'library.sqlite'), path.join(app.getPath('userData'), 'videos'));
+  let backupBusy = false;
   const backupManager = new BackupManager(database, app.getPath('userData'), require('../package.json').version);
   const checkBackup = () => { try { backupManager.check(); } catch { if (!window?.isDestroyed()) window?.webContents.send('backup:error'); } };
   const backupTimer = setInterval(checkBackup, 6 * 60 * 60 * 1000);
@@ -116,44 +118,41 @@ app.whenReady().then(async () => {
   const assertRenderer = event => {
     if (event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url !== page) throw new Error('Niedozwolony nadawca IPC');
   };
-  protocol.handle('prezent-video', async request => {
-    try {
-      const url = new URL(request.url);
-      if (url.hostname !== 'local' || !/^\/[a-z0-9-]+$/.test(url.pathname)) return new Response(null, { status: 400 });
-      const file = videoLibrary.pathFor(url.pathname.slice(1));
-      const size = statSync(file).size;
-      const range = request.headers.get('range');
-      let start = 0;
-      let end = size - 1;
-      let status = 200;
-      if (range) {
-        const match = /^bytes=(\d*)-(\d*)$/.exec(range);
-        if (!match) return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${size}` } });
-        if (match[1]) start = Number(match[1]);
-        if (match[2]) end = Number(match[2]);
-        else if (match[1]) end = Math.min(start + 1024 * 1024 - 1, size - 1);
-        if (start >= size || start > end) return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${size}` } });
-        end = Math.min(end, size - 1);
-        status = 206;
-      }
-      const contentType = path.extname(file).toLowerCase() === '.webm' ? 'video/webm' : 'video/mp4';
-      const headers = { 'Accept-Ranges': 'bytes', 'Content-Length': String(end - start + 1), 'Content-Type': contentType };
-      if (status === 206) headers['Content-Range'] = `bytes ${start}-${end}/${size}`;
-      return new Response(Readable.toWeb(require('node:fs').createReadStream(file, { start, end })), { status, headers });
-    } catch { return new Response(null, { status: 404 }); }
-  });
+  protocol.handle('prezent-video', request => require('./video-response.cjs').videoResponse(videoLibrary, request));
   ipcMain.handle('video:import', async event => {
     assertRenderer(event);
-    const selected = process.env.PREZENT_E2E_VIDEO_FIXTURE
+    const e2eImport = process.argv.includes('--smoke-test') && process.argv.includes('--e2e-interactive');
+    const selected = e2eImport && process.env.PREZENT_E2E_VIDEO_FIXTURE
       ? { canceled: false, filePaths: [path.resolve(process.env.PREZENT_E2E_VIDEO_FIXTURE)] }
       : await dialog.showOpenDialog(window, { properties: ['openFile', 'multiSelections'], filters: [{ name: 'Filmy MP4/WebM', extensions: ['mp4', 'webm'] }] });
     if (selected.canceled) return [];
     const results = [];
     for (const file of selected.filePaths) {
-      const testLocation = process.env.PREZENT_E2E_VIDEO_LOCATION ? JSON.parse(process.env.PREZENT_E2E_VIDEO_LOCATION) : undefined;
+      const testLocation = e2eImport && process.env.PREZENT_E2E_VIDEO_LOCATION ? JSON.parse(process.env.PREZENT_E2E_VIDEO_LOCATION) : undefined;
       results.push(await videoLibrary.importVideo(file, testLocation ? { location: testLocation, locationSource: 'metadata' } : {}));
     }
     return results.map(result => ({ ...result, item: { ...result.item, playbackUrl: `prezent-video://local/${result.item.id}` } }));
+  });
+  ipcMain.handle('backup:library', async (event, operation) => {
+    assertRenderer(event);
+    if (!['create', 'restore'].includes(operation) || backupBusy) throw new Error('Kopia jest w toku lub operacja jest nieprawidłowa');
+    backupBusy = true;
+    try {
+      const selected = await dialog.showOpenDialog(window, { title: operation === 'create' ? 'Wybierz folder nadrzędny dla pełnej kopii' : 'Wybierz folder pełnej kopii z manifest.json', properties: ['openDirectory'] });
+      if (selected.canceled) return null;
+      const directory = selected.filePaths[0];
+      if (operation === 'create') {
+        const destination = path.join(directory, `Prezent-Mapy-${Date.now()}-${require('node:crypto').randomUUID()}`);
+        await createLibraryBackup(database, app.getPath('userData'), destination);
+        return { directory: destination };
+      }
+      const confirmation = await dialog.showMessageBox(window, { type: 'question', buttons: ['Anuluj', 'Przywróć'], defaultId: 0, cancelId: 0, message: 'Dodać dane z pełnej kopii?', detail: 'Istniejące dane zostaną zachowane. Konflikty lub uszkodzone pliki zatrzymają przywracanie. Najpierw powstanie kopia aktualnej biblioteki.' });
+      if (confirmation.response !== 1) return null;
+      const safety = path.join(app.getPath('userData'), 'backups', `before-restore-${Date.now()}-${require('node:crypto').randomUUID()}`);
+      await createLibraryBackup(database, app.getPath('userData'), safety);
+      await restoreLibraryBackup(database, videoLibrary, directory);
+      return { directory, safety };
+    } finally { backupBusy = false; }
   });
   ipcMain.handle('video:list', event => { assertRenderer(event); return videoLibrary.list().map(item => ({ ...item, playbackUrl: `prezent-video://local/${item.id}` })); });
   ipcMain.handle('video:set-album', (event, id, albumId) => { assertRenderer(event); if (typeof id !== 'string' || (albumId !== null && typeof albumId !== 'string')) throw new Error('Nieprawidłowe medium lub album'); videoLibrary.setAlbum(id, albumId); return true; });
@@ -209,7 +208,7 @@ app.whenReady().then(async () => {
   window.once('ready-to-show', () => window.show());
   await window.loadURL(page);
   if (!process.argv.includes('--smoke-test')) setTimeout(checkBackup, 2000).unref();
-  if (process.argv.includes('--smoke-test')) {
+  if (process.argv.includes('--smoke-test') && !process.argv.includes('--e2e-interactive')) {
     const reportsDirectory = path.join(process.cwd(), 'reports');
     mkdirSync(reportsDirectory, { recursive: true });
     writeFileSync(path.join(reportsDirectory, 'desktop-smoke.json'), JSON.stringify({ passed: false, status: 'RUNNING', date: new Date().toISOString() }));
@@ -307,14 +306,11 @@ app.whenReady().then(async () => {
         }
         await remoteControl.stop();
       }
-      const keepOpenForE2E = process.argv.includes('--e2e-interactive');
-      if (!keepOpenForE2E) {
         await new Promise(resolve => setTimeout(resolve, 1500));
         const screenshot = await window.webContents.capturePage();
         writeFileSync(path.join(reportsDirectory, 'desktop-smoke.png'), screenshot.toPNG());
         writeFileSync(path.join(reportsDirectory, 'desktop-smoke.json'), JSON.stringify({ ...state, passed: true, electron: process.versions.electron, packaged: app.isPackaged }, null, 2));
         app.exit(0);
-      }
     } catch (error) { writeFileSync(path.join(reportsDirectory, 'desktop-smoke.json'), JSON.stringify({ passed: false, error: error.message, date: new Date().toISOString() })); console.error(error); app.exit(1); }
   }
 }).catch(() => {

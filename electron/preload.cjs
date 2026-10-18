@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('electronAPI', Object.freeze({
   systemInfo: () => ipcRenderer.invoke('system:action', 'info'),
   openPhotos: () => ipcRenderer.invoke('system:action', 'open-photos'),
   openBackups: () => ipcRenderer.invoke('system:action', 'open-backups'),
+  libraryBackup: operation => ipcRenderer.invoke('backup:library', operation),
   setAutoStart: enabled => ipcRenderer.invoke('system:action', 'autostart', enabled),
   importOfflineMap: () => ipcRenderer.invoke('maps:import'),
   removeOfflineMap: () => ipcRenderer.invoke('system:action', 'remove-offline-map'),

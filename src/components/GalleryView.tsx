@@ -18,6 +18,7 @@ import {
   Upload
 } from 'lucide-react';
 import { VideoThumbnail } from './VideoThumbnail';
+import { VideoLocationEditor } from './VideoLocationEditor';
 
 interface GalleryViewProps {
   photos: TravelPhoto[];
@@ -74,7 +75,6 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   const [onlyFavorites, setOnlyFavorites] = useState<boolean>(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [mediaFilter, setMediaFilter] = useState<'all' | 'photos' | 'videos'>('all');
-  const [videoLocationDrafts, setVideoLocationDrafts] = useState<Record<string, { lat: string; lng: string }>>({});
   useEffect(() => { setSelectedIds(ids => ids.filter(id => photos.some(photo => photo.id === id))); }, [photos]);
   const [countryFilter, setCountryFilter] = useState<string>('ALL');
   const [yearFilter, setYearFilter] = useState<string>('ALL');
@@ -422,7 +422,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
       )}
 
       {/* SEKCJE ZDJĘĆ */}
-      {filteredPhotos.length === 0 ? (
+      {filteredPhotos.length === 0 && filteredVideos.length === 0 ? (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center space-y-3">
           <Compass className="w-12 h-12 text-slate-600 mx-auto" />
           <h3 className="text-base font-bold text-white">Brak zdjęć w tym katalogu</h3>
@@ -634,7 +634,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                 <span className="absolute right-2 top-2 rounded-lg bg-slate-950/80 px-2 py-1 text-[10px] text-white">{video.durationMs ? `${Math.round(video.durationMs / 1000)} s` : 'czas nieznany'}</span>
               </button>
               <div className="p-3 space-y-2"><h4 className="font-bold text-sm text-white truncate">{video.title}</h4><select value={video.albumId || ''} onChange={event => onAssignVideo?.(video, event.target.value || null)} className="w-full rounded-lg bg-slate-950 border border-slate-700 px-2 py-1.5 text-xs text-slate-200"><option value="">Bez albumu</option>{albums.map(album => <option key={album.id} value={album.id}>{album.name}</option>)}</select>
-                {onSetVideoLocation && <div className="grid grid-cols-2 gap-1"><input aria-label={`${video.title} szerokość`} type="number" min="-90" max="90" step="any" placeholder="lat" value={videoLocationDrafts[video.id]?.lat ?? (video.location?.lat ?? '')} onChange={event => setVideoLocationDrafts(current => ({ ...current, [video.id]: { lat: event.target.value, lng: current[video.id]?.lng ?? String(video.location?.lng ?? '') } }))} className="rounded bg-slate-950 border border-slate-700 px-2 py-1 text-xs" /><input aria-label={`${video.title} długość`} type="number" min="-180" max="180" step="any" placeholder="lng" value={videoLocationDrafts[video.id]?.lng ?? (video.location?.lng ?? '')} onChange={event => setVideoLocationDrafts(current => ({ ...current, [video.id]: { lat: current[video.id]?.lat ?? String(video.location?.lat ?? ''), lng: event.target.value } }))} className="rounded bg-slate-950 border border-slate-700 px-2 py-1 text-xs" /><button type="button" className="col-span-2 rounded bg-indigo-500/80 px-2 py-1 text-xs" onClick={() => { const draft = videoLocationDrafts[video.id] ?? { lat: String(video.location?.lat ?? ''), lng: String(video.location?.lng ?? '') }; if (draft.lat.trim() === '' || draft.lng.trim() === '') return; const lat = Number(draft.lat); const lng = Number(draft.lng); if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return; onSetVideoLocation(video, { lat, lng, cityName: '', countryName: '', countryCode: '' }); }}>Zapisz GPS</button>{video.location && <button type="button" className="col-span-2 rounded border border-slate-700 px-2 py-1 text-xs" onClick={() => onSetVideoLocation(video, null)}>Usuń GPS</button>}</div>}
+                {onSetVideoLocation && <VideoLocationEditor video={video} onSave={onSetVideoLocation} />}
               </div>
             </article>)}
           </div>

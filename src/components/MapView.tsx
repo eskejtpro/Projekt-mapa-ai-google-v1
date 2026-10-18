@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet.markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
@@ -436,7 +436,7 @@ export const MapView: React.FC<MapViewProps> = ({
   }, [tileProvider, showMapLabels]);
 
   // Filtrowanie zdjęć
-  const visiblePhotos = photos.filter(photo => {
+  const visiblePhotos = useMemo(() => photos.filter(photo => {
     if (selectedTripId) {
       if (selectedTripId === 'trip-italy-2024' && photo.location.countryCode !== 'IT') return false;
       if (selectedTripId === 'trip-greece-2023' && photo.location.countryCode !== 'GR') return false;
@@ -448,13 +448,13 @@ export const MapView: React.FC<MapViewProps> = ({
       return false;
     }
     return mediaFilter !== 'videos';
-  });
-  const visibleVideos = videos.filter(video => {
+  }), [photos, selectedTripId, activeCountryFilter, mediaFilter]);
+  const visibleVideos = useMemo(() => videos.filter(video => {
     if (mediaFilter === 'photos' || !video.location) return false;
     const videoTripId = video.tripId ?? albums.find(album => album.id === video.albumId)?.tripId;
     if (selectedTripId && videoTripId !== selectedTripId) return false;
     return activeCountryFilter === 'ALL' || video.location.countryCode === activeCountryFilter;
-  });
+  }), [videos, albums, selectedTripId, activeCountryFilter, mediaFilter]);
 
   // Renderowanie klastrów markerów z leaflet.markercluster oraz tras podróży
   useEffect(() => {
@@ -606,10 +606,10 @@ export const MapView: React.FC<MapViewProps> = ({
       });
     }
 
-    if (bounds.isValid() && visiblePhotos.length + visibleVideos.length > 0 && selectedTripId) {
+    if (autoCenterOnPhotos && bounds.isValid() && visiblePhotos.length + visibleVideos.length > 0 && selectedTripId) {
       mapInstanceRef.current.fitBounds(bounds, { padding: [60, 60], maxZoom: 9 });
     }
-  }, [visiblePhotos, visibleVideos, selectedTripId, showAnimatedRoutes, trips, albums, onSelectVideo]);
+  }, [visiblePhotos, visibleVideos, selectedTripId, showAnimatedRoutes, trips, albums, onSelectVideo, autoCenterOnPhotos]);
 
   // Wyszukiwanie z animowanym flyTo
   const handleMapSearch = (e: React.FormEvent) => {
@@ -731,14 +731,15 @@ export const MapView: React.FC<MapViewProps> = ({
       )}
 
       {/* Pływający pasek wyszukiwania oraz przycisk dodawania w lewym górnym rogu */}
-      <div className="absolute top-3 left-3 z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-md w-full pr-14 sm:pr-0">
-        <form onSubmit={handleMapSearch} className="relative flex-1">
+      <div className="absolute top-3 left-3 right-16 z-10 flex flex-wrap items-center gap-2 max-w-3xl">
+        <form onSubmit={handleMapSearch} className="relative min-w-56 flex-1">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
+            aria-label="Szukaj w widocznych mediach mapy"
             value={mapSearchQuery}
             onChange={e => setMapSearchQuery(e.target.value)}
-            placeholder="Szukaj na mapie: Rzym, Santorini, Tatry..."
+            placeholder="Szukaj miejsca lub tytułu…"
             className="w-full bg-[#0c101c]/90 backdrop-blur-md border border-slate-700/80 rounded-2xl pl-10 pr-4 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-2xl"
           />
         </form>

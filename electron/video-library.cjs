@@ -2,8 +2,7 @@ const { createHash, randomUUID } = require('node:crypto');
 const { createReadStream, existsSync, mkdirSync, copyFileSync, renameSync, unlinkSync, realpathSync, statSync } = require('node:fs');
 const path = require('node:path');
 const { DatabaseSync } = require('node:sqlite');
-let exifr;
-try { exifr = require('exifr'); } catch { exifr = null; }
+const { readVideoGps } = require('./video-gps.cjs');
 
 const VIDEO_TYPES = new Map([
   ['.mp4', { mimeType: 'video/mp4', container: 'mp4' }],
@@ -52,11 +51,9 @@ function validLocation(location) {
 }
 
 async function extractVideoMetadata(file) {
-  // exifr obsługuje metadane obrazów, ale nie jest parserem kontenerów
-  // MP4/WebM. Nie otwieramy więc pliku wideo przez exifr: zapobiega to
-  // wyciekom FileHandle i nie udaje obsługi GPS, której nie potwierdzono.
-  void file;
-  return {};
+  if (!['.mp4', '.mov'].includes(path.extname(file).toLowerCase())) return {};
+  try { const location = await readVideoGps(file); return location ? { location } : {}; }
+  catch { return {}; }
 }
 
 class VideoLibrary {
@@ -114,6 +111,7 @@ class VideoLibrary {
   setLocation(id, location, source = 'user') {
     if (location !== null) {
       if (!location || !Number.isFinite(location.lat) || !Number.isFinite(location.lng) || location.lat < -90 || location.lat > 90 || location.lng < -180 || location.lng > 180) throw new Error('Nieprawidłowe współrzędne GPS');
+      if (!['cityName', 'countryName', 'countryCode'].every(key => typeof location[key] === 'string' && location[key].length <= 200) || !['user', 'place'].includes(source)) throw new Error('Nieprawidłowe dane lokalizacji GPS');
     }
     const result = this.db.prepare('UPDATE media_items SET location_json = ?, location_source = ? WHERE id = ?').run(location ? JSON.stringify(location) : null, location ? source : 'unknown', id);
     if (!result.changes) throw new Error('Nieznane medium');

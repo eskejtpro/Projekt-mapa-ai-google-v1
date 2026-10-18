@@ -1,7 +1,7 @@
 # Znane problemy
 
 - P1: pozostałe operacje wielokolekcyjne wymagają przeglądu atomowości. Reset demo, usuwanie demo, czyszczenie map, import zdjęć+albumu i .prezent zapisują już stan kontrolowanie; pojedyncze edycje/usuwanie uwzględniają błąd zapisu.
-- P0: backup/restore nie obejmuje jeszcze katalogu `videos` ani tabeli `media_items`; filmy pozostają lokalne i nie są deklarowane jako obsługiwane przez `.prezent`.
+- P1: starszy `.prezent` i automatyczny harmonogram nie obejmują filmów. Dla SQLite/zdjęć/filmów dodano osobną pełną kopię folderową z przywracaniem i SHA-256; zakres: docs/VIDEO_GPS_AND_BACKUP.md. Obsługa utraty zasilania w trakcie przywracania wymaga dalszego testu awaryjnego.
 - P1: stan odzyskiwania po błędzie odczytu jest wdrożony i testowany na uszkodzonym rekordzie. Pozostaje pełna procedura odtwarzania po uszkodzeniu fizycznego SQLite lub braku wielu plików zdjęć.
 - P1: Windows zapisuje SQLite i pliki zdjęć, lecz obrazy są nadal odtwarzane jako base64 w pamięci UI. Podgląd Vite nadal ma limit localStorage.
 - P1: brak pełnych testów importu JPEG z GPS/bez GPS/uszkodzonych obrazów, schowka i przeciągania folderów. FileReader ma już obsługę błędu i anulowania.
