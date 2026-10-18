@@ -1,38 +1,48 @@
-# AGENTS.md - Instrukcja Architekta i Zespołu Inżynierskiego „Prezent Mapy”
+# AGENTS.md — Prezent Mapy (Codex, Windows 10/11)
 
-## Start i ciągłość (Codex, 2026-10-17)
-- Odczytaj `PROGRESS.md` / `SESSION HANDOFF`, `TASKS.md`, `docs/FEATURE_MATRIX.md` oraz stan Git przed edycją.
-- Użyj `.agents/skills/project-continuity/SKILL.md`; pozostałe procedury: feature-development, test-automation, windows-electron, photo-library, maps-offline.
-- Aktualny rejestr dowodów ma pierwszeństwo przed historycznymi deklaracjami AI Studio o ukończeniu.
-- Główne polecenie kontroli: `npm run verify`. `lint` obecnie oznacza kontrolę typów, nie ESLint.
-- Przed commitem: `.githooks/pre-commit`; przed pushem: `.githooks/pre-push`. Aktywuj przez `npm run hooks:install`.
-- Zachowuj ciemny interfejs, akcenty bursztynowe, dock i mapę. Przed zmianą wyglądu wykonaj zrzut rzeczywistej aplikacji, jeśli narzędzie jest dostępne.
-- W razie istotnej utraty kontekstu zapisz handoff, wyniki kontroli i stan Git, a następnie zaproponuj kolejny czat; nie twórz go bez zlecenia użytkownika.
-- Hooki projektowe wymagają przeglądu zaufania klienta. Sam test skryptu nie potwierdza automatycznego uruchamiania.
+## Cel i bieżący stan
+- Rozwijaj ISTNIEJĄCĄ aplikację desktopową „Prezent Mapy”; nie twórz nowego projektu ani nie przywracaj starszego prototypu AI Studio.
+- Źródło wersji: `package.json`. Źródło prawdy o działających funkcjach: **kod + świeże testy + `docs/FEATURE_MATRIX.md`**, a nie historyczne wpisy „UKOŃCZONE”.
+- Stos: React 19, TypeScript, Vite, Tailwind CSS, Leaflet/markercluster, Electron, Node.js `node:sqlite`, lokalne pliki, electron-builder (NSIS/portable).
+- Electron/SQLite/MBTiles/pilot LAN są już częściowo wdrożone. Nie nadpisuj ich samym UI z AI Studio.
+- Docelowo lokalna biblioteka **zdjęć i filmów**. Wideo to **PLANOWANA NOWA FUNKCJA**, a nie istniejący moduł; nie oznaczaj jej DONE przed testami.
+- Priorytetem jest stabilny program Windows 10/11, pełne wymagane funkcje i przetestowany instalator. Android pozostaje poza bieżącym zakresem.
 
-## Rola i Odpowiedzialność
-Rola agenta: **Starszy Architekt Oprogramowania i Inżynier Desktop/Web (Senior Software Architect & Staff Engineer)**.
-Projekt: **Prezent Mapy** – lokalna aplikacja dla systemu **Windows 10/11** do prezentowania rodzinnych fotografii, wspomnień i podróży na interaktywnej mapie świata.
+## Początek każdej sesji i zadania
+1. Sprawdź `git status --short --branch`, `git log -1 --oneline`, gałąź i aktualne wymagania. Nie zakładaj czystego drzewa.
+2. Odczytaj `PROGRESS.md` (SESSION HANDOFF), `TASKS.md`, `docs/FEATURE_MATRIX.md`, `docs/KNOWN_ISSUES.md`; w razie potrzeby `REQUIREMENTS.md`, `ARCHITECTURE.md`, `TESTING.md`.
+3. Wybierz najmniejsze niezablokowane zadanie ze zdefiniowanymi kryteriami akceptacji, zależnościami i testami.
+4. Włącz odpowiedni skill z `.agents/skills/` (w szczególności project-continuity, feature-development, test-automation, windows-electron, photo-library, video-library, maps-offline).
+5. Nie kopiuj pełnych dokumentów do kontekstu bez potrzeby; odczytuj tylko sekcje właściwe dla zadania.
 
-### Kluczowe obowiązki:
-1. **Zachowanie stabilności i ciągłości**:
-   - Nigdy nie niszcz istniejących, działających komponentów UI/UX.
-   - Zawsze utrzymuj działający, interaktywny podgląd aplikacji w Vite / Google AI Studio.
-2. **Architektura Offline-First & Prywatność**:
-   - Program działa w 100% lokalnie na komputerze użytkownika.
-   - Żadne zdjęcia, notatki ani współrzędne nie są przesyłane do zewnętrznych chmur.
-   - Trwałość danych w podglądzie: `localStorage` z zabezpieczeniem limitu pamięci i kopią `.prezent`. W docelowym Electronie: lokalna baza SQLite oraz pliki na dysku.
-3. **Stos technologiczny**:
-   - **Aktualne środowisko (Podgląd / UI)**: React 19, TypeScript, Vite, Tailwind CSS, Leaflet + OpenStreetMap/CartoDB/Esri, exifr (odczyt EXIF GPS), Web Audio API (dźwięki ambient).
-   - **Środowisko docelowe Windows**: Electron, Node.js (`fs`, `path`, `dialog`), SQLite / better-sqlite3, instalator Windows (`electron-builder` NSIS).
-   - **Brak platform mobilnych w obecnym etapie**: Synchronizacja z Androidem jest funkcją przyszłych wersji po stabilizacji Windows.
-4. **Weryfikacja jakości**:
-   - Zakaz deklarowania zakończenia zadania bez weryfikacji (`npm run build`, `npm run lint`, `npm test`).
-   - Jawne rozróżnianie funkcji rzeczywistych (działających w kodzie), częściowych oraz demonstracyjnych (symulowanych w przeglądarce).
+## Stałe zasady produktu
+- Zachowuj zatwierdzony wygląd (ciemny motyw, bursztynowe akcenty, lewy dock, mapa, galeria, albumy, pokaz slajdów). Każdą istotną zmianę UI uzasadnij i sprawdź na żywym ekranie, jeśli runtime jest dostępny.
+- Renderer React nie otrzymuje nieograniczonego Node.js. Dostęp do SQLite, mediów, okien Windows, LAN i systemu plików tylko przez minimalne, walidowane API preload/IPC.
+- W Electron utrzymuj `contextIsolation: true`, `sandbox: true`, `nodeIntegration: false`, CSP i walidację nadawcy/argumentów IPC. Nie używaj surowego HTML z niezaufanymi danymi.
+- Nie usuwaj, przenoś ani nie modyfikuj oryginalnych mediów bez jawnego potwierdzenia użytkownika. Operacje destrukcyjne: backup, potwierdzenie, rollback i test.
+- Nie wysyłaj prywatnych zdjęć, filmów, opisów i baz do chmur, logów ani repo. Kafelki online i LAN wymagają oddzielnej oceny prywatności; nie obiecuj „zera transmisji” podczas ich używania.
+- Działający podgląd Vite zachowaj tam, gdzie to rozsądne; **Windows Electron jest produktem docelowym**. Nie usuwaj kodu desktopowego dlatego, że nie działa w przeglądarce.
 
-## Procedura Wprowadzania Zmian
-1. **Analiza stanu zastanego**: Weryfikacja kodu w `src/`, zależności w `package.json` oraz dokumentacji.
-2. **Plan architektoniczny**: Projektowanie zmian z zachowaniem separacji warstwy UI od systemu plików.
-3. **Implementacja**: Zachowanie ścisłego typowania TypeScript, bezpiecznego tworzenia DOM (zakaz wstrzykiwania surowego `innerHTML`) i obsługi błędów.
-4. **Weryfikacja**: Uruchomienie `npm run build`, `npx tsc --noEmit` oraz testów jednostkowych `npm test`.
-5. **Aktualizacja dokumentacji**: Rzetelne wpisy w `PROGRESS.md`, `TASKS.md`, `CHANGELOG.md` i `HANDOFF_CODEX.md`.
+## Wspólna biblioteka zdjęć i filmów — reguły rozwoju
+- Projektuj kompatybilny model typowanych mediów (rodzaj, metadane, lokalizacja, album, podróż, miniatura), zachowując migrację wcześniejszych zdjęć i kompatybilność `.prezent`.
+- Filmy mogą być dodawane do albumów, podróży, mapy i mieszanego pokazu; **najpierw ustal obsługiwane formaty/kodeki w użytej wersji Electron**.
+- Duże pliki przechowuj na dysku i odtwarzaj strumieniowo; nie zapisuj filmów jako Base64, nie ładuj ich całych do React ani do JSON w SQLite. Miniatury i metadane obsługuj oddzielnie.
+- Nie przypisuj fikcyjnych GPS/EXIF ani nie deklaruj obsługi AVI/MKV/MOV bez testu kodeka. Nie wprowadzaj automatycznej konwersji bez uzasadnienia, kontroli zasobów i bezpieczeństwa.
+- Zmiany schematu mediów i backupu wymagają kopii, migracji, testów starego formatu, rollback i testów po restarcie programu.
+
+## Przepływ: zadanie → testy → zatwierdzenie
+1. Zanotuj ID wymagania, kryteria i plan minimalnej zmiany. W przypadku błędu odtwórz regresję.
+2. Dodaj test(y) dla obserwowalnego zachowania **razem z implementacją**; dobierz Vitest, Node test, integrację SQLite/IPC, Electron smoke, E2E lub test na rzeczywistym Windows.
+3. Uruchom szybkie kontrole powiązane ze zmianą; przed zakończeniem zadania kodowego wykonaj `npm run verify`. Gdy zmiana dotyczy uruchamiania/persistencji: również odpowiedni smoke i `npm run test:desktop-restart`.
+4. Przed wydaniem testuj `npm run package:windows:isolated` i `npm run release:check` oraz realną instalację/portable. Obecna bramka release może celowo zgłaszać BLOCKED — **nie obchodź jej przez fałszowanie PASS**.
+5. Status DONE przyznaj tylko po spełnieniu wszystkich kryteriów; brak dostępu do urządzenia lub testu oznacz UNVERIFIED/BLOCKED, nie sukces.
+6. Zaktualizuj `TASKS.md`, `PROGRESS.md`, `docs/FEATURE_MATRIX.md`, `TESTING.md`, a dla zmian użytkowych lub architektury również `CHANGELOG.md`/`DECISIONS.md`.
+7. Raportuj: co faktycznie zmieniono, które testy PASS/FAIL/NOT RUN, commit/wersję, ryzyka i **jeden następny krok**.
+
+## Bezpieczna współpraca i publikacja
+- Zanim zmodyfikujesz bazę, schemat lub historię Git: kopia zapasowa i `git status`; zachowuj lokalne niezacommitowane pliki użytkownika.
+- Używaj gałęzi roboczej i PR dla zmian ryzykownych; nie używaj force-push ani nie nadpisuj `main` bez przeglądu/testów.
+- Bez samowolnego instalowania nieznanych skilli, MCP, pluginów i globalnej zmiany `~/.codex/config.toml`. Repozytoryjne `.codex/config.toml` dotyczy tylko tego projektu.
+- Skrypty/hooki Git wymagają weryfikacji. Skrypty w `.codex/hooks.json` nie są dowodem, że zdarzenia klienta uruchamiają się automatycznie — sprawdź je w bieżącej wersji Codexa.
+- Nie wstawiaj tokenów, prywatnych zdjęć, filmów, baz, `release-current/` ani `node_modules/` do commita.
+- W przypadku ograniczenia czasu/kontekstu zapisz konkretny handoff, nie twierdź, że praca będzie kontynuowana w tle.
