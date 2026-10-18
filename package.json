@@ -12,6 +12,7 @@
   "scripts": {
     "desktop": "npm run build && electron .",
     "test:desktop-restart": "npm run build && node scripts/desktop-restart-test.mjs",
+    "test:e2e:electron": "npm run build && node --test --test-timeout=60000 tests/electron-gallery.e2e.mjs",
     "benchmark:library": "node scripts/benchmark-library.cjs",
     "package:windows": "npm run build && electron-builder --win nsis portable --x64 --publish never",
     "package:windows:isolated": "npm run build && electron-builder --win nsis portable --x64 --publish never -c.directories.output=release-current",
@@ -83,9 +84,11 @@
     "vite": "^8.3.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@types/express": "^4.17.21",
     "@types/leaflet.markercluster": "^1.5.6",
     "@types/node": "^22.14.0",
+    "@playwright/test": "^1.64.1",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

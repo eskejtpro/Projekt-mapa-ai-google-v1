@@ -16,6 +16,12 @@
 - `npm run test:tooling`: **PASS**, 14/14.
 - `npm run verify`: **PASS**; raport: `reports/verification.json`.
 
+## Galeria wideo — test Electron/Playwright
+
+- `npm run test:e2e:electron`: **PASS** — izolowany profil Windows, import syntetycznego kontenera WebM przez UI, filtr filmów, karta placeholdera, otwarcie/zamknięcie playera, przypisanie do albumu i trwałość po restarcie.
+- Test E2E nie potwierdza dekodowania H.264/VP8/VP9 ani dźwięku; rzeczywiste pliki/kodeki i odsłuch: **UNVERIFIED**.
+- Backup filmów: **NOT SUPPORTED** — obecny `.prezent`/`BackupManager` obejmuje zdjęcia, albumy, trasy i ustawienia, ale nie katalog `videos` ani rekordy `media_items`.
+
 
 ## Codex — świeża weryfikacja 2026-10-17
 Baseline źródeł: 1be0136 + zmiany gałęzi work/windows-desktop-foundation. System wykonania: Windows 10 Pro 10.0.19045 x64, Node 26.8.1, npm 11.19.0; CI skonfigurowane na Node 24/windows-latest (wynik zdalny osobno).

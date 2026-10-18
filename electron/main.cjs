@@ -144,7 +144,9 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle('video:import', async event => {
     assertRenderer(event);
-    const selected = await dialog.showOpenDialog(window, { properties: ['openFile', 'multiSelections'], filters: [{ name: 'Filmy MP4/WebM', extensions: ['mp4', 'webm'] }] });
+    const selected = process.env.PREZENT_E2E_VIDEO_FIXTURE
+      ? { canceled: false, filePaths: [path.resolve(process.env.PREZENT_E2E_VIDEO_FIXTURE)] }
+      : await dialog.showOpenDialog(window, { properties: ['openFile', 'multiSelections'], filters: [{ name: 'Filmy MP4/WebM', extensions: ['mp4', 'webm'] }] });
     if (selected.canceled) return [];
     const results = [];
     for (const file of selected.filePaths) results.push(await videoLibrary.importVideo(file));

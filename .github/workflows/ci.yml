@@ -22,6 +22,8 @@ jobs:
         run: npm ci
       - name: Verify code, automation and tests
         run: npm run verify
+      - name: Electron gallery E2E
+        run: npm run test:e2e:electron
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
       - name: Upload verification evidence
