@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet.markercluster';
+import { photosForTrip } from '../services/trip-media';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { TravelPhoto, TravelTrip, TravelAlbum, MapTileProvider } from '../types/travel';
@@ -438,22 +439,15 @@ export const MapView: React.FC<MapViewProps> = ({
     setTimeout(() => {
       mapInstanceRef.current?.invalidateSize({ animate: false });
     }, 50);
-  }, [tileProvider, showMapLabels]);
+  }, [tileProvider, showMapLabels, offlineMode]);
 
   // Filtrowanie zdjęć
-  const visiblePhotos = useMemo(() => photos.filter(photo => {
-    if (selectedTripId) {
-      if (selectedTripId === 'trip-italy-2024' && photo.location.countryCode !== 'IT') return false;
-      if (selectedTripId === 'trip-greece-2023' && photo.location.countryCode !== 'GR') return false;
-      if (selectedTripId === 'trip-poland-tatry' && photo.location.countryCode !== 'PL') return false;
-      if (selectedTripId === 'trip-japan-spring' && photo.location.countryCode !== 'JP') return false;
-      if (selectedTripId === 'trip-norway-fjords' && photo.location.countryCode !== 'NO') return false;
-    }
+  const visiblePhotos = useMemo(() => photosForTrip(photos, albums, selectedTripId).filter(photo => {
     if (activeCountryFilter !== 'ALL' && photo.location.countryCode !== activeCountryFilter) {
       return false;
     }
     return mediaFilter !== 'videos';
-  }), [photos, selectedTripId, activeCountryFilter, mediaFilter]);
+  }), [photos, albums, selectedTripId, activeCountryFilter, mediaFilter]);
   const visibleVideos = useMemo(() => videos.filter(video => {
     if (mediaFilter === 'photos' || !video.location) return false;
     const videoTripId = video.tripId ?? albums.find(album => album.id === video.albumId)?.tripId;

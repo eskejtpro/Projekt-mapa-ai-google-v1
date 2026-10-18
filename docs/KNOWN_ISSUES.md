@@ -1,5 +1,7 @@
 # Znane problemy
 
+Aktualny audyt PR #10 (1.8.1): `FINAL_QUALITY_AUDIT.md`. Początkowa mapa offline, eager/lazy, XML DIDL i zależność timera pokazu zostały naprawione z regresjami. Test fizycznego TV/odsłuch, wszystkie preferencje pokazu, pauza zegara zdjęć w pokazie DLNA, instalacja/aktualizacja 1.8.1 i Windows 11 pozostają otwarte; bramka wydania jest BLOCKED.
+
 - P1: pozostałe operacje wielokolekcyjne wymagają przeglądu atomowości. Reset demo, usuwanie demo, czyszczenie map, import zdjęć+albumu i .prezent zapisują już stan kontrolowanie; pojedyncze edycje/usuwanie uwzględniają błąd zapisu.
 - P1: starszy `.prezent` i automatyczny harmonogram nie obejmują filmów. Dla SQLite/zdjęć/filmów dodano osobną pełną kopię folderową z przywracaniem i SHA-256; zakres: docs/VIDEO_GPS_AND_BACKUP.md. Obsługa utraty zasilania w trakcie przywracania wymaga dalszego testu awaryjnego.
 - P1: stan odzyskiwania po błędzie odczytu jest wdrożony i testowany na uszkodzonym rekordzie. Pozostaje pełna procedura odtwarzania po uszkodzeniu fizycznego SQLite lub braku wielu plików zdjęć.
@@ -12,3 +14,6 @@
 - P2: wymagane dalsze pomiary rzeczywistych zdjęć, wydajności galerii/mapy i szczytowej pamięci. Pomiar syntetycznych metadanych nie dowodzi 60 FPS ani kosztu pełnowymiarowych obrazów.
 
 Aktualne dowody: TESTING.md i reports/. Stan funkcji: docs/FEATURE_MATRIX.md. Historia wcześniejszych usterek pozostaje w Git.
+# Aktualne blokery wydania 2.0 — audyt PR #10
+
+Kanoniczna lista: [SYSTEM_AUDIT_2026-10-18.md](SYSTEM_AUDIT_2026-10-18.md). Niepełne powiązanie ustawień i trwałość opcji pokazu, negocjacja formatów/pauza zdjęć DLNA oraz brak testów instalacji/upgrade/Windows 11 blokują pełną deklarację gotowości. Fizyczny TV i odsłuch pozostają UNVERIFIED. Starsze wpisy należy interpretować według aktualnej macierzy.

@@ -1,5 +1,35 @@
 # TESTING.md - Procedury Testowe i Raport Weryfikacji
 
+## Rozszerzony audyt systemowy PR #10 — 2026-10-18
+
+- `npm run verify`: PASS — 24 Vitest, 14 tooling, 23 integracyjne oraz 6 osobno izolowanych scenariuszy backupu; typecheck, kontrola struktury/automatyzacji i build PASS.
+- `npm run test:e2e:system`: PASS, 13,4 s; rzeczywisty Electron, JPEG/EXIF/folder, uszkodzony obraz, nieprawidłowy GPS, album, edytor, wyszukiwanie, błąd zapisu IPC, 9 ekranów, 12 kategorii ustawień, fullscreen, restart i pusty album. Raport `reports/system-audit.json` i zrzuty `reports/system-audit/`.
+- `npm run package:windows:isolated`: PASS; NSIS i portable 1.8.1 w `release-current/`. Brak dowodu instalacji/upgrade/deinstalacji tej wersji; nie instalowano na bibliotece użytkownika.
+- `npm audit --omit=dev --audit-level=high`: PASS, 0 podatności w zakresie zależności produkcyjnych.
+- Pełne `npm audit --audit-level=high`: exit 0, lecz WARN: 8 umiarkowanych zależności w łańcuchu narzędzi electron-builder/sprintf-js (jedna pierwotna advisory). Nie wykonano niebezpiecznego `audit fix --force`; szczegóły i granice w raporcie systemowym.
+- `npm run test:e2e:electron`: PASS — mapa 1513 mediów (1295 ms), popup, player, albumy i backup/restore. Pierwszy przebieg FAIL na oczekiwaniu 5 s na początkowy kafelek; powtórzenie PASS. Dodano diagnostykę stanu mapy i zrzut przy błędzie, bez zwiększania timeoutu; przyczyna pojedynczego przekroczenia niepotwierdzona.
+- `npm run test:video-playback-real`: PASS — H.264/AAC, VP8/Opus, VP9/Opus, klatki/postęp/pauza/seek, miniatury i zakończenie filmu w pokazie; ciężki przebieg tylko raz (1513 mediów, 1238 ms), backup/restore i restart PASS. Odsłuch UNVERIFIED.
+- `npm run test:video-gps-real`: PASS — MP4/loci i MOV/QuickTime, ffprobe, import MP4 i ponowne otwarcie SQLite. Nie oznacza obsługi importu wszystkich MOV.
+- `npm run test:packaged`: PASS — dwa uruchomienia spakowanego Electron, zapis/odczyt po restarcie, CSP, odmowa obcego IPC/okna; `reports/windows-audit.json` zawiera SHA-256 NSIS/portable. Nie jest to test instalacji ani uruchomienia samego samorozpakowującego portable.
+- `npm run test:desktop-restart`: PASS — dane zdjęcia i opis zachowane między dwoma procesami Electron.
+- `npm run release:check`: BLOCKED (exit 1, ready=false), zgodnie z niezakończonym DoD. Skrypt historycznie raportuje `release/`; bieżące artefakty izolowanego pakowania są w `release-current/` i `reports/windows-audit.json`.
+- Test handlera hooka nie dowodzi automatycznego wywołania przez klienta Codex. Wyniki nowego Windows CI raportować dopiero dla wypchniętego HEAD.
+- Windows Quality implementacji `cad73f4328e42cdd553e448262375356b0e8560d`: push run 39127184610 i PR run 39127186995 PASS — obejmują npm ci, verify, oba E2E, rzeczywiste kodeki/GPS i restart. Kolejny commit dokumentacyjny ma oddzielne kontrole. Actions zgłasza ostrzeżenie migracji runtime Node 20→24 dla akcji v4; nie jest to FAIL testu aplikacji.
+- Końcowe artefakty 1.8.1 po ponownym pakowaniu: Setup SHA-256 `1125657ecc1209637c9e251349f6a194466803259926ab36e01ce270a941c813`; Portable SHA-256 `b14ed0f2351e6ee9129688c2d184da5c4961a975f8a520d91f10c7ae8ccd82c6`. Spakowany runtime ponownie PASS; oryginalne dane użytkownika nie były profilem testowym.
+- Vite ostrzega o głównym chunku 793 kB. Fizyczny TV, odsłuch, Windows 11, 4K i odporność na awarię zasilania UNVERIFIED. Bramka wydania pozostaje BLOCKED.
+
+## PR #10 — 1.8.1, audyt DoD (2026-10-18)
+
+- Integracja: PR #8/#9 scalone po dwóch PASS Windows quality gate każdego aktualnego HEAD; main `f55c972e6c98b2bf5dc14850b809b135239e971d`.
+- Regresja początkowej mapy offline: najpierw FAIL timeout 5000 ms, po uwzględnieniu `offlineMode` PASS w prawdziwym Electron. Benchmark potwierdził `tilesLoaded=true`, oczekiwanie kafelka 32 ms; to odrębny pomiar od czasu kontenera Leaflet.
+- DIDL z tytułem `A & <B>`: FAIL przed poprawką, PASS po zakodowaniu obu warstw XML. Testy DLNA/SSRF/root/IP/brak pliku/Range/Stop/rozłączenie są automatyczne na symulatorze, nie na fizycznym TV.
+- E2E Electron: PASS — start MBTiles bez nawigacji, import/player/filtry/album, ustawienie eager po reload i restarcie, pokaz mieszany, backup/restore, 1513 mediów i zoom (1256 ms w tym przebiegu).
+- Rozszerzono real-codec E2E o film spowolniony ponad sześć sekund, aby wykrywał stary timer zdjęcia. Scenariusz wymaga plików FFmpeg z Windows CI; lokalny syntetyczny kontener nie potwierdza dekodowania.
+- `npm run verify`: PASS (Vitest 22/22, tooling 14/14, backend 19/19 + sześć izolowanych scenariuszy backupu, build). Ostateczny HEAD dodatkowo sprawdzany przez pre-push i CI.
+- `npm run test:desktop-restart`: PASS, wynik w `reports/desktop-restart.json`; test izolowany dwóch procesów.
+- `npm run release:check`: BLOCKED, exit 1/ready=false; nie zmieniono bramki. Instalacja/aktualizacja/deinstalacja kandydata 1.8.1, Windows 11, sprzęt TV i odsłuch: NOT RUN/UNVERIFIED.
+- Pełna macierz DoD i zadania #11: `docs/FINAL_QUALITY_AUDIT.md`; wynik bieżącego CI jest dostępny w checks PR #10, nie należy zastępować go starym raportem.
+
 ## PR #8 — native DLNA casting
 
 - Test `tests/tv-casting.test.cjs`: symulator urządzenia, opis XML, SOAP, ograniczony plik, MIME, HTTP Range, odrzucenie ścieżki i zamknięcie serwera.

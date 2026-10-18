@@ -1,5 +1,11 @@
 # CHANGELOG.md - Historia Zmian Projektu „Prezent Mapy”
 
+## 1.8.1 — audyt jakości (PR #10, kandydat)
+- Naprawiono zastosowanie ustawienia offline przy pierwszym starcie mapy i eager/lazy w galerii.
+- Poprawiono kodowanie metadanych DIDL w SOAP DLNA i dodano negatywne testy dostępu do mediów/SSRF.
+- Timer zdjęcia jest zwalniany przy zmianie medium w pokazie; regresja CI sprawdza film dłuższy od interwału zdjęcia.
+- Wynik audytu i otwarte kryteria Windows: `docs/FINAL_QUALITY_AUDIT.md`; wydanie produkcyjne nadal BLOCKED.
+
 ## Unreleased — PR #9 performance fast track
 - Dodano powtarzalny benchmark Electron (`npm run benchmark:electron`) dla startu, kontenera mapy, galerii, odczytu SQLite i RSS; ciężki test 1513 mediów pozostaje w pełnym E2E.
 - Zmemoizowano filtrowanie, sortowanie i grupowanie galerii oraz dostępne kraje; miniatury filmów nie renderują ponownie bez zmiany źródła.
@@ -174,3 +180,10 @@ Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.0.0/).
 - Dodano natywne wykrywanie odbiorników DLNA/UPnP, opis usług AVTransport, połączenie SOAP, wysyłanie zdjęć/filmów, podstawowe sterowanie i pokaz sekwencyjny.
 - Dodano ograniczony serwer lokalnego medium z walidacją ścieżki, tokenem, MIME i HTTP Range. Usunięto Smart Remote, QR, tokeny sesji pilota i jego IPC.
 - Dodano test symulatora odbiornika; test fizycznego telewizora pozostaje UNVERIFIED.
+# Uzupełnienie audytu 1.8.1 — PR #10 (2026-10-18)
+
+- Walidacja rzeczywistego obrazu/GPS i anulowanie importu, zachowanie danych edytora zdjęcia.
+- Organizer albumów bez pętli renderów i bez pozornego sukcesu po błędzie zapisu; poprawne relacje podróży.
+- Rzeczywisty fullscreen, wykorzystanie ustawień pokazu, poprawki pustych widoków i lazy-load.
+- SOAP Fault oraz anulowanie żądań DLNA z natychmiastowym unieważnieniem udostępnień.
+- Systemowe E2E Electron i aktualna macierz ograniczeń: `docs/SYSTEM_AUDIT_2026-10-18.md`. To kandydat, nie gotowe wydanie 2.0.

@@ -23,7 +23,7 @@ interface CatalogOrganizerModalProps {
   onClose: () => void;
   album: TravelAlbum | null;
   allPhotos: TravelPhoto[];
-  onSaveOrder: (albumId: string, orderedPhotoIds: string[]) => void;
+  onSaveOrder: (albumId: string, orderedPhotoIds: string[]) => boolean;
   onStartSlideshow: (orderedPhotos: TravelPhoto[]) => void;
 }
 
@@ -35,14 +35,12 @@ export const CatalogOrganizerModal: React.FC<CatalogOrganizerModalProps> = ({
   onSaveOrder,
   onStartSlideshow,
 }) => {
-  if (!isOpen || !album) return null;
-
   // Pobierz wszystkie zdjęcia z tego albumu
-  const albumPhotos = allPhotos.filter(p => p.albumId === album.id);
+  const albumPhotos = React.useMemo(() => allPhotos.filter(p => p.albumId === album?.id), [allPhotos, album?.id]);
 
   // Uporządkuj zdjęcia według zapisanego customPhotoOrder (lub domyślnie chronologicznie)
   const initialOrderedPhotos = React.useMemo(() => {
-    if (album.customPhotoOrder && album.customPhotoOrder.length > 0) {
+    if (album?.customPhotoOrder && album.customPhotoOrder.length > 0) {
       const orderMap = new Map<string, number>();
       album.customPhotoOrder.forEach((id, idx) => orderMap.set(id, idx));
 
@@ -65,6 +63,8 @@ export const CatalogOrganizerModal: React.FC<CatalogOrganizerModalProps> = ({
     setOrderedList(initialOrderedPhotos);
     setHasSaved(false);
   }, [initialOrderedPhotos]);
+
+  if (!isOpen || !album) return null;
 
   // Przesunięcie elementu w tablicy
   const moveItem = (fromIndex: number, toIndex: number) => {
@@ -122,7 +122,7 @@ export const CatalogOrganizerModal: React.FC<CatalogOrganizerModalProps> = ({
   // Zapisz porządek
   const handleSave = () => {
     const ids = orderedList.map(p => p.id);
-    onSaveOrder(album.id, ids);
+    if (!onSaveOrder(album.id, ids)) return;
     setHasSaved(true);
     setTimeout(() => setHasSaved(false), 2500);
   };
@@ -130,7 +130,7 @@ export const CatalogOrganizerModal: React.FC<CatalogOrganizerModalProps> = ({
   // Uruchom pokaz w mojej kolejności
   const handlePlayInOrder = () => {
     const ids = orderedList.map(p => p.id);
-    onSaveOrder(album.id, ids);
+    if (!onSaveOrder(album.id, ids)) return;
     onStartSlideshow(orderedList);
     onClose();
   };
@@ -180,6 +180,7 @@ export const CatalogOrganizerModal: React.FC<CatalogOrganizerModalProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
+              aria-label="Zamknij organizer albumu"
               className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
               title="Zamknij (Esc)"
             >

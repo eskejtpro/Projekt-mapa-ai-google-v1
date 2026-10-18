@@ -1,5 +1,12 @@
 # REQUIREMENTS.md - Wymagania Funkcjonalne i Niefunkcjonalne
 
+## REQ-QA10 — audyt systemowy, 2026-10-18
+
+- REQ-QA10-01 (P1): import zdjęcia musi odrzucić uszkodzony plik i niepoprawny GPS bez zapisu; zamknięcie nie przenosi kolejki do następnego importu. Dowód: system E2E.
+- REQ-QA10-02 (P1): zapis kolejności albumu potwierdza sukces tylko po rzeczywistym zapisie; edytor zachowuje istniejące dane. Dowód: E2E błędu IPC i restartu.
+- REQ-QA10-03 (P1): Stop/disconnect DLNA odwołują udostępnienia i przerywają oczekujące Play; SOAP Fault nie jest sukcesem. Dowód: symulator HTTP/SOAP.
+- REQ-QA10-04 (P1): wydanie 2.0 wymaga zamknięcia DoD, nie samego zielonego CI. Aktualne braki i status każdej funkcji: `docs/SYSTEM_AUDIT_2026-10-18.md`; dotychczasowe historyczne „UKOŃCZONE” nie są potwierdzeniem.
+
 ## Zatwierdzony zakres PR #6 — 1.6.0
 
 - REQ-VGM-01: film z poprawnym GPS ma rzeczywisty marker w istniejącym klastrze Leaflet, popup i otwarcie playera; test Electron również przy blokadzie HTTP(S).

@@ -23,6 +23,12 @@ function xmlTag(xml, name) {
   return match ? match[1].trim() : '';
 }
 function xmlUnescape(value) { return value.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&'); }
+function soapFault(response) {
+  if (!/<(?:[\w-]+:)?Fault\b/i.test(response)) return null;
+  const code = xmlUnescape(xmlTag(response, 'errorCode') || xmlTag(response, 'faultcode') || 'unknown');
+  const description = xmlUnescape(xmlTag(response, 'errorDescription') || xmlTag(response, 'faultstring') || 'Nieznany błąd SOAP');
+  return { code, description };
+}
 function parseDeviceDescription(xml, location) {
   const base = new URL(xmlTag(xml, 'URLBase') || location);
   const services = [];
@@ -41,16 +47,25 @@ function parseDeviceDescription(xml, location) {
 
 function requestText(url, options = {}) {
   const target = safeUrl(url);
+  const { signal, ...requestOptions } = options;
   return new Promise((resolve, reject) => {
-    const request = http.request(target, { ...options, timeout: 2500, headers: { ...(options.headers || {}), Connection: 'close' } }, response => {
+    if (signal?.aborted) return reject(Object.assign(new Error('Operacja DLNA anulowana'), { name: 'AbortError' }));
+    const request = http.request(target, { ...requestOptions, timeout: 2500, headers: { ...(requestOptions.headers || {}), Connection: 'close' } }, response => {
       let body = ''; response.setEncoding('utf8'); response.on('data', chunk => { body += chunk; if (Buffer.byteLength(body) > 256 * 1024) request.destroy(new Error('Odpowiedź odbiornika przekracza limit')); });
       response.once('error', reject);
-      response.on('end', () => response.statusCode >= 200 && response.statusCode < 300 ? resolve(body) : reject(new Error(`Odbiornik HTTP ${response.statusCode}`)));
+      response.on('end', () => {
+        const fault = soapFault(body);
+        if (fault) return reject(new Error(`SOAP Fault ${fault.code}: ${fault.description}`));
+        if (response.statusCode >= 200 && response.statusCode < 300) return resolve(body);
+        reject(new Error(`Odbiornik HTTP ${response.statusCode}`));
+      });
     });
     request.once('timeout', () => request.destroy(new Error('Przekroczono czas odpowiedzi odbiornika')));
     const deadline = setTimeout(() => request.destroy(new Error('Przekroczono czas operacji DLNA')), 5000);
-    request.once('close', () => clearTimeout(deadline));
-    request.once('error', reject); if (options.body) request.write(options.body); request.end();
+    const abort = () => request.destroy(Object.assign(new Error('Operacja DLNA anulowana'), { name: 'AbortError' }));
+    signal?.addEventListener('abort', abort, { once: true });
+    request.once('close', () => { clearTimeout(deadline); signal?.removeEventListener('abort', abort); });
+    request.once('error', reject); if (requestOptions.body) request.write(requestOptions.body); request.end();
   });
 }
 
@@ -66,7 +81,11 @@ function soapEnvelope(action, body) {
   return `<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:${action} xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">${body}</u:${action}></s:Body></s:Envelope>`;
 }
 function escapeXml(value) { return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;'); }
-function didl(title, url, mimeType) { return `&lt;DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"&gt;&lt;item id="1" parentID="0" restricted="1"&gt;&lt;dc:title&gt;${escapeXml(title)}&lt;/dc:title&gt;&lt;res protocolInfo="http-get:*:${escapeXml(mimeType)}:*"&gt;${escapeXml(url)}&lt;/res&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;`; }
+function didl(title, url, mimeType) {
+  const mediaClass = mimeType.startsWith('image/') ? 'object.item.imageItem.photo' : 'object.item.videoItem';
+  const metadata = `<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"><item id="1" parentID="0" restricted="1"><dc:title>${escapeXml(title)}</dc:title><upnp:class>${mediaClass}</upnp:class><res protocolInfo="http-get:*:${escapeXml(mimeType)}:*">${escapeXml(url)}</res></item></DIDL-Lite>`;
+  return escapeXml(metadata);
+}
 
 class MediaShareServer {
   constructor(allowedRoots = []) { this.allowedRoots = allowedRoots.map(root => realpathSync(root)); this.entries = new Map(); this.server = null; }
@@ -116,9 +135,24 @@ class DlnaCasting {
   constructor(resolveMedia, allowedRoots) { this.resolveMedia = resolveMedia; this.share = new MediaShareServer(allowedRoots); this.devices = new Map(); this.connected = null; this.cancelled = false; }
   setDevices(devices) { this.devices = new Map(devices.map(device => [device.id, device])); }
   async connect(deviceId) { const device = this.devices.get(deviceId); if (!device) throw new Error('Nieznany odbiornik'); const hydrated = device.controlURL ? device : await hydrateRenderer(device); this.devices.set(deviceId, hydrated); this.connected = hydrated; await this.share.start(); return { ...hydrated, status: 'connected' }; }
-  async #soap(action, body) { if (!this.connected) throw new Error('Najpierw połącz odbiornik'); const bodyXml = soapEnvelope(action, `<InstanceID>0</InstanceID>${body}`); const response = await requestText(this.connected.controlURL, { method: 'POST', headers: { 'Content-Type': 'text/xml; charset="utf-8"', SOAPAction: `"urn:schemas-upnp-org:service:AVTransport:1#${action}"`, 'Content-Length': Buffer.byteLength(bodyXml) }, body: bodyXml }); if (/Fault|Error/i.test(response) && !/<u:/.test(response)) throw new Error('Odbiornik odrzucił operację DLNA'); return response; }
-  async play(media) { const resolved = await this.resolveMedia(media); const url = this.share.publish(resolved.file, resolved.mimeType, resolved.title, this.connected.address); await this.#soap('SetAVTransportURI', `<CurrentURI>${escapeXml(url)}</CurrentURI><CurrentURIMetaData>${didl(resolved.title, url, resolved.mimeType)}</CurrentURIMetaData>`); await this.#soap('Play', '<Speed>1</Speed>'); return { url, title: resolved.title, mimeType: resolved.mimeType }; }
-  async control(action) { const actions = { pause: 'Pause', stop: 'Stop', play: 'Play' }; if (!actions[action]) throw new Error('Nieznane sterowanie DLNA'); if (action === 'stop') this.cancelShow?.abort(); await this.#soap(actions[action], action === 'play' ? '<Speed>1</Speed>' : ''); if (action === 'stop') this.share.revokeAll(); return { status: action }; }
+  async #soap(action, body, signal) { if (!this.connected) throw new Error('Najpierw połącz odbiornik'); const bodyXml = soapEnvelope(action, `<InstanceID>0</InstanceID>${body}`); return requestText(this.connected.controlURL, { method: 'POST', headers: { 'Content-Type': 'text/xml; charset="utf-8"', SOAPAction: `"urn:schemas-upnp-org:service:AVTransport:1#${action}"`, 'Content-Length': Buffer.byteLength(bodyXml) }, body: bodyXml, signal }); }
+  async play(media, externalSignal) {
+    if (!this.connected) throw new Error('Najpierw połącz odbiornik');
+    if (!externalSignal) this.cancelShow?.abort();
+    this.cancelPlay?.abort();
+    const controller = new AbortController(); this.cancelPlay = controller;
+    const signal = externalSignal ? AbortSignal.any([externalSignal, controller.signal]) : controller.signal;
+    try {
+      const resolved = await this.resolveMedia(media);
+      signal.throwIfAborted();
+      this.share.revokeAll();
+      const url = this.share.publish(resolved.file, resolved.mimeType, resolved.title, this.connected.address);
+      await this.#soap('SetAVTransportURI', `<CurrentURI>${escapeXml(url)}</CurrentURI><CurrentURIMetaData>${didl(resolved.title, url, resolved.mimeType)}</CurrentURIMetaData>`, signal);
+      await this.#soap('Play', '<Speed>1</Speed>', signal);
+      return { url, title: resolved.title, mimeType: resolved.mimeType };
+    } finally { if (this.cancelPlay === controller) this.cancelPlay = null; }
+  }
+  async control(action) { const actions = { pause: 'Pause', stop: 'Stop', play: 'Play' }; if (!actions[action]) throw new Error('Nieznane sterowanie DLNA'); if (action === 'stop') { this.cancelShow?.abort(); this.cancelPlay?.abort(); this.share.revokeAll(); } await this.#soap(actions[action], action === 'play' ? '<Speed>1</Speed>' : ''); return { status: action }; }
   async slideshow(items, intervalMs = 8000) {
     this.cancelShow?.abort();
     const controller = new AbortController(); this.cancelShow = controller;
@@ -126,13 +160,13 @@ class DlnaCasting {
     try {
       for (const item of items.slice(0, 500)) {
         if (controller.signal.aborted) break;
-        await this.play(item);
+        await this.play(item, controller.signal);
         if (item.kind === 'photo') await wait(intervalMs, undefined, { signal: controller.signal });
         else {
           let started = false; let startupPolls = 0;
           do {
             await wait(1000, undefined, { signal: controller.signal });
-            const state = xmlTag(await this.#soap('GetTransportInfo', ''), 'CurrentTransportState');
+            const state = xmlTag(await this.#soap('GetTransportInfo', '', controller.signal), 'CurrentTransportState');
             if (state === 'PLAYING') started = true;
             if (!started && ++startupPolls >= 10) throw new Error('Odbiornik nie potwierdził rozpoczęcia filmu');
             if (started && state === 'STOPPED') break;
@@ -142,7 +176,7 @@ class DlnaCasting {
       }
     } catch (error) { if (error.name !== 'AbortError') throw error; }
   }
-  async disconnect() { this.cancelled = true; this.cancelShow?.abort(); try { if (this.connected) await this.#soap('Stop', ''); } catch {} this.connected = null; await this.share.close(); }
+  async disconnect() { this.cancelled = true; this.cancelShow?.abort(); this.cancelPlay?.abort(); this.share.revokeAll(); try { if (this.connected) await this.#soap('Stop', ''); } catch {} this.connected = null; await this.share.close(); }
 }
 
-module.exports = { isPrivateAddress, parseDeviceDescription, hydrateRenderer, MediaShareServer, DlnaCasting, escapeXml, didl };
+module.exports = { isPrivateAddress, parseDeviceDescription, hydrateRenderer, MediaShareServer, DlnaCasting, escapeXml, didl, soapFault };

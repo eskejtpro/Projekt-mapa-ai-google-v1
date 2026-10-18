@@ -1,5 +1,25 @@
 # PROGRESS.md - Rzeczywisty Stan Postępów Projektu „Prezent Mapy”
 
+## SESSION HANDOFF — rozszerzony audyt systemowy PR #10, 2026-10-18
+
+- Cel: pełny audyt aplikacji i przygotowanie do Windows 2.0; bieżąca wersja 1.8.1, branch `feature/final-quality-audit`, main `f55c972e6c98b2bf5dc14850b809b135239e971d`.
+- Naprawiono: walidację/dekodowanie importu zdjęć, GPS i anulowanie kolejki; inicjalizację edytora; pętlę renderów organizera i fałszywy sukces zapisu; fullscreen; filtr podróży; odczyt ustawień pokazu; SOAP Fault i anulowanie DLNA.
+- Zweryfikowano lokalnie: verify PASS (24 Vitest, 14 tooling, 23 integracyjne + 6 izolowanych backup), system E2E PASS, pakowanie NSIS/portable 1.8.1 PASS. Dalsze wyniki E2E, restartu i CI: TESTING.md.
+- Macierz wszystkich funkcji, granice bezpieczeństwa, braki ustawień i kryteria DoD: `docs/SYSTEM_AUDIT_2026-10-18.md`. Decyzja wydania: NOT READY. Fizyczny TV i odsłuch UNVERIFIED.
+- Profile testowe są odizolowane. Oryginalne media i nieśledzony `moje instrukcje do projektu.txt` nietknięte.
+- Implementacja `cad73f4328e42cdd553e448262375356b0e8560d`: Windows Quality push/PR PASS (runs 39127184610 i 39127186995), w tym czyste npm ci, system E2E, realne kodeki, GPS i restart. Końcowy commit dokumentacyjny wymaga własnego wyniku CI.
+- Pełne npm audit: 8 umiarkowanych wpisów deweloperskiego łańcucha pakowania, brak high/critical; produkcyjne 0. Nie używano audit fix --force.
+- Następny krok: review PR #10 (bez automatycznego merge); małe poprawki ustawień i trwałości pokazu, następnie dowody instalacji/upgrade/Windows 11. Braków wydania nie oznaczać DONE.
+
+## SESSION HANDOFF — PR #10, 2026-10-18 (aktualny)
+- Cel: końcowy audyt DoD i celowane regresje; branch `feature/final-quality-audit`, kandydat 1.8.1.
+- Main po merge #8/#9: `f55c972e6c98b2bf5dc14850b809b135239e971d`; oba PR scalone po dwóch zielonych CI. Wcześniejsze handoffy poniżej są historyczne.
+- Naprawy: początkowa warstwa offline, XML DIDL, eager/lazy galerii i cleanup timera pokazu po zmianie medium; testy negatywne DLNA.
+- Odtworzono FAIL E2E początkowego offline i FAIL DIDL; po zmianach PASS. Benchmark po poprawce: lokalne kafelki załadowane, tilesLoaded=true (32 ms oczekiwania); to nie pomiar całego renderowania dużej biblioteki.
+- Pełny audyt i pozostałe kryteria: `docs/FINAL_QUALITY_AUDIT.md`; szczegółowe wyniki sesji w `TESTING.md`.
+- Plik `moje instrukcje do projektu.txt` pozostaje nieśledzony i nietknięty. Nie zmieniano oryginalnych mediów ani prywatnej bazy.
+- Następny krok: zakończyć verify/E2E/restart i kontrolę CI PR #10. Nie scalać #10 automatycznie. Fizyczny TV, odsłuch i gotowe wydanie Windows nadal UNVERIFIED/BLOCKED zgodnie z zakresem.
+
 ## SESSION HANDOFF — PR #9 performance fast track, 2026-10-18
 - Cel: zmniejszyć koszt renderowania galerii i mapy bez zmiany funkcji, danych ani wyglądu.
 - Branch: `feature/performance-optimization`, baza `origin/main` `566e081`; commit `025e939`; PR #9: https://github.com/eskejtpro/Projekt-mapa-ai-google-v1/pull/9.

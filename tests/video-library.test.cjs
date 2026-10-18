@@ -12,6 +12,18 @@ function fixture(root, name, header, body = 'synthetic-video') {
   return file;
 }
 
+test('równoległe importy tego samego filmu zachowują jeden rekord i kompletny plik', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'prezent-video-concurrent-'));
+  const library = new VideoLibrary(join(root, 'library.sqlite'), join(root, 'videos'));
+  try {
+    const source = fixture(root, 'same.webm', [0x1a, 0x45, 0xdf, 0xa3]);
+    const results = await Promise.all(Array.from({ length: 4 }, () => library.importVideo(source)));
+    assert.equal(results.filter(result => !result.duplicate).length, 1);
+    assert.equal(library.list().length, 1);
+    assert.deepEqual(require('node:fs').readFileSync(library.pathFor(results[0].item.id)), require('node:fs').readFileSync(source));
+  } finally { library.close(); rmSync(root, { recursive: true, force: true }); }
+});
+
 test('importuje MP4/WebM do katalogu aplikacji bez Base64 i odrzuca duplikat', async () => {
   const root = mkdtempSync(join(tmpdir(), 'prezent-video-'));
   const db = join(root, 'library.sqlite');

@@ -69,14 +69,16 @@ app.whenReady().then(async () => {
   backupTimer.unref();
   app.once('will-quit', () => clearInterval(backupTimer));
   if (process.argv.includes('--smoke-test') && process.argv.includes('--recovery-smoke-test')) database.set('prezent_travel_photos_v2', JSON.stringify([{ id: 'synthetic-invalid-record' }]));
-  if (offlineSmoke) database.set('prezent_app_settings_v2', JSON.stringify({ offlineSimulationMode: true }));
+  if (offlineSmoke) database.set('prezent_app_settings_v2', JSON.stringify({ ...JSON.parse(database.get('prezent_app_settings_v2') || '{}'), offlineSimulationMode: true }));
   if (process.argv.includes('--smoke-test') && process.argv.includes('--preferences-smoke-test')) {
     database.set('prezent_app_settings_v2', JSON.stringify({ ...JSON.parse(database.get('prezent_app_settings_v2') || '{}'), slideshowInterval: 12, kenBurnsEnabled: false, ambientSoundEnabled: false, showMiniMapPip: false, defaultSortBy: 'title', lazyLoadImages: false }));
   }
   let offlineNetworkBlocked = JSON.parse(database.get('prezent_app_settings_v2') || '{}').offlineSimulationMode === true;
   session.defaultSession.webRequest.onBeforeRequest({ urls: ['http://*/*', 'https://*/*'] }, (_details, callback) => callback({ cancel: offlineNetworkBlocked }));
   app.once('will-quit', () => { videoLibrary.close(); database.close(); });
-  session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
+  session.defaultSession.setPermissionRequestHandler((contents, permission, callback, details) => {
+    callback(permission === 'fullscreen' && contents === window?.webContents && details.isMainFrame === true && details.requestingUrl === page);
+  });
   window = new BrowserWindow({
     width: 1440, height: 900, minWidth: 960, minHeight: 640,
     frame: false, backgroundColor: '#080d17', show: false,
