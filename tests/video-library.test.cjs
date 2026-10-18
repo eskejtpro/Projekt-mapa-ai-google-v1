@@ -28,9 +28,13 @@ test('importuje MP4/WebM do katalogu aplikacji bez Base64 i odrzuca duplikat', a
     assert.ok(!JSON.stringify(first.item).includes('base64'));
     assert.ok(library.pathFor(first.item.id).startsWith(store));
     assert.throws(() => library.pathFor('../outside'), /Nieznane medium/);
+    library.db.prepare(`INSERT INTO media_items
+      (id,kind,title,file_name,relative_path,mime_type,size_bytes,content_hash,date,codec_status,thumbnail_status)
+      VALUES ('escape','video','escape','escape.mp4','../outside.mp4','video/mp4',7,'escape-hash','2026-10-18','unknown','placeholder')`).run();
+    assert.throws(() => library.pathFor('escape'), /Brak bezpiecznego pliku medium/);
     library.close();
     const reopened = new VideoLibrary(db, store);
-    assert.equal(reopened.list().length, 1);
+    assert.equal(reopened.list().length, 2);
     reopened.close();
   } finally { rmSync(root, { recursive: true, force: true }); }
 });

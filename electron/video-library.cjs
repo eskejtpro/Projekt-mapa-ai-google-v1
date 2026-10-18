@@ -1,5 +1,5 @@
 const { createHash, randomUUID } = require('node:crypto');
-const { createReadStream, existsSync, mkdirSync, readFileSync, copyFileSync, renameSync, unlinkSync } = require('node:fs');
+const { createReadStream, existsSync, mkdirSync, copyFileSync, renameSync, unlinkSync, realpathSync, statSync } = require('node:fs');
 const path = require('node:path');
 const { DatabaseSync } = require('node:sqlite');
 
@@ -91,9 +91,12 @@ class VideoLibrary {
   pathFor(id) {
     const row = this.db.prepare('SELECT relative_path FROM media_items WHERE id = ?').get(id);
     if (!row) throw new Error('Nieznane medium');
-    const target = path.resolve(this.directory, row.relative_path);
-    if (path.dirname(target) !== this.directory || !existsSync(target)) throw new Error('Brak bezpiecznego pliku medium');
-    return target;
+    const root = realpathSync(this.directory);
+    const target = path.resolve(root, row.relative_path);
+    if (!target.startsWith(`${root}${path.sep}`) || !existsSync(target) || !statSync(target).isFile()) throw new Error('Brak bezpiecznego pliku medium');
+    const resolved = realpathSync(target);
+    if (!resolved.startsWith(`${root}${path.sep}`)) throw new Error('Plik medium wskazuje poza katalog aplikacji');
+    return resolved;
   }
   close() { this.db.close(); }
   #row(row) { return { id: row.id, kind: row.kind, title: row.title, fileName: row.file_name ?? row.fileName, localPath: row.relative_path, mimeType: row.mime_type ?? row.mimeType, sizeBytes: row.size_bytes ?? row.sizeBytes, contentHash: row.content_hash ?? row.contentHash, date: row.date, durationMs: row.duration_ms ?? row.durationMs, width: row.width, height: row.height, codec: row.codec, codecStatus: row.codec_status ?? row.codecStatus, thumbnailPath: row.thumbnail_path ?? row.thumbnailPath, thumbnailStatus: row.thumbnail_status ?? row.thumbnailStatus, albumId: row.album_id ?? row.albumId, tripId: row.trip_id ?? row.tripId, location: row.location_json ? JSON.parse(row.location_json) : undefined }; }
