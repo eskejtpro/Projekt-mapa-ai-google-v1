@@ -73,6 +73,6 @@ Tabela PREZ poniżej zachowuje historyczne statusy AI Studio. Aktualny audyt: do
 
 ## PR #7 — Multimedia Slideshow
 - [IN_REVIEW] MSL-01 — wspólny pokaz zdjęć i filmów z galerii, albumu i biblioteki; Electron E2E i CI Windows PASS.
-- [IN_REVIEW] MSL-02 — automatyczne odtwarzanie filmu, przejście po `ended`, pauza/wznowienie, seek, głośność, wyciszenie i fullscreen.
+- [IN_REVIEW] MSL-02 — automatyczne odtwarzanie filmu, przejście po `ended`, pauza/wznowienie, seek, głośność, wyciszenie i fullscreen; koniec ostatniego filmu respektuje wyłączoną pętlę, a błąd ma akcję pominięcia.
 - [IN_REVIEW] MSL-03 — E2E zdjęcie/film/mixed, pauza/wznowienie, zakończenie filmu i restart PASS; pozostają pusty album, brakujący film i zachowanie ustawień.
 - [IN_REVIEW] MSL-04 — CI Windows PR #7 PASS; pozostaje przegląd wydajności dużych albumów.

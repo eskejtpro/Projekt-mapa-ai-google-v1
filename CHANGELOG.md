@@ -4,6 +4,7 @@
 - Rozszerzono istniejący pokaz o wspólną listę zdjęć i filmów MP4/WebM.
 - Filmy odtwarzają się automatycznie, przechodzą dalej po zakończeniu i zachowują pauzę, seek, głośność, wyciszenie oraz fullscreen.
 - Pokaz z galerii i albumu może obejmować oba rodzaje mediów; zachowano pasek miniatur, kolejność, shuffle, pętlę i auto-ukrywanie kontrolek.
+- Dopracowano UX: pusty pokaz ma czytelny stan, błąd filmu pozwala go pominąć, koniec ostatniego filmu respektuje wyłączoną pętlę, a mini-mapa działa lokalnie bez zewnętrznego iframe.
 - Testy UI Electron dla mieszanego pokazu pozostają wymagane przed scaleniem PR #7.
 
 ## 1.6.0 — integracja GPS filmów i pełna kopia biblioteki
