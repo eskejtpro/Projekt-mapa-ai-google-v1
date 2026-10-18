@@ -60,7 +60,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     { id: 'gallery', name: 'Galeria i zdjęcia', icon: ImageIcon, desc: 'Sortowanie, odznaki EXIF i układ' },
     { id: 'import', name: 'Import oraz foldery', icon: FolderSync, desc: 'Ścieżki Windows i skanowanie' },
     { id: 'slideshow', name: 'Pokaz slajdów', icon: Play, desc: 'Ken Burns, przejścia i ambient audio' },
-    { id: 'tv', name: 'Telewizor i prezentacja', icon: Tv, desc: 'Tryb salonu 4K i pilot Smart Remote' },
+    { id: 'tv', name: 'Telewizor i prezentacja', icon: Tv, desc: 'Wykrywanie DLNA i przesyłanie multimediów' },
     { id: 'storage', name: 'Pamięć i dane lokalne', icon: HardDrive, desc: 'Pamięć podręczna i diagnostyka' },
     { id: 'backup', name: 'Kopie zapasowe', icon: Save, desc: 'Archiwum .prezent i automatyzacja' },
     { id: 'performance', name: 'Wydajność', icon: Zap, desc: 'Akceleracja sprzętowa i optymalizacja' },
@@ -605,18 +605,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </select>
               </div>
 
-              <div className="flex items-center justify-between border-t border-slate-800 pt-3">
-                <div>
-                  <div className="text-white font-semibold">Kod QR Smart Remote na ekranie:</div>
-                  <div className="text-slate-400 text-[11px]">Pozwala gościom przewijać zdjęcia z poziomu smartfona</div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={settings.enableSmartRemoteQr}
-                  onChange={e => update('enableSmartRemoteQr', e.target.checked)}
-                  className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
-                />
-              </div>
+              <p className="border-t border-slate-800 pt-3 text-slate-400 text-[11px]">Pilot telefoniczny i kody QR zostały usunięte. Sterowanie odbywa się bezpośrednio z aplikacji Windows przez obsługiwany odbiornik DLNA.</p>
             </div>
           </div>
         )}

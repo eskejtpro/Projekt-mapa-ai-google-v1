@@ -1130,6 +1130,7 @@ export default function App() {
         isOpen={isTvModeOpen}
         onClose={() => setIsTvModeOpen(false)}
         photos={photos}
+        videos={videos}
         trips={trips}
         albums={albums}
         onStartSlideshow={(list) => handleStartSlideshow(list)}

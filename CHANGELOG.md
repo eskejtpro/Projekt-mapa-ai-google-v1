@@ -169,3 +169,8 @@ Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.0.0/).
 ## [1.5.1] — 2026-10-18
 - Naprawiono obsługę HTTP Range w protokole `prezent-video://`, dzięki czemu przewijanie działa w Electronie.
 - Zweryfikowano rzeczywiste próbki H.264/AAC, VP8/Opus i VP9/Opus w Electronie na Windows; pomiar wyjścia audio pozostaje `UNVERIFIED`.
+# 1.8.0
+
+- Dodano natywne wykrywanie odbiorników DLNA/UPnP, opis usług AVTransport, połączenie SOAP, wysyłanie zdjęć/filmów, podstawowe sterowanie i pokaz sekwencyjny.
+- Dodano ograniczony serwer lokalnego medium z walidacją ścieżki, tokenem, MIME i HTTP Range. Usunięto Smart Remote, QR, tokeny sesji pilota i jego IPC.
+- Dodano test symulatora odbiornika; test fizycznego telewizora pozostaje UNVERIFIED.

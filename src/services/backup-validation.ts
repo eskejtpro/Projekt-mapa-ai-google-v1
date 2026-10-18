@@ -16,7 +16,7 @@ const ENUMS: Record<string, readonly string[]> = {
   defaultMapLayer: ['dark', 'satellite', 'voyager', 'light', 'osm', 'streets'], defaultSortBy: ['date-desc', 'date-asc', 'location', 'title'],
   slideshowTransition: ['fade', 'slide', 'zoom'], tvTargetResolution: ['4k', '1080p'], tvFontSize: ['normal', 'large', 'huge'],
 };
-const BOOLEANS = new Set(['autoStartWithWindows', 'transparentSidebar', 'autoCenterOnPhotos', 'showAnimatedRoutes', 'showMapLabels', 'showExifBadges', 'groupPhotosByDate', 'autoDetectDuplicates', 'autoScanNewPhotos', 'readExifOnImport', 'compressLocalThumbnails', 'kenBurnsEnabled', 'ambientSoundEnabled', 'showMiniMapPip', 'enableSmartRemoteQr', 'showCinematicCaptions', 'offlineSimulationMode', 'includeThumbnailsInBackup', 'hardwareAcceleration', 'lazyLoadImages', 'stripGpsOnExport', 'saveSearchHistory']);
+const BOOLEANS = new Set(['autoStartWithWindows', 'transparentSidebar', 'autoCenterOnPhotos', 'showAnimatedRoutes', 'showMapLabels', 'showExifBadges', 'groupPhotosByDate', 'autoDetectDuplicates', 'autoScanNewPhotos', 'readExifOnImport', 'compressLocalThumbnails', 'kenBurnsEnabled', 'ambientSoundEnabled', 'showMiniMapPip', 'showCinematicCaptions', 'offlineSimulationMode', 'includeThumbnailsInBackup', 'hardwareAcceleration', 'lazyLoadImages', 'stripGpsOnExport', 'saveSearchHistory']);
 const RANGES: Record<string, [number, number]> = { clusterRadius: [1, 500], slideshowInterval: [1, 3600], cacheLimitMb: [1, 1048576], autoBackupIntervalDays: [0, 3650], maxRenderedMarkers: [1, 100000] };
 export function validateSettings(settings: unknown): void {
   if (!object(settings)) throw new Error('Nieprawidłowe ustawienia');

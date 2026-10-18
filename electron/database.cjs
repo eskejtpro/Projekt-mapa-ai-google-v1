@@ -28,6 +28,14 @@ class LibraryDatabase {
     try { for (const [key, value] of entries) this.set(key, value); this.db.exec('COMMIT'); }
     catch (error) { this.db.exec('ROLLBACK'); throw error; }
   }
+  pathForPhoto(id) {
+    if (typeof id !== 'string' || id.length > 200) throw new Error('Nieprawidłowy identyfikator zdjęcia');
+    const stored = this.db.prepare('SELECT value FROM library WHERE key=?').get('prezent_travel_photos_v2')?.value;
+    if (!stored) throw new Error('Nie znaleziono biblioteki zdjęć');
+    const photo = JSON.parse(stored).find(item => item && item.id === id);
+    if (!photo || !this.media) throw new Error('Zdjęcie nie jest dostępne lokalnie');
+    return { file: this.media.pathFor(photo.url), mimeType: `image/${path.extname(this.media.pathFor(photo.url)).slice(1).replace('jpg', 'jpeg')}`, title: photo.title || 'Zdjęcie' };
+  }
   close() { this.db.close(); }
 }
 module.exports = { LibraryDatabase };
